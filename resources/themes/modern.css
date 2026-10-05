@@ -1,0 +1,106 @@
+/* Stapik K-Pop widgets on top of the "modern" theme of stapik-common. */
+
+/* --- Sidebar with the kinds of entries --- */
+.kpop-sidebar {
+    background-color: #f5f5f7;
+    border-right: 1px solid #e2e2e5;
+}
+
+.kpop-sidebar list,
+.kpop-sidebar row {
+    background-color: transparent;
+}
+
+.kpop-sidebar row {
+    border-radius: 8px;
+}
+
+.kpop-sidebar row:hover {
+    background-color: #e9e9ee;
+}
+
+.kpop-sidebar row:selected {
+    background-color: #007aff;
+}
+
+.kpop-sidebar-name {
+    color: #1c1c1e;
+    font-weight: bold;
+}
+
+.kpop-sidebar-count {
+    color: #1c1c1e;
+    opacity: 0.75;
+}
+
+.kpop-sidebar row:selected .kpop-sidebar-name,
+.kpop-sidebar row:selected .kpop-sidebar-count {
+    color: #ffffff;
+    opacity: 1;
+}
+
+.kpop-kind-swatch {
+    min-width: 6px;
+    border: none;
+    border-radius: 3px;
+}
+
+/* --- Entry list --- */
+.kpop-list {
+    background-color: #ffffff;
+}
+
+.kpop-list row {
+    border-bottom: 1px solid #ececf0;
+}
+
+.kpop-list row:selected {
+    background-color: #e3f0ff;
+}
+
+.kpop-list row:selected label {
+    color: #1c1c1e;
+}
+
+.kpop-row-title {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.kpop-row-subtitle {
+    opacity: 0.7;
+}
+
+.kpop-row-extra {
+    font-weight: bold;
+    opacity: 0.85;
+}
+
+/* --- Status badges --- */
+.kpop-badge {
+    padding: 1px 8px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 10px;
+}
+
+.kpop-status-owned { background-color: #2e7d32; }
+.kpop-status-ordered { background-color: #1565c0; }
+.kpop-status-wishlist { background-color: #8e24aa; }
+.kpop-status-sold { background-color: #757575; }
+
+/* --- Forms --- */
+entry.kpop-invalid {
+    border-color: #d32f2f;
+    background-color: #fff0f0;
+}
+
+.kpop-multiline textview {
+    padding: 4px;
+}
+
+/* --- Footer --- */
+.kpop-footer {
+    border-top: 1px solid #e2e2e5;
+}

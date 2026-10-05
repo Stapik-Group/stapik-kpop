@@ -1,0 +1,149 @@
+name: Windows
+
+# Builds the Windows package: a folder with the program and everything it needs, zipped. Every build runs the
+# program once on the unpacked zip with nothing but the Windows directories in PATH (--self-test), so a package that
+# cannot start never reaches anybody. A v* tag publishes the zip as a GitHub release; the workflow can also be run by
+# hand (Actions > Windows > Run workflow) to get a build of any branch for testers.
+on:
+  push:
+    branches-ignore:
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-gtkmm-4.0
+            mingw-w64-ucrt-x86_64-curl
+            mingw-w64-ucrt-x86_64-adwaita-icon-theme
+            mingw-w64-ucrt-x86_64-hicolor-icon-theme
+            mingw-w64-ucrt-x86_64-librsvg
+
+      - name: Tool versions
+        run: |
+          g++ --version | head -n 1
+          cmake --version | head -n 1
+          pkg-config --modversion gtk4 gtkmm-4.0
+          curl-config --version --ssl-backends || true
+
+      - name: Name the package
+        run: |
+          project_version=$(sed -nE 's/^project\(stapikkpop VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' CMakeLists.txt)
+
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            if [[ "${GITHUB_REF_NAME#v}" != "$project_version" ]]; then
+              echo "Tag $GITHUB_REF_NAME does not match project version '$project_version' in CMakeLists.txt"
+              exit 1
+            fi
+            version="$project_version"
+          else
+            version="${project_version}-${GITHUB_SHA::7}"
+          fi
+
+          echo "PACKAGE_NAME=stapik-kpop-${version}-windows-x64" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSTAPIK_KPOP_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Assemble the folder
+        run: |
+          cmake --build build --target stapikkpop_windows_bundle
+          cp packaging/windows/README.txt build/stapikkpop-windows/README.txt
+          mv build/stapikkpop-windows "build/${PACKAGE_NAME}"
+
+      - name: Zip
+        shell: pwsh
+        run: |
+          Set-Location build
+          7z a -tzip "..\$env:PACKAGE_NAME.zip" "$env:PACKAGE_NAME" | Out-Null
+          Set-Location ..
+          $hash = (Get-FileHash "$env:PACKAGE_NAME.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $env:PACKAGE_NAME.zip" | Out-File -Encoding ascii "$env:PACKAGE_NAME.zip.sha256"
+          Get-Item "$env:PACKAGE_NAME.zip" | Select-Object Name, @{ Name = 'MB'; Expression = { [math]::Round($_.Length / 1MB, 1) } }
+
+      # What a tester does: unpack the zip somewhere clean and start the program, on a PC where only the Windows
+      # directories are searched for DLLs. Data goes to a temporary folder so the run starts from scratch.
+      - name: Smoke test the zip
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $target = Join-Path $env:RUNNER_TEMP 'smoke'
+          $work = Join-Path $env:RUNNER_TEMP 'smoke-data'
+          Remove-Item $target, $work -Recurse -Force -ErrorAction SilentlyContinue
+          7z x "$env:PACKAGE_NAME.zip" "-o$target" -y | Out-Null
+          $exe = Join-Path $target "$env:PACKAGE_NAME\stapikkpop.exe"
+          if (-not (Test-Path $exe)) { throw "stapikkpop.exe is not in the zip" }
+
+          foreach ($name in 'data', 'config', 'cache') { New-Item -ItemType Directory -Force (Join-Path $work $name) | Out-Null }
+          $env:XDG_DATA_HOME = Join-Path $work 'data'
+          $env:XDG_CONFIG_HOME = Join-Path $work 'config'
+          $env:XDG_CACHE_HOME = Join-Path $work 'cache'
+          $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+
+          $process = Start-Process -FilePath $exe -ArgumentList '--self-test' -PassThru
+          $finished = $process.WaitForExit(90000)
+          if (-not $finished) { $process.Kill() }
+
+          $log = Join-Path $work 'cache\stapikkpop\stapik.log'
+          Write-Host '---- stapik.log ----'
+          if (Test-Path $log) { Get-Content $log } else { Write-Host '(no log file was written)' }
+          Write-Host '--------------------'
+
+          if (-not $finished) { throw 'the self-test did not finish within 90 seconds' }
+          if ($process.ExitCode -ne 0) { throw "the self-test failed (exit code $($process.ExitCode))" }
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: |
+            ${{ env.PACKAGE_NAME }}.zip
+            ${{ env.PACKAGE_NAME }}.zip.sha256
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            ${{ env.PACKAGE_NAME }}.zip
+            ${{ env.PACKAGE_NAME }}.zip.sha256

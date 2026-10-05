@@ -1,0 +1,68 @@
+cmake_minimum_required(VERSION 4.2)
+project(stapikkpop VERSION 1.0.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(STAPIK_KPOP_BUILD_TESTS "Build the Stapik K-Pop unit tests" OFF)
+
+# v1.3.0 is the first stapik-common with Windows support.
+set(STAPIK_COMMON_GIT_TAG "v1.3.0" CACHE STRING "Tag, branch or commit of stapik-common to build against")
+
+include(FetchContent)
+FetchContent_Declare(
+        stapikcommon
+        GIT_REPOSITORY https://github.com/Stapik-Group/stapik-common.git
+        GIT_TAG ${STAPIK_COMMON_GIT_TAG}
+)
+FetchContent_MakeAvailable(stapikcommon)
+
+# Everything that does not need a window lives in the core library, so it can be unit tested.
+add_library(kpopcore STATIC
+        src/kpop/app/CollectionController.cpp
+        src/kpop/command/CollectionCommands.cpp
+        src/kpop/document/CollectionDocument.cpp
+        src/kpop/document/CollectionSerializer.cpp
+        src/kpop/domain/CollectionStatistics.cpp
+        src/kpop/domain/ItemDetails.cpp
+        src/kpop/domain/ItemFilter.cpp
+        src/kpop/domain/PartialDate.cpp
+)
+target_include_directories(kpopcore PUBLIC src)
+target_link_libraries(kpopcore PUBLIC stapik::common)
+stapik_enable_warnings(kpopcore)
+
+stapik_add_application(
+        NAME stapikkpop
+        DISPLAY_NAME "Stapik K-Pop"
+        DESCRIPTION "Retro-styled K-pop collection manager with optional own cloud sync"
+        APPLICATION_ID pl.stapik.kpop
+        RESOURCES_DIRECTORY resources
+        HOMEPAGE https://github.com/Stapik-Group/stapik-kpop
+        MAINTAINER "Sebastian Smoliński <sebastian.smolinski6@gmail.com>"
+        SOURCES
+                src/main.cpp
+                src/kpop/ui/ItemPresenter.cpp
+                src/kpop/ui/MainWindow.cpp
+                src/kpop/ui/SelfTest.cpp
+                src/kpop/ui/dialog/ArtistEditDialog.cpp
+                src/kpop/ui/dialog/ArtistsDialog.cpp
+                src/kpop/ui/dialog/ItemDialog.cpp
+                src/kpop/ui/form/DetailsForms.cpp
+                src/kpop/ui/form/FormGrid.cpp
+                src/kpop/ui/view/ItemListView.cpp
+                src/kpop/ui/view/KindSidebar.cpp
+                src/kpop/ui/widget/FilterBar.cpp
+                src/kpop/ui/widget/MoneyEntry.cpp
+                src/kpop/ui/widget/MultilineText.cpp
+                src/kpop/ui/widget/PaginationBar.cpp
+                src/kpop/ui/widget/PartialDateEntry.cpp
+        LINK_LIBRARIES kpopcore
+)
+
+if(STAPIK_KPOP_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
