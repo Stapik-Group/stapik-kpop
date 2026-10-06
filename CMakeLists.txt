@@ -8,8 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(STAPIK_KPOP_BUILD_TESTS "Build the Stapik K-Pop unit tests" OFF)
 
-# v1.3.0 is the first stapik-common with Windows support.
-set(STAPIK_COMMON_GIT_TAG "v1.3.0" CACHE STRING "Tag, branch or commit of stapik-common to build against")
+set(STAPIK_COMMON_GIT_TAG "v1.3.1" CACHE STRING "Tag, branch or commit of stapik-common to build against")
 
 include(FetchContent)
 FetchContent_Declare(
@@ -40,6 +39,7 @@ stapik_add_application(
         DESCRIPTION "Retro-styled K-pop collection manager with optional own cloud sync"
         APPLICATION_ID pl.stapik.kpop
         RESOURCES_DIRECTORY resources
+        PACKAGING_DIRECTORY packaging
         HOMEPAGE https://github.com/Stapik-Group/stapik-kpop
         MAINTAINER "Sebastian Smoliński <sebastian.smolinski6@gmail.com>"
         SOURCES
