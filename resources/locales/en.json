@@ -75,7 +75,7 @@
   "kpop.field.status": "Status",
   "kpop.field.condition": "Condition",
   "kpop.field.quantity": "Copies",
-  "kpop.field.price": "Price per copy",
+  "kpop.field.price": "Purchase price",
   "kpop.field.acquiredOn": "Acquired on",
   "kpop.field.acquiredFrom": "Acquired from",
   "kpop.field.notes": "Notes",
