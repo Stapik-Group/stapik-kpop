@@ -45,6 +45,8 @@ namespace kpop::domain
     enum class AlbumType
     {
         Single,
+        Concert,
+        LiveCD,
         Mini,
         Full,
         Repackage,
@@ -141,6 +143,8 @@ namespace kpop::domain
     inline constexpr auto ALBUM_TYPES = makeEnumCatalog(
         "kpop.albumType",
         entry(AlbumType::Single, "single"),
+        entry(AlbumType::Concert, "concert"),
+        entry(AlbumType::LiveCD, "livecd"),
         entry(AlbumType::Mini, "mini"),
         entry(AlbumType::Full, "full"),
         entry(AlbumType::Repackage, "repackage"),

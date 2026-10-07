@@ -23,6 +23,8 @@
   "kpop.artistType.group": "Gruppe",
   "kpop.artistType.soloist": "Solokünstler",
   "kpop.albumType.single": "Single",
+  "kpop.albumType.concert": "Konzert",
+  "kpop.albumType.livecd": "LiveCD",
   "kpop.albumType.mini": "Mini-Album",
   "kpop.albumType.full": "Vollständiges Album",
   "kpop.albumType.repackage": "Repackage",
