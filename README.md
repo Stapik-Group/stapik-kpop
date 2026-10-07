@@ -42,10 +42,10 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_STAPIKCOMMON=../stapik-common
 The Windows build is a folder with the program and everything it needs (GTK, its data, the application resources),
 distributed as a zip. There is no installer.
 
-* **From CI:** the *Windows* workflow builds the zip on every push and pull request, runs the program once on the
+* **From CI:** the *Package* workflow builds the zip on every push and pull request, runs the program once on the
   unpacked zip with only the Windows directories in `PATH` (`stapikkpop.exe --self-test`), and uploads it as an
-  artifact. Run it by hand (Actions > Windows > Run workflow) to get a build of any branch for testers; a `v*` tag
-  publishes the zip as a GitHub release.
+  artifact. Run it by hand (Actions > Package > Run workflow) to get a build of any branch for testers; a `v*` tag
+  publishes the zip, together with the Ubuntu package (see below), as one GitHub release.
 * **Locally**, in an MSYS2 UCRT64 shell (packages: `gcc cmake ninja pkgconf gtkmm-4.0 curl adwaita-icon-theme
   hicolor-icon-theme librsvg`, prefixed `mingw-w64-ucrt-x86_64-`):
 
@@ -65,6 +65,15 @@ goes into the zip.
 data directory, logs every check and exits with 1 when one of them fails.
 
 To change the stapik-common version: `-DSTAPIK_COMMON_GIT_TAG=<tag, branch or commit>`.
+
+## Linux package
+
+The *Package* workflow also builds `stapikkpop_<version>_amd64.deb` (CPack, installed under `/opt/stapikkpop` with a
+launcher in `/usr/bin`, a `.desktop` entry and the icon) and, before uploading it, installs it in a clean Ubuntu 24.04
+container with only its declared dependencies and starts it (`--self-test`). It needs Ubuntu 24.04 or newer (or Debian
+13): the dependencies are those of the build machine (`libgtkmm-4.0-0`, `libstdc++6 >= 13`, `t64` library names).
+Install with `sudo apt install ./stapikkpop_<version>_amd64.deb`. Locally: `cmake --build build` and then
+`cd build && cpack -G DEB -D CPACK_DEBIAN_FILE_NAME=DEB-DEFAULT`.
 
 ## Layout
 
