@@ -16,7 +16,7 @@ namespace kpop::ui
         FormGrid();
 
         void addRow(std::string_view labelKey, Gtk::Widget& field);
-
+        void addFullWidthRow(std::string_view labelKey, Gtk::Widget& field);
         void shareLabelWidth(const Glib::RefPtr<Gtk::SizeGroup>& sizeGroup);
 
     private:

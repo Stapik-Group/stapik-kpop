@@ -48,7 +48,11 @@ namespace kpop::test
             .label = "JYP",
             .region = "KR",
             .catalogNumber = "L200002046",
-            .inclusions = "photocard, poster" };
+            .inclusions = "photocard, poster",
+            .tracklist = {
+                { .title = "Intro", .writers = "Bang Chan, Changbin", .length = domain::TrackLength::fromSeconds(65), .titleTrack = false },
+                { .title = "Dance the Night Away", .writers = "Han", .length = domain::TrackLength::fromSeconds(201), .titleTrack = true },
+                { .title = "Outro", .writers = "", .length = std::nullopt, .titleTrack = false } } };
         return item;
     }
 

@@ -18,6 +18,7 @@ add_executable(stapikkpop_tests
         ItemFilterTest.cpp
         LocaleResourcesTest.cpp
         PartialDateTest.cpp
+        TracklistTest.cpp
         support/TestFixtures.hpp
 )
 target_link_libraries(stapikkpop_tests PRIVATE kpopcore GTest::gtest_main)

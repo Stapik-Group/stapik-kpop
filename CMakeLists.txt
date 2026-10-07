@@ -28,6 +28,8 @@ add_library(kpopcore STATIC
         src/kpop/domain/ItemDetails.cpp
         src/kpop/domain/ItemFilter.cpp
         src/kpop/domain/PartialDate.cpp
+        src/kpop/domain/TrackLength.cpp
+        src/kpop/domain/Tracklist.cpp
 )
 target_include_directories(kpopcore PUBLIC src)
 target_link_libraries(kpopcore PUBLIC stapik::common)
@@ -59,6 +61,8 @@ stapik_add_application(
                 src/kpop/ui/widget/MultilineText.cpp
                 src/kpop/ui/widget/PaginationBar.cpp
                 src/kpop/ui/widget/PartialDateEntry.cpp
+                src/kpop/ui/widget/TrackLengthEntry.cpp
+                src/kpop/ui/widget/TracklistEditor.cpp
         LINK_LIBRARIES kpopcore
 )
 

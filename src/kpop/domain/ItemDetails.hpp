@@ -2,6 +2,7 @@
 
 #include "Enumerations.hpp"
 #include "PartialDate.hpp"
+#include "Tracklist.hpp"
 
 #include <optional>
 #include <string>
@@ -19,6 +20,7 @@ namespace kpop::domain
         std::string region;
         std::string catalogNumber;
         std::string inclusions;
+        Tracklist tracklist;
 
         bool operator==(const AlbumDetails&) const = default;
     };

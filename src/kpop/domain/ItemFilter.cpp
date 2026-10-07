@@ -50,6 +50,8 @@ namespace kpop::domain
                 [&text](const AlbumDetails& album)
                 {
                     appendFields(text, { album.edition, album.label, album.region, album.catalogNumber, album.inclusions });
+                    for (const auto& track : album.tracklist)
+                        appendFields(text, { track.title, track.writers });
                 },
                 [&text](const PhotocardDetails& photocard)
                 {

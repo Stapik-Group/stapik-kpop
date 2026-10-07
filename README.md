@@ -7,7 +7,7 @@ Retro-styled desktop manager of a K-pop collection, written in C++20 with GTK4 (
 
 | Kind | Details |
 | --- | --- |
-| Albums | type, format (CD, vinyl, cassette, digital, platform album, kit), edition, release date, label, region, catalog number, inclusions |
+| Albums | type, format (CD, vinyl, cassette, digital, platform album, kit), edition, release date, label, region, catalog number, inclusions, tracklist (title, writers, length, title track) |
 | Photocards | member, origin (album, pre-order, lucky draw, fansign, event), source, available for trade |
 | Merchandise | lightsticks, apparel, photobooks, season's greetings, posters, keyrings, stationery |
 | Clips | type, platform, link, release date, album, watched |
