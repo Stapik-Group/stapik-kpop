@@ -98,6 +98,37 @@ namespace
         EXPECT_FALSE(restored.items().front().price.has_value());
     }
 
+    TEST(CollectionDocumentTest, KeepsAlbumWithoutTracklistEmpty)
+    {
+        CollectionDocument document;
+        auto item = sampleAlbum();
+        std::get<AlbumDetails>(item.details).tracklist.clear();
+        document.insertItem(0, item);
+
+        const auto restored = roundTrip(document);
+        EXPECT_TRUE(std::get<AlbumDetails>(restored.items().front().details).tracklist.empty());
+    }
+
+    TEST(CollectionDocumentTest, ReadsTracklistSavedAsPlainTitles)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"]["tracklist"] = { "Intro", "Outro" };
+
+        const auto restored = CollectionDocument::fromJson(json);
+        const auto& tracklist = std::get<AlbumDetails>(restored.items().front().details).tracklist;
+        ASSERT_EQ(tracklist.size(), 2U);
+        EXPECT_EQ(tracklist.front().title, "Intro");
+        EXPECT_FALSE(tracklist.front().length.has_value());
+    }
+
+    TEST(CollectionDocumentTest, RejectsInvalidTrackLength)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"]["tracklist"][0]["length"] = 0;
+
+        EXPECT_THROW(static_cast<void>(CollectionDocument::fromJson(json)), std::invalid_argument);
+    }
+
     TEST(CollectionDocumentTest, KeepsAmountsOfCurrenciesWithoutDecimals)
     {
         CollectionDocument document;
