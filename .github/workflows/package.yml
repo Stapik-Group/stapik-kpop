@@ -148,7 +148,7 @@ jobs:
   deb:
     needs: version
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -156,7 +156,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtkmm-4.0-dev libcurl4-openssl-dev ninja-build dpkg-dev
+          sudo apt-get install -y --no-install-recommends libgtkmm-4.0-dev libcurl4-openssl-dev ninja-build dpkg-dev xvfb
 
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v2
@@ -183,15 +183,40 @@ jobs:
           dpkg-deb --info dist/stapikkpop_*_amd64.deb
           dpkg-deb --contents dist/stapikkpop_*_amd64.deb
 
-      - name: Smoke test in a clean Ubuntu 24.04
+      # Unpacks the package and starts the program from it, which checks that the package holds everything the program
+      # needs. Xvfb is started directly (no xvfb-run, which can wait forever for it) and the program runs under a
+      # timeout, so a hang fails in a minute instead of holding the job.
+      - name: Smoke test the package
+        timeout-minutes: 5
         run: |
-          docker run --rm --volume "$PWD/dist:/dist:ro" ubuntu:24.04 bash -euxc '
-            apt-get update
-            apt-get install -y --no-install-recommends /dist/stapikkpop_*_amd64.deb xvfb xauth
-            export XDG_DATA_HOME=/tmp/data XDG_CONFIG_HOME=/tmp/config XDG_CACHE_HOME=/tmp/cache
-            export GSETTINGS_BACKEND=memory NO_AT_BRIDGE=1
-            xvfb-run -a stapikkpop --self-test
-          '
+          deb=$(ls dist/stapikkpop_*_amd64.deb)
+          root="$RUNNER_TEMP/deb-root"
+          rm -rf "$root"
+          dpkg-deb --extract "$deb" "$root"
+
+          grep -q '/opt/stapikkpop/bin/stapikkpop' "$root/usr/bin/stapikkpop"
+          test -x "$root/opt/stapikkpop/bin/stapikkpop"
+          test -f "$root/usr/share/applications/pl.stapik.kpop.desktop"
+
+          Xvfb :99 -screen 0 1280x800x24 > "$RUNNER_TEMP/xvfb.log" 2>&1 &
+          xvfb_pid=$!
+          trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 50); do
+            [[ -S /tmp/.X11-unix/X99 ]] && break
+            sleep 0.2
+          done
+          if [[ ! -S /tmp/.X11-unix/X99 ]]; then
+            echo "Xvfb did not start"
+            cat "$RUNNER_TEMP/xvfb.log"
+            exit 1
+          fi
+
+          export DISPLAY=:99
+          export XDG_DATA_HOME="$RUNNER_TEMP/smoke/data" XDG_CONFIG_HOME="$RUNNER_TEMP/smoke/config" XDG_CACHE_HOME="$RUNNER_TEMP/smoke/cache"
+          export GSETTINGS_BACKEND=memory NO_AT_BRIDGE=1
+
+          timeout 60 "$root/opt/stapikkpop/bin/stapikkpop" --self-test
 
       - name: Upload the package
         uses: actions/upload-artifact@v4

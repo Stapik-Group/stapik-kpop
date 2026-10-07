@@ -69,9 +69,9 @@ To change the stapik-common version: `-DSTAPIK_COMMON_GIT_TAG=<tag, branch or co
 ## Linux package
 
 The *Package* workflow also builds `stapikkpop_<version>_amd64.deb` (CPack, installed under `/opt/stapikkpop` with a
-launcher in `/usr/bin`, a `.desktop` entry and the icon) and, before uploading it, installs it in a clean Ubuntu 24.04
-container with only its declared dependencies and starts it (`--self-test`). It needs Ubuntu 24.04 or newer (or Debian
-13): the dependencies are those of the build machine (`libgtkmm-4.0-0`, `libstdc++6 >= 13`, `t64` library names).
+launcher in `/usr/bin`, a `.desktop` entry and the icon) and, before uploading it, unpacks it and starts the program from
+it (`--self-test` under Xvfb, with a timeout). It needs Ubuntu 24.04 or newer (or Debian 13): the dependencies are
+those of the build machine (`libgtkmm-4.0-0`, `libstdc++6 >= 13`, `t64` library names).
 Install with `sudo apt install ./stapikkpop_<version>_amd64.deb`. Locally: `cmake --build build` and then
 `cd build && cpack -G DEB -D CPACK_DEBIAN_FILE_NAME=DEB-DEFAULT`.
 
