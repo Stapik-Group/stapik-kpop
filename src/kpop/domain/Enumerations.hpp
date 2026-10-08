@@ -100,6 +100,18 @@ namespace kpop::domain
         Other
     };
 
+    enum class SortOrder
+    {
+        AddedNewest,
+        AddedOldest,
+        TitleAscending,
+        TitleDescending,
+        ArtistAscending,
+        ArtistDescending,
+        ReleaseDateNewest,
+        ReleaseDateOldest
+    };
+
     enum class EventType
     {
         Concert,
@@ -205,6 +217,17 @@ namespace kpop::domain
         entry(EventType::ListeningParty, "listeningParty"),
         entry(EventType::PopUpStore, "popUpStore"),
         entry(EventType::Other, "other"));
+
+    inline constexpr auto SORT_ORDERS = makeEnumCatalog(
+        "kpop.sortOrder",
+        entry(SortOrder::AddedNewest, "addedNewest"),
+        entry(SortOrder::AddedOldest, "addedOldest"),
+        entry(SortOrder::TitleAscending, "titleAscending"),
+        entry(SortOrder::TitleDescending, "titleDescending"),
+        entry(SortOrder::ArtistAscending, "artistAscending"),
+        entry(SortOrder::ArtistDescending, "artistDescending"),
+        entry(SortOrder::ReleaseDateNewest, "releaseDateNewest"),
+        entry(SortOrder::ReleaseDateOldest, "releaseDateOldest"));
 
     [[nodiscard]] constexpr stapik::domain::CategoryColor colorOf(const ItemKind kind)
     {

@@ -21,9 +21,11 @@ namespace kpop::ui
         append(m_searchEntry);
         append(m_statusDropDown);
         append(m_artistDropDown);
+        append(m_sortDropDown);
 
         rebuildStatusModel();
         rebuildArtistModel();
+        rebuildSortModel();
         refreshLabels();
 
         m_searchEntry.signal_search_changed().connect([this] { m_signalChanged.emit(); });
@@ -35,6 +37,7 @@ namespace kpop::ui
         };
         m_statusDropDown.property_selected().signal_changed().connect(onSelectionChanged);
         m_artistDropDown.property_selected().signal_changed().connect(onSelectionChanged);
+        m_sortDropDown.property_selected().signal_changed().connect(onSelectionChanged);
     }
 
     void FilterBar::setArtists(const std::vector<domain::Artist>& artists)
@@ -59,11 +62,14 @@ namespace kpop::ui
     void FilterBar::refreshLabels()
     {
         const auto previous = filter();
+        const auto previousSortOrder = sortOrder();
 
         m_searchEntry.set_placeholder_text(translate("kpop.filter.search"));
+        m_sortDropDown.set_tooltip_text(translate("kpop.filter.sortTooltip"));
 
         rebuildStatusModel();
         rebuildArtistModel();
+        rebuildSortModel();
 
         m_updatingModels = true;
         if (previous.status)
@@ -83,6 +89,8 @@ namespace kpop::ui
                     m_artistDropDown.set_selected(static_cast<guint>(index + ALL_ENTRY_COUNT));
             }
         }
+
+        selectSortOrder(previousSortOrder);
         m_updatingModels = false;
     }
 
@@ -106,6 +114,14 @@ namespace kpop::ui
         return result;
     }
 
+    domain::SortOrder FilterBar::sortOrder() const
+    {
+        const auto entries = domain::SORT_ORDERS.entries();
+        const auto position = static_cast<std::size_t>(m_sortDropDown.get_selected());
+
+        return position < entries.size() ? entries[position].value : domain::SortOrder::AddedNewest;
+    }
+
     sigc::signal<void()>& FilterBar::signalChanged()
     {
         return m_signalChanged;
@@ -120,6 +136,27 @@ namespace kpop::ui
         m_updatingModels = true;
         m_statusDropDown.set_model(Gtk::StringList::create(labels));
         m_updatingModels = false;
+    }
+
+    void FilterBar::rebuildSortModel()
+    {
+        std::vector<Glib::ustring> labels;
+        for (const auto&[value, id] : domain::SORT_ORDERS.entries())
+            labels.emplace_back(translate(domain::SORT_ORDERS.nameKey(value)));
+
+        m_updatingModels = true;
+        m_sortDropDown.set_model(Gtk::StringList::create(labels));
+        m_updatingModels = false;
+    }
+
+    void FilterBar::selectSortOrder(const domain::SortOrder order)
+    {
+        const auto entries = domain::SORT_ORDERS.entries();
+        for (std::size_t index = 0; index < entries.size(); ++index)
+        {
+            if (entries[index].value == order)
+                m_sortDropDown.set_selected(static_cast<guint>(index));
+        }
     }
 
     void FilterBar::rebuildArtistModel()

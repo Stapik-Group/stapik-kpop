@@ -4,6 +4,7 @@
 
 #include "kpop/domain/CollectionStatistics.hpp"
 #include "kpop/domain/ItemFilter.hpp"
+#include "kpop/domain/ItemSort.hpp"
 #include "kpop/ui/ItemPresenter.hpp"
 #include "kpop/ui/dialog/ArtistsDialog.hpp"
 #include "kpop/ui/dialog/ItemDialog.hpp"
@@ -239,23 +240,27 @@ namespace kpop::ui
         auto filter = m_filterBar.filter();
         filter.kind = m_sidebar.selectedKind();
 
-        std::vector<ItemRow> matchingRows;
-        const auto& languageCode = LocaleManager::instance().languageCode();
+        std::vector<domain::SortableItem> matchingItems;
         for (auto item = document.items().rbegin(); item != document.items().rend(); ++item)
         {
             if (const auto* artist = document.findArtist(item->artistId); domain::matchesFilter(filter, *item, artist))
-                matchingRows.push_back(describeItem(*item, artist, languageCode));
+                matchingItems.push_back({ .item = &*item, .artist = artist });
         }
 
-        const auto pageCount = std::max<std::size_t>(1, (matchingRows.size() + PAGE_SIZE - 1) / PAGE_SIZE);
+        domain::sortItems(matchingItems, m_filterBar.sortOrder());
+
+        const auto pageCount = std::max<std::size_t>(1, (matchingItems.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         m_currentPage = std::clamp<std::size_t>(m_currentPage, 1, pageCount);
 
         const auto firstIndex = (m_currentPage - 1) * PAGE_SIZE;
-        const auto lastIndex = std::min(firstIndex + PAGE_SIZE, matchingRows.size());
+        const auto lastIndex = std::min(firstIndex + PAGE_SIZE, matchingItems.size());
 
-        m_listView.setRows(std::vector(
-            matchingRows.begin() + static_cast<std::ptrdiff_t>(firstIndex),
-            matchingRows.begin() + static_cast<std::ptrdiff_t>(lastIndex)));
+        std::vector<ItemRow> pageRows;
+        const auto& languageCode = LocaleManager::instance().languageCode();
+        for (auto index = firstIndex; index < lastIndex; ++index)
+            pageRows.push_back(describeItem(*matchingItems[index].item, matchingItems[index].artist, languageCode));
+
+        m_listView.setRows(pageRows);
         m_paginationBar.setPage(m_currentPage, pageCount);
     }
 

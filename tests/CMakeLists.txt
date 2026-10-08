@@ -16,6 +16,7 @@ add_executable(stapikkpop_tests
         CollectionStatisticsTest.cpp
         EnumCatalogTest.cpp
         ItemFilterTest.cpp
+        ItemSortTest.cpp
         LocaleResourcesTest.cpp
         PartialDateTest.cpp
         TracklistTest.cpp

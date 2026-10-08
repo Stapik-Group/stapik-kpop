@@ -35,6 +35,7 @@ namespace
         expectWellFormed(PHOTOCARD_ORIGINS);
         expectWellFormed(CLIP_TYPES);
         expectWellFormed(EVENT_TYPES);
+        expectWellFormed(SORT_ORDERS);
     }
 
     TEST(EnumCatalogTest, UnknownIdIsNotFound)

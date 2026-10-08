@@ -27,6 +27,7 @@ add_library(kpopcore STATIC
         src/kpop/domain/CollectionStatistics.cpp
         src/kpop/domain/ItemDetails.cpp
         src/kpop/domain/ItemFilter.cpp
+        src/kpop/domain/ItemSort.cpp
         src/kpop/domain/PartialDate.cpp
         src/kpop/domain/TrackLength.cpp
         src/kpop/domain/Tracklist.cpp
