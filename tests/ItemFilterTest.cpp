@@ -39,6 +39,26 @@ namespace
         EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "standard missing" }, sampleAlbum(), nullptr));
     }
 
+    TEST(ItemFilterTest, TextSearchCoversTracklist)
+    {
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "dance night" }, sampleAlbum(), nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "missing track" }, sampleAlbum(), nullptr));
+    }
+
+    TEST(ItemFilterTest, TextSearchCoversTrackWriters)
+    {
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "changbin" }, sampleAlbum(), nullptr));
+    }
+
+    TEST(ItemFilterTest, TextSearchCoversApparelSize)
+    {
+        auto item = sampleItemOfKind(ItemKind::Merchandise);
+        item.details = MerchandiseDetails{ .type = MerchandiseType::Apparel, .version = "", .official = true, .size = "XL" };
+
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "xl" }, item, nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "xxl" }, item, nullptr));
+    }
+
     TEST(ItemFilterTest, TextSearchCoversArtistNameAndMembers)
     {
         const auto artist = sampleArtist();

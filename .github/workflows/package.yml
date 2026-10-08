@@ -2,13 +2,8 @@ name: Package
 
 on:
   push:
-    branches-ignore:
-      - develop
     tags:
       - 'v*'
-  pull_request:
-    branches:
-      - master
   workflow_dispatch:
 
 concurrency:

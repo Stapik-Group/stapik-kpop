@@ -89,6 +89,7 @@ namespace
         collectCatalogKeys(PHOTOCARD_ORIGINS, requiredKeys);
         collectCatalogKeys(CLIP_TYPES, requiredKeys);
         collectCatalogKeys(EVENT_TYPES, requiredKeys);
+        collectCatalogKeys(SORT_ORDERS, requiredKeys);
 
         const auto availableKeys = keysOf("en");
         for (const auto& key : requiredKeys)

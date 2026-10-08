@@ -7,6 +7,11 @@ namespace kpop::domain
         return static_cast<ItemKind>(details.index());
     }
 
+    bool hasSize(const MerchandiseType type)
+    {
+        return type == MerchandiseType::Apparel;
+    }
+
     ItemDetails defaultDetails(const ItemKind kind)
     {
         switch (kind)

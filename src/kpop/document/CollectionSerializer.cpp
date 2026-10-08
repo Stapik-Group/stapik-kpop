@@ -1,5 +1,7 @@
 #include "CollectionSerializer.hpp"
 
+#include <format>
+
 #include "stapik/domain/CurrencyCatalog.hpp"
 
 #include <stdexcept>
@@ -81,6 +83,71 @@ namespace kpop::document::serializer
             return {source.at("minorUnits").get<std::int64_t>(), std::move(currency)};
         }
 
+        json trackToJson(const domain::Track& track)
+        {
+            json result = {
+                { "title", track.title },
+                { "writers", track.writers },
+                { "titleTrack", track.titleTrack }
+            };
+
+            if (track.length)
+                result["length"] = track.length->seconds();
+
+            return result;
+        }
+
+        domain::Track trackFromJson(const json& source)
+        {
+            domain::Track track;
+
+            // Tracklists used to be saved as plain titles.
+            if (source.is_string())
+            {
+                track.title = source.get<std::string>();
+                return track;
+            }
+
+            track.title = source.at("title").get<std::string>();
+            track.writers = stringOrEmpty(source, "writers");
+            track.titleTrack = source.value("titleTrack", false);
+
+            if (source.contains("length") && !source.at("length").is_null())
+            {
+                const auto seconds = source.at("length").get<int>();
+                track.length = domain::TrackLength::fromSeconds(seconds);
+                if (!track.length)
+                    throw std::invalid_argument(std::format("Invalid track length {}", std::to_string(seconds)));
+            }
+
+            return track;
+        }
+
+        json tracklistToJson(const domain::Tracklist& tracklist)
+        {
+            auto tracks = json::array();
+            for (const auto& track : tracklist)
+                tracks.push_back(trackToJson(track));
+
+            return tracks;
+        }
+
+        domain::Tracklist tracklistFromJson(const json& source, const char* key)
+        {
+            domain::Tracklist tracklist;
+            if (!source.contains(key))
+                return tracklist;
+
+            const auto& tracks = source.at(key);
+            if (!tracks.is_array())
+                throw std::invalid_argument(std::string("Expected a list for '") + key + "'");
+
+            for (const auto& track : tracks)
+                tracklist.push_back(trackFromJson(track));
+
+            return tracklist;
+        }
+
         json detailsToJson(const domain::AlbumDetails& album)
         {
             json details = {
@@ -93,6 +160,10 @@ namespace kpop::document::serializer
                 { "inclusions", album.inclusions }
             };
             setDate(details, "releaseDate", album.releaseDate);
+
+            if (!album.tracklist.empty())
+                details["tracklist"] = tracklistToJson(album.tracklist);
+
             return details;
         }
 
@@ -108,11 +179,16 @@ namespace kpop::document::serializer
 
         json detailsToJson(const domain::MerchandiseDetails& merchandise)
         {
-            return {
+            json details = {
                 { "type", std::string(domain::MERCHANDISE_TYPES.idOf(merchandise.type)) },
                 { "version", merchandise.version },
                 { "official", merchandise.official }
             };
+
+            if (!merchandise.size.empty())
+                details["size"] = merchandise.size;
+
+            return details;
         }
 
         json detailsToJson(const domain::ClipDetails& clip)
@@ -167,7 +243,8 @@ namespace kpop::document::serializer
                         .label = stringOrEmpty(source, "label"),
                         .region = stringOrEmpty(source, "region"),
                         .catalogNumber = stringOrEmpty(source, "catalogNumber"),
-                        .inclusions = stringOrEmpty(source, "inclusions") };
+                        .inclusions = stringOrEmpty(source, "inclusions"),
+                        .tracklist = tracklistFromJson(source, "tracklist") };
 
                 case ItemKind::Photocard:
                     return PhotocardDetails{
@@ -180,7 +257,8 @@ namespace kpop::document::serializer
                     return MerchandiseDetails{
                         .type = enumOr(MERCHANDISE_TYPES, source, "type", MerchandiseType::Lightstick),
                         .version = stringOrEmpty(source, "version"),
-                        .official = source.value("official", true) };
+                        .official = source.value("official", true),
+                        .size = stringOrEmpty(source, "size") };
 
                 case ItemKind::Clip:
                     return ClipDetails{

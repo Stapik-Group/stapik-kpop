@@ -1,0 +1,212 @@
+/* Stapik K-Pop widgets on top of the "dark" theme of stapik-common. */
+
+/* Text inherits its colour from the window; the system theme may be a light one. */
+window,
+dialog {
+    color: #f2f2f7;
+}
+
+.dim-label {
+    color: #98989f;
+    opacity: 1;
+}
+
+/* --- Sidebar with the kinds of entries --- */
+.kpop-sidebar {
+    background-color: #2c2c2e;
+    border-right: 1px solid #3a3a3c;
+}
+
+.kpop-sidebar list,
+.kpop-sidebar row {
+    background-color: transparent;
+}
+
+.kpop-sidebar row {
+    border-radius: 8px;
+}
+
+.kpop-sidebar row:hover {
+    background-color: #3a3a3c;
+}
+
+.kpop-sidebar row:selected {
+    background-color: #0a84ff;
+}
+
+.kpop-sidebar-name {
+    color: #f2f2f7;
+    font-weight: bold;
+}
+
+.kpop-sidebar-count {
+    color: #f2f2f7;
+    opacity: 0.75;
+}
+
+.kpop-sidebar row:selected .kpop-sidebar-name,
+.kpop-sidebar row:selected .kpop-sidebar-count {
+    color: #ffffff;
+    opacity: 1;
+}
+
+.kpop-kind-swatch {
+    min-width: 6px;
+    border: none;
+    border-radius: 3px;
+}
+
+/* --- Entry list --- */
+.kpop-list {
+    background-color: #1c1c1e;
+    color: #f2f2f7;
+}
+
+.kpop-list row {
+    border-bottom: 1px solid #2c2c2e;
+}
+
+.kpop-list row:hover {
+    background-color: #2c2c2e;
+}
+
+.kpop-list row:selected {
+    background-color: rgba(10, 132, 255, 0.32);
+}
+
+.kpop-list row:selected label {
+    color: #f2f2f7;
+}
+
+.kpop-row-title {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.kpop-row-subtitle {
+    color: #98989f;
+}
+
+.kpop-row-extra {
+    font-weight: bold;
+    opacity: 0.85;
+}
+
+/* --- Status badges --- */
+.kpop-badge {
+    padding: 1px 8px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 10px;
+}
+
+.kpop-status-owned { background-color: #248a3d; }
+.kpop-status-ordered { background-color: #0a6cd6; }
+.kpop-status-wishlist { background-color: #9b3fc4; }
+.kpop-status-sold { background-color: #636366; }
+
+/* --- Forms --- */
+entry.kpop-invalid {
+    border-color: #ff453a;
+    background-color: rgba(255, 69, 58, 0.16);
+}
+
+.kpop-multiline {
+    background-color: #2c2c2e;
+    border: 1px solid #48484a;
+    border-radius: 8px;
+}
+
+.kpop-multiline textview,
+.kpop-multiline textview text {
+    background-color: #2c2c2e;
+    color: #f2f2f7;
+    caret-color: #f2f2f7;
+}
+
+.kpop-multiline textview {
+    padding: 4px;
+}
+
+/* --- Tracklist editor and quick-pick entries: flat buttons are borderless until hovered --- */
+.kpop-tracklist button.flat:not(:checked),
+.kpop-quickpick button.flat:not(:checked) {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.kpop-tracklist button.flat:hover:not(:checked),
+.kpop-quickpick button.flat:hover:not(:checked) {
+    background-color: #3a3a3c;
+}
+
+/* --- Check boxes, drop-down lists, scrolling, tooltips --- */
+checkbutton check {
+    background-color: #2c2c2e;
+    border: 1px solid #48484a;
+    color: #ffffff;
+}
+
+checkbutton check:checked,
+checkbutton check:indeterminate {
+    background-color: #0a84ff;
+    border-color: #0a84ff;
+}
+
+popover.background,
+popover contents {
+    color: #f2f2f7;
+}
+
+popover contents scrolledwindow,
+popover contents listview,
+popover contents list {
+    background-color: transparent;
+    color: #f2f2f7;
+}
+
+popover contents row,
+popover contents listview row {
+    border-radius: 7px;
+    background-color: transparent;
+}
+
+popover contents row:hover {
+    background-color: #3a3a3c;
+}
+
+popover contents row:selected {
+    background-color: #0a84ff;
+    color: #ffffff;
+}
+
+scrollbar {
+    background-color: transparent;
+}
+
+scrollbar slider {
+    background-color: #5a5a5e;
+    border-radius: 999px;
+}
+
+scrollbar slider:hover {
+    background-color: #78787d;
+}
+
+separator {
+    background-color: #3a3a3c;
+}
+
+tooltip,
+tooltip.background {
+    background-color: #2c2c2e;
+    color: #f2f2f7;
+    border-radius: 6px;
+}
+
+/* --- Footer --- */
+.kpop-footer {
+    border-top: 1px solid #3a3a3c;
+}

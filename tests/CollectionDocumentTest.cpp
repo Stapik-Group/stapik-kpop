@@ -44,7 +44,7 @@ namespace
         photocard.details = PhotocardDetails{ .member = "Felix", .origin = PhotocardOrigin::LuckyDraw, .source = "Soundwave", .forTrade = true };
 
         auto merchandise = sampleItemOfKind(ItemKind::Merchandise);
-        merchandise.details = MerchandiseDetails{ .type = MerchandiseType::Lightstick, .version = "Ver. 2", .official = false };
+        merchandise.details = MerchandiseDetails{ .type = MerchandiseType::Lightstick, .version = "Ver. 2", .official = false, .size = "" };
 
         auto clip = sampleItemOfKind(ItemKind::Clip);
         clip.details = ClipDetails{
@@ -96,6 +96,57 @@ namespace
         const auto restored = roundTrip(document);
         EXPECT_EQ(restored.items().front(), item);
         EXPECT_FALSE(restored.items().front().price.has_value());
+    }
+
+    TEST(CollectionDocumentTest, KeepsAlbumWithoutTracklistEmpty)
+    {
+        CollectionDocument document;
+        auto item = sampleAlbum();
+        std::get<AlbumDetails>(item.details).tracklist.clear();
+        document.insertItem(0, item);
+
+        const auto restored = roundTrip(document);
+        EXPECT_TRUE(std::get<AlbumDetails>(restored.items().front().details).tracklist.empty());
+    }
+
+    TEST(CollectionDocumentTest, ReadsTracklistSavedAsPlainTitles)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"]["tracklist"] = { "Intro", "Outro" };
+
+        const auto restored = CollectionDocument::fromJson(json);
+        const auto& tracklist = std::get<AlbumDetails>(restored.items().front().details).tracklist;
+        ASSERT_EQ(tracklist.size(), 2U);
+        EXPECT_EQ(tracklist.front().title, "Intro");
+        EXPECT_FALSE(tracklist.front().length.has_value());
+    }
+
+    TEST(CollectionDocumentTest, RejectsInvalidTrackLength)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"]["tracklist"][0]["length"] = 0;
+
+        EXPECT_THROW(static_cast<void>(CollectionDocument::fromJson(json)), std::invalid_argument);
+    }
+
+    TEST(CollectionDocumentTest, KeepsSizeOfApparel)
+    {
+        CollectionDocument document;
+        auto item = sampleItemOfKind(ItemKind::Merchandise);
+        item.details = MerchandiseDetails{ .type = MerchandiseType::Apparel, .version = "", .official = true, .size = "XL" };
+        document.insertItem(0, item);
+
+        const auto restored = roundTrip(document);
+        EXPECT_EQ(std::get<MerchandiseDetails>(restored.items().front().details).size, "XL");
+    }
+
+    TEST(CollectionDocumentTest, ReadsMerchandiseWithoutSizeAsEmpty)
+    {
+        CollectionDocument document;
+        document.insertItem(0, sampleItemOfKind(ItemKind::Merchandise));
+
+        const auto restored = roundTrip(document);
+        EXPECT_TRUE(std::get<MerchandiseDetails>(restored.items().front().details).size.empty());
     }
 
     TEST(CollectionDocumentTest, KeepsAmountsOfCurrenciesWithoutDecimals)

@@ -45,6 +45,8 @@ namespace kpop::domain
     enum class AlbumType
     {
         Single,
+        Concert,
+        LiveCD,
         Mini,
         Full,
         Repackage,
@@ -55,6 +57,10 @@ namespace kpop::domain
     enum class AlbumFormat
     {
         Cd,
+        Dvd,
+        Nfc,
+        Cd_Dvd,
+        Cd_2Dvd,
         Vinyl,
         Cassette,
         Digital,
@@ -92,6 +98,18 @@ namespace kpop::domain
         Variety,
         BehindTheScenes,
         Other
+    };
+
+    enum class SortOrder
+    {
+        AddedNewest,
+        AddedOldest,
+        TitleAscending,
+        TitleDescending,
+        ArtistAscending,
+        ArtistDescending,
+        ReleaseDateNewest,
+        ReleaseDateOldest
     };
 
     enum class EventType
@@ -141,6 +159,8 @@ namespace kpop::domain
     inline constexpr auto ALBUM_TYPES = makeEnumCatalog(
         "kpop.albumType",
         entry(AlbumType::Single, "single"),
+        entry(AlbumType::Concert, "concert"),
+        entry(AlbumType::LiveCD, "livecd"),
         entry(AlbumType::Mini, "mini"),
         entry(AlbumType::Full, "full"),
         entry(AlbumType::Repackage, "repackage"),
@@ -150,6 +170,10 @@ namespace kpop::domain
     inline constexpr auto ALBUM_FORMATS = makeEnumCatalog(
         "kpop.albumFormat",
         entry(AlbumFormat::Cd, "cd"),
+        entry(AlbumFormat::Dvd, "dvd"),
+        entry(AlbumFormat::Nfc, "nfc"),
+        entry(AlbumFormat::Cd_Dvd, "cd_dvd"),
+        entry(AlbumFormat::Cd_2Dvd, "cd_2dvd"),
         entry(AlbumFormat::Vinyl, "vinyl"),
         entry(AlbumFormat::Cassette, "cassette"),
         entry(AlbumFormat::Digital, "digital"),
@@ -193,6 +217,17 @@ namespace kpop::domain
         entry(EventType::ListeningParty, "listeningParty"),
         entry(EventType::PopUpStore, "popUpStore"),
         entry(EventType::Other, "other"));
+
+    inline constexpr auto SORT_ORDERS = makeEnumCatalog(
+        "kpop.sortOrder",
+        entry(SortOrder::AddedNewest, "addedNewest"),
+        entry(SortOrder::AddedOldest, "addedOldest"),
+        entry(SortOrder::TitleAscending, "titleAscending"),
+        entry(SortOrder::TitleDescending, "titleDescending"),
+        entry(SortOrder::ArtistAscending, "artistAscending"),
+        entry(SortOrder::ArtistDescending, "artistDescending"),
+        entry(SortOrder::ReleaseDateNewest, "releaseDateNewest"),
+        entry(SortOrder::ReleaseDateOldest, "releaseDateOldest"));
 
     [[nodiscard]] constexpr stapik::domain::CategoryColor colorOf(const ItemKind kind)
     {

@@ -1,4 +1,5 @@
 #include "kpop/domain/Enumerations.hpp"
+#include "kpop/domain/ItemDetails.hpp"
 
 #include <gtest/gtest.h>
 
@@ -35,6 +36,7 @@ namespace
         expectWellFormed(PHOTOCARD_ORIGINS);
         expectWellFormed(CLIP_TYPES);
         expectWellFormed(EVENT_TYPES);
+        expectWellFormed(SORT_ORDERS);
     }
 
     TEST(EnumCatalogTest, UnknownIdIsNotFound)
@@ -47,6 +49,13 @@ namespace
     {
         EXPECT_EQ(ITEM_STATUSES.nameKey(ItemStatus::Wishlist), "kpop.status.wishlist");
         EXPECT_EQ(MERCHANDISE_TYPES.nameKey(MerchandiseType::SeasonsGreetings), "kpop.merchandiseType.seasonsGreetings");
+    }
+
+    TEST(EnumCatalogTest, OnlyApparelHasSize)
+    {
+        EXPECT_TRUE(hasSize(MerchandiseType::Apparel));
+        EXPECT_FALSE(hasSize(MerchandiseType::Lightstick));
+        EXPECT_FALSE(hasSize(MerchandiseType::Other));
     }
 
     TEST(EnumCatalogTest, EveryKindHasItsOwnColor)

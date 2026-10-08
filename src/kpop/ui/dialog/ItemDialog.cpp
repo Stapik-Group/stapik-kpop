@@ -19,7 +19,7 @@ namespace kpop::ui
 {
     namespace
     {
-        constexpr int DIALOG_WIDTH = 620;
+        constexpr int DIALOG_WIDTH = 760;
         constexpr int DIALOG_HEIGHT = 720;
         constexpr int SECTION_SPACING = 12;
         constexpr int NOTES_MIN_HEIGHT = 70;
@@ -31,7 +31,7 @@ namespace kpop::ui
     }
 
     ItemDialog::ItemDialog(
-        Gtk::Window& parent,
+        Window& parent,
         app::CollectionController& controller,
         const ItemDialogOptions& options,
         std::function<void(domain::CollectionItem)> onAccept) :
@@ -90,14 +90,14 @@ namespace kpop::ui
         m_topGrid.addRow("kpop.field.title", m_titleEntry);
         m_topGrid.addRow("kpop.field.artist", *artistRow);
 
-        for (const auto& kindEntry : domain::ITEM_KINDS.entries())
+        for (const auto&[value, id] : domain::ITEM_KINDS.entries())
         {
-            auto* form = createManagedDetailsForm(kindEntry.value);
+            auto* form = createManagedDetailsForm(value);
             form->shareLabelWidth(labelSizeGroup);
-            form->setDetails(domain::defaultDetails(kindEntry.value));
+            form->setDetails(domain::defaultDetails(value));
             form->signalChanged().connect([this] { updateConfirmSensitivity(); });
 
-            m_detailsStack.add(*form, std::string(kindEntry.id));
+            m_detailsStack.add(*form, std::string(id));
             m_detailsForms.push_back(form);
         }
         m_detailsStack.set_vhomogeneous(false);
