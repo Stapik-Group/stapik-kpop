@@ -1,4 +1,5 @@
 #include "kpop/domain/Enumerations.hpp"
+#include "kpop/domain/ItemDetails.hpp"
 
 #include <gtest/gtest.h>
 
