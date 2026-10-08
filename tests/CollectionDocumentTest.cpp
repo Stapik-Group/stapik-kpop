@@ -44,7 +44,7 @@ namespace
         photocard.details = PhotocardDetails{ .member = "Felix", .origin = PhotocardOrigin::LuckyDraw, .source = "Soundwave", .forTrade = true };
 
         auto merchandise = sampleItemOfKind(ItemKind::Merchandise);
-        merchandise.details = MerchandiseDetails{ .type = MerchandiseType::Lightstick, .version = "Ver. 2", .official = false };
+        merchandise.details = MerchandiseDetails{ .type = MerchandiseType::Lightstick, .version = "Ver. 2", .official = false, .size = "" };
 
         auto clip = sampleItemOfKind(ItemKind::Clip);
         clip.details = ClipDetails{

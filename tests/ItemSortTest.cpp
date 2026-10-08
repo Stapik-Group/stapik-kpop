@@ -31,7 +31,10 @@ namespace
             CollectionItem item;
             item.id = entry.title;
             item.title = entry.title;
-            item.details = AlbumDetails{ .releaseDate = entry.releaseDate };
+
+            AlbumDetails album;
+            album.releaseDate = entry.releaseDate;
+            item.details = album;
             items.push_back(std::move(item));
 
             Artist artist;
@@ -111,9 +114,16 @@ namespace
         items[0].title = "photocard";
         items[0].details = PhotocardDetails{};
         items[1].title = "clip";
-        items[1].details = ClipDetails{ .releaseDate = PartialDate::tryCreate(2020) };
+
+        ClipDetails clip;
+        clip.releaseDate = PartialDate::tryCreate(2020);
+        items[1].details = clip;
+
         items[2].title = "album";
-        items[2].details = AlbumDetails{ .releaseDate = PartialDate::tryCreate(2022) };
+
+        AlbumDetails album;
+        album.releaseDate = PartialDate::tryCreate(2022);
+        items[2].details = album;
 
         std::vector<SortableItem> sortable = { { &items[0], nullptr }, { &items[1], nullptr }, { &items[2], nullptr } };
         sortItems(sortable, SortOrder::ReleaseDateOldest);
