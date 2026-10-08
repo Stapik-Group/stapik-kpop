@@ -179,11 +179,16 @@ namespace kpop::document::serializer
 
         json detailsToJson(const domain::MerchandiseDetails& merchandise)
         {
-            return {
+            json details = {
                 { "type", std::string(domain::MERCHANDISE_TYPES.idOf(merchandise.type)) },
                 { "version", merchandise.version },
                 { "official", merchandise.official }
             };
+
+            if (!merchandise.size.empty())
+                details["size"] = merchandise.size;
+
+            return details;
         }
 
         json detailsToJson(const domain::ClipDetails& clip)
@@ -252,7 +257,8 @@ namespace kpop::document::serializer
                     return MerchandiseDetails{
                         .type = enumOr(MERCHANDISE_TYPES, source, "type", MerchandiseType::Lightstick),
                         .version = stringOrEmpty(source, "version"),
-                        .official = source.value("official", true) };
+                        .official = source.value("official", true),
+                        .size = stringOrEmpty(source, "size") };
 
                 case ItemKind::Clip:
                     return ClipDetails{

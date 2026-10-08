@@ -129,14 +129,16 @@ entry.kpop-invalid {
     padding: 4px;
 }
 
-/* --- Tracklist editor: the buttons of a row are borderless until hovered --- */
-.kpop-tracklist button.flat:not(:checked) {
+/* --- Tracklist editor and quick-pick entries: flat buttons are borderless until hovered --- */
+.kpop-tracklist button.flat:not(:checked),
+.kpop-quickpick button.flat:not(:checked) {
     background-color: transparent;
     border-color: transparent;
     box-shadow: none;
 }
 
-.kpop-tracklist button.flat:hover:not(:checked) {
+.kpop-tracklist button.flat:hover:not(:checked),
+.kpop-quickpick button.flat:hover:not(:checked) {
     background-color: #3a3a3c;
 }
 

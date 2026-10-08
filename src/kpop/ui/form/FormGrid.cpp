@@ -37,6 +37,7 @@ namespace kpop::ui
             m_labelSizeGroup->add_widget(*label);
 
         m_labels.push_back(label);
+        m_labelOfField[&field] = label;
         attach(*label, LABEL_COLUMN, m_nextRow);
         attach(field, FIELD_COLUMN, m_nextRow);
         ++m_nextRow;
@@ -53,6 +54,14 @@ namespace kpop::ui
         attach(*label, LABEL_COLUMN, m_nextRow, FULL_WIDTH_COLUMNS, 1);
         attach(field, LABEL_COLUMN, m_nextRow + 1, FULL_WIDTH_COLUMNS, 1);
         m_nextRow += 2;
+    }
+
+    void FormGrid::setRowVisible(Widget& field, const bool visible)
+    {
+        field.set_visible(visible);
+
+        if (const auto label = m_labelOfField.find(&field); label != m_labelOfField.end())
+            label->second->set_visible(visible);
     }
 
     void FormGrid::shareLabelWidth(const Glib::RefPtr<Gtk::SizeGroup>& sizeGroup)

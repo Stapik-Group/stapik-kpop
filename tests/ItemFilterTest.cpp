@@ -50,6 +50,15 @@ namespace
         EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "changbin" }, sampleAlbum(), nullptr));
     }
 
+    TEST(ItemFilterTest, TextSearchCoversApparelSize)
+    {
+        auto item = sampleItemOfKind(ItemKind::Merchandise);
+        item.details = MerchandiseDetails{ .type = MerchandiseType::Apparel, .version = "", .official = true, .size = "XL" };
+
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "xl" }, item, nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "xxl" }, item, nullptr));
+    }
+
     TEST(ItemFilterTest, TextSearchCoversArtistNameAndMembers)
     {
         const auto artist = sampleArtist();

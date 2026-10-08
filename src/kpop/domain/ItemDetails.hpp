@@ -4,8 +4,10 @@
 #include "PartialDate.hpp"
 #include "Tracklist.hpp"
 
+#include <array>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <variant>
 
 namespace kpop::domain
@@ -40,9 +42,16 @@ namespace kpop::domain
         MerchandiseType type = MerchandiseType::Lightstick;
         std::string version;
         bool official = true;
+        std::string size;
 
         bool operator==(const MerchandiseDetails&) const = default;
     };
+
+    // Only some kinds of merchandise have a size; it stays empty for the others.
+    [[nodiscard]] bool hasSize(MerchandiseType type);
+
+    // Offered as shortcuts, any other size can be typed in.
+    inline constexpr std::array<std::string_view, 7> APPAREL_SIZE_SUGGESTIONS{ "XS", "S", "M", "L", "XL", "XXL", "3XL" };
 
     struct ClipDetails
     {

@@ -59,7 +59,7 @@ namespace kpop::domain
                 },
                 [&text](const MerchandiseDetails& merchandise)
                 {
-                    appendFields(text, { merchandise.version });
+                    appendFields(text, { merchandise.version, merchandise.size });
                 },
                 [&text](const ClipDetails& clip)
                 {

@@ -4,6 +4,7 @@
 #include "kpop/ui/widget/EnumDropDown.hpp"
 #include "kpop/ui/widget/MultilineText.hpp"
 #include "kpop/ui/widget/PartialDateEntry.hpp"
+#include "kpop/ui/widget/QuickPickEntry.hpp"
 #include "kpop/ui/widget/TracklistEditor.hpp"
 
 #include <gtkmm/checkbutton.h>
@@ -157,36 +158,54 @@ namespace kpop::ui
         public:
             MerchandiseForm() :
                 m_typeDropDown(MERCHANDISE_TYPES),
+                m_sizeEntry(APPAREL_SIZE_SUGGESTIONS),
                 m_officialCheck(translate("kpop.field.officialCheck"))
             {
                 addRow("kpop.field.merchandiseType", m_typeDropDown);
+                addRow("kpop.field.size", m_sizeEntry);
                 addRow("kpop.field.version", m_versionEntry);
                 addRow("kpop.field.official", m_officialCheck);
+                refreshSizeVisibility();
 
                 const auto onChanged = [this] { notifyChanged(); };
-                m_typeDropDown.property_selected().signal_changed().connect(onChanged);
+                m_typeDropDown.property_selected().signal_changed().connect([this, onChanged]
+                {
+                    refreshSizeVisibility();
+                    onChanged();
+                });
+                m_sizeEntry.signalChanged().connect(onChanged);
                 m_officialCheck.signal_toggled().connect(onChanged);
                 connectChanged({ &m_versionEntry }, onChanged);
             }
 
             void setDetails(const ItemDetails& details) override
             {
-                const auto&[type, version, official] = std::get<MerchandiseDetails>(details);
+                const auto&[type, version, official, size] = std::get<MerchandiseDetails>(details);
                 m_typeDropDown.setValue(type);
+                m_sizeEntry.setText(size);
                 m_versionEntry.set_text(version);
                 m_officialCheck.set_active(official);
+                refreshSizeVisibility();
             }
 
             [[nodiscard]] ItemDetails details() const override
             {
+                const auto type = m_typeDropDown.value();
                 return MerchandiseDetails{
-                    .type = m_typeDropDown.value(),
+                    .type = type,
                     .version = trimmedText(m_versionEntry),
-                    .official = m_officialCheck.get_active() };
+                    .official = m_officialCheck.get_active(),
+                    .size = hasSize(type) ? m_sizeEntry.text() : std::string() };
             }
 
         private:
+            void refreshSizeVisibility()
+            {
+                setRowVisible(m_sizeEntry, hasSize(m_typeDropDown.value()));
+            }
+
             EnumDropDown<MerchandiseType> m_typeDropDown;
+            QuickPickEntry m_sizeEntry;
             Gtk::Entry m_versionEntry;
             Gtk::CheckButton m_officialCheck;
         };

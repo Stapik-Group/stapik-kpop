@@ -129,6 +129,26 @@ namespace
         EXPECT_THROW(static_cast<void>(CollectionDocument::fromJson(json)), std::invalid_argument);
     }
 
+    TEST(CollectionDocumentTest, KeepsSizeOfApparel)
+    {
+        CollectionDocument document;
+        auto item = sampleItemOfKind(ItemKind::Merchandise);
+        item.details = MerchandiseDetails{ .type = MerchandiseType::Apparel, .version = "", .official = true, .size = "XL" };
+        document.insertItem(0, item);
+
+        const auto restored = roundTrip(document);
+        EXPECT_EQ(std::get<MerchandiseDetails>(restored.items().front().details).size, "XL");
+    }
+
+    TEST(CollectionDocumentTest, ReadsMerchandiseWithoutSizeAsEmpty)
+    {
+        CollectionDocument document;
+        document.insertItem(0, sampleItemOfKind(ItemKind::Merchandise));
+
+        const auto restored = roundTrip(document);
+        EXPECT_TRUE(std::get<MerchandiseDetails>(restored.items().front().details).size.empty());
+    }
+
     TEST(CollectionDocumentTest, KeepsAmountsOfCurrenciesWithoutDecimals)
     {
         CollectionDocument document;

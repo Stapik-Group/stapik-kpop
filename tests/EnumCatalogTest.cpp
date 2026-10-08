@@ -49,6 +49,13 @@ namespace
         EXPECT_EQ(MERCHANDISE_TYPES.nameKey(MerchandiseType::SeasonsGreetings), "kpop.merchandiseType.seasonsGreetings");
     }
 
+    TEST(EnumCatalogTest, OnlyApparelHasSize)
+    {
+        EXPECT_TRUE(hasSize(MerchandiseType::Apparel));
+        EXPECT_FALSE(hasSize(MerchandiseType::Lightstick));
+        EXPECT_FALSE(hasSize(MerchandiseType::Other));
+    }
+
     TEST(EnumCatalogTest, EveryKindHasItsOwnColor)
     {
         std::set<int> colors;

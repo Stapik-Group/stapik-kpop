@@ -60,7 +60,7 @@ namespace kpop::ui
                 },
                 [](const MerchandiseDetails& merchandise)
                 {
-                    return joinNonEmpty({ translate(MERCHANDISE_TYPES.nameKey(merchandise.type)), merchandise.version });
+                    return joinNonEmpty({ translate(MERCHANDISE_TYPES.nameKey(merchandise.type)), merchandise.size, merchandise.version });
                 },
                 [](const ClipDetails& clip)
                 {
