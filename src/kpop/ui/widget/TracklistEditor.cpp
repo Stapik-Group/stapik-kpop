@@ -169,6 +169,8 @@ namespace kpop::ui
         Box(Gtk::Orientation::VERTICAL, EDITOR_SPACING),
         m_addButton(translate("kpop.tracklist.add"))
     {
+        add_css_class("kpop-tracklist");
+
         m_grid.set_column_spacing(GRID_COLUMN_SPACING);
         m_grid.set_row_spacing(GRID_ROW_SPACING);
 
