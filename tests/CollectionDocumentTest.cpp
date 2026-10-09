@@ -129,6 +129,52 @@ namespace
         EXPECT_THROW(static_cast<void>(CollectionDocument::fromJson(json)), std::invalid_argument);
     }
 
+    TEST(CollectionDocumentTest, ItemWithoutImageHasNoImageKey)
+    {
+        CollectionDocument document;
+        auto item = sampleAlbum();
+        item.image.reset();
+        document.insertItem(0, item);
+
+        EXPECT_EQ(document.toJson().dump().find("\"image\""), std::string::npos);
+        EXPECT_FALSE(roundTrip(document).items().front().image.has_value());
+    }
+
+    TEST(CollectionDocumentTest, RejectsInvalidImageId)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["image"] = "not-a-hash";
+
+        EXPECT_THROW(static_cast<void>(CollectionDocument::fromJson(json)), std::invalid_argument);
+    }
+
+    TEST(CollectionDocumentTest, ReadsNullImageAsNoImage)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["image"] = nullptr;
+
+        const auto restored = CollectionDocument::fromJson(json);
+        EXPECT_FALSE(restored.items().front().image.has_value());
+    }
+
+    TEST(CollectionDocumentTest, ListsEveryReferencedImageOnceInOrder)
+    {
+        const auto first = ImageId::parse(std::string(64, 'a'));
+        const auto second = ImageId::parse(std::string(64, 'b'));
+        ASSERT_TRUE(first.has_value() && second.has_value());
+
+        CollectionDocument document;
+        for (const auto& image : { second, first, second, std::optional<ImageId>() })
+        {
+            auto item = sampleAlbum();
+            item.image = image;
+            document.insertItem(0, item);
+        }
+
+        EXPECT_EQ(document.referencedImages(), (std::vector<ImageId>{ *first, *second }));
+        EXPECT_TRUE(CollectionDocument().referencedImages().empty());
+    }
+
     TEST(CollectionDocumentTest, KeepsSizeOfApparel)
     {
         CollectionDocument document;

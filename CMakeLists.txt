@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(STAPIK_KPOP_BUILD_TESTS "Build the Stapik K-Pop unit tests" OFF)
 
-set(STAPIK_COMMON_GIT_TAG "v1.3.1" CACHE STRING "Tag, branch or commit of stapik-common to build against")
+set(STAPIK_COMMON_GIT_TAG "v1.4.0" CACHE STRING "Tag, branch or commit of stapik-common to build against")
 
 include(FetchContent)
 FetchContent_Declare(
@@ -18,22 +18,31 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(stapikcommon)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GDKPIXBUF REQUIRED IMPORTED_TARGET gdk-pixbuf-2.0)
+
 # Everything that does not need a window lives in the core library, so it can be unit tested.
 add_library(kpopcore STATIC
         src/kpop/app/CollectionController.cpp
+        src/kpop/app/ImageSync.cpp
         src/kpop/command/CollectionCommands.cpp
         src/kpop/document/CollectionDocument.cpp
         src/kpop/document/CollectionSerializer.cpp
         src/kpop/domain/CollectionStatistics.cpp
+        src/kpop/domain/ImageId.cpp
         src/kpop/domain/ItemDetails.cpp
         src/kpop/domain/ItemFilter.cpp
         src/kpop/domain/ItemSort.cpp
         src/kpop/domain/PartialDate.cpp
         src/kpop/domain/TrackLength.cpp
         src/kpop/domain/Tracklist.cpp
+        src/kpop/image/ImageEncoder.cpp
+        src/kpop/image/ImageLibrary.cpp
+        src/kpop/image/ImageStore.cpp
+        src/kpop/image/ImageSynchronizer.cpp
 )
 target_include_directories(kpopcore PUBLIC src)
-target_link_libraries(kpopcore PUBLIC stapik::common)
+target_link_libraries(kpopcore PUBLIC stapik::common PkgConfig::GDKPIXBUF)
 stapik_enable_warnings(kpopcore)
 
 stapik_add_application(
@@ -61,6 +70,8 @@ stapik_add_application(
                 src/kpop/ui/widget/MoneyEntry.cpp
                 src/kpop/ui/widget/MultilineText.cpp
                 src/kpop/ui/widget/PaginationBar.cpp
+                src/kpop/ui/widget/ImagePicker.cpp
+                src/kpop/ui/widget/ImageTexture.cpp
                 src/kpop/ui/widget/PartialDateEntry.cpp
                 src/kpop/ui/widget/QuickPickEntry.cpp
                 src/kpop/ui/widget/TrackLengthEntry.cpp

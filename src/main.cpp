@@ -1,4 +1,5 @@
 #include "kpop/app/CollectionController.hpp"
+#include "kpop/app/ImageSync.hpp"
 #include "kpop/ui/MainWindow.hpp"
 #include "kpop/ui/SelfTest.hpp"
 
@@ -25,7 +26,9 @@ namespace
     constexpr auto AUTHOR = "Sebastian Smoliński";
     constexpr auto REPOSITORY_URL = "https://github.com/Stapik-Group/stapik-kpop";
     constexpr auto COLLECTION_FILE_NAME = "collection.json";
+    constexpr auto IMAGES_DIRECTORY_NAME = "images";
     constexpr auto CLOUD_SLOT_KEY = "stapikkpop.json";
+    constexpr auto IMAGES_SLOT_KEY = "covers";
     constexpr auto SELF_TEST_OPTION = "--self-test";
     constexpr unsigned SELF_TEST_DELAY_MILLISECONDS = 2000;
 
@@ -46,7 +49,6 @@ int main(int argumentCount, char* arguments[])
 {
     const bool selfTest = takeSelfTestOption(argumentCount, arguments);
 
-    // GLib hides informational messages unless asked; the report of the self-test is the whole point of running it.
     if (selfTest)
         g_setenv("G_MESSAGES_DEBUG", "all", FALSE);
 
@@ -61,16 +63,14 @@ int main(int argumentCount, char* arguments[])
     if (selfTest)
         stapik::log::setLevel(stapik::log::Level::Info);
 
-    // Two copies would edit the same collection and the one saving last would overwrite the other's changes.
-    const auto instanceGuard = stapik::app::SingleInstanceGuard::acquire(APPLICATION_ID, STAPIK_APP_DISPLAY_NAME);
-    if (!instanceGuard)
+    if (const auto instanceGuard = stapik::app::SingleInstanceGuard::acquire(APPLICATION_ID, STAPIK_APP_DISPLAY_NAME); !instanceGuard)
         return 0;
 
     const auto application = Gtk::Application::create(APPLICATION_ID);
     auto styleProvider = AppStyleProvider::withCommonThemes(AppPaths::resourcesDir());
 
-    // The controller has to outlive the window, which is deleted when it is hidden.
     std::unique_ptr<kpop::app::CollectionController> controller;
+    std::unique_ptr<kpop::app::ImageSync> imageSync;
     int selfTestFailures = 0;
 
     application->signal_activate().connect([&]
@@ -90,10 +90,17 @@ int main(int argumentCount, char* arguments[])
         StandardMenu::installShortcuts(*application);
         application->set_accels_for_action("win.addItem", { "<Primary>n" });
 
-        const auto documentPath = AppPaths::ensureUserDataDir(STAPIK_APP_NAME) / COLLECTION_FILE_NAME;
-        controller = std::make_unique<kpop::app::CollectionController>(documentPath, stapik::sync::defaultCloudSessionHooks(CLOUD_SLOT_KEY));
+        const auto dataDirectory = AppPaths::ensureUserDataDir(STAPIK_APP_NAME);
+        controller = std::make_unique<kpop::app::CollectionController>(
+            dataDirectory / COLLECTION_FILE_NAME,
+            dataDirectory / IMAGES_DIRECTORY_NAME,
+            stapik::sync::defaultCloudSessionHooks(CLOUD_SLOT_KEY));
 
-        auto* window = new kpop::ui::MainWindow(*controller, styleProvider.themes());
+        controller->removeUnusedImages();
+        imageSync = std::make_unique<kpop::app::ImageSync>(*controller, IMAGES_SLOT_KEY);
+        imageSync->requestSync();
+
+        auto* window = new kpop::ui::MainWindow(*controller, *imageSync, styleProvider.themes());
         application->add_window(*window);
         window->signal_hide().connect([window] { delete window; });
         window->present();
@@ -108,10 +115,7 @@ int main(int argumentCount, char* arguments[])
             return;
         }
 
-        // Only a collection that was read successfully may be synchronised: a newer replacement from the cloud
-        // would otherwise overwrite a file this version does not understand.
-        const auto loadStatus = controller->loadStatus();
-        if (loadStatus == stapik::document::LoadStatus::Loaded || loadStatus == stapik::document::LoadStatus::Missing || loadStatus == stapik::document::LoadStatus::Corrupted)
+        if (const auto loadStatus = controller->loadStatus(); loadStatus == stapik::document::LoadStatus::Loaded || loadStatus == stapik::document::LoadStatus::Missing || loadStatus == stapik::document::LoadStatus::Corrupted)
             controller->startCloudSync();
 
         window->showStartupProblems();

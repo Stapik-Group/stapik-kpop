@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kpop/app/CollectionController.hpp"
+#include "kpop/app/ImageSync.hpp"
 #include "kpop/ui/view/ItemListView.hpp"
 #include "kpop/ui/view/KindSidebar.hpp"
 #include "kpop/ui/widget/FilterBar.hpp"
@@ -25,7 +26,7 @@ namespace kpop::ui
     class MainWindow : public Gtk::ApplicationWindow
     {
     public:
-        MainWindow(app::CollectionController& controller, const stapik::theme::ThemeRegistry& themes);
+        MainWindow(app::CollectionController& controller, app::ImageSync& imageSync, const stapik::theme::ThemeRegistry& themes);
         ~MainWindow() override;
 
         MainWindow(const MainWindow&) = delete;
@@ -40,7 +41,7 @@ namespace kpop::ui
         void initActions();
         void initMenu();
         void initLayout();
-        void initSignals();
+        void initSignals(app::ImageSync& imageSync);
 
         void refreshAll();
         void refreshLanguage();
@@ -76,6 +77,7 @@ namespace kpop::ui
 
         std::size_t m_currentPage = 1;
         sigc::connection m_documentConnection;
+        sigc::connection m_imagesConnection;
         sigc::connection m_syncConnection;
         sigc::connection m_localeConnection;
         sigc::connection m_saveFailedConnection;

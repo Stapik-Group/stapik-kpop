@@ -25,7 +25,7 @@ namespace
 
         [[nodiscard]] std::unique_ptr<CollectionController> openController() const
         {
-            return std::make_unique<CollectionController>(documentPath(), stapik::sync::CloudSessionHooks{});
+            return std::make_unique<CollectionController>(documentPath(), m_directory.path() / "images", stapik::sync::CloudSessionHooks{});
         }
 
     private:
@@ -190,6 +190,34 @@ namespace
         EXPECT_EQ(controller->loadStatus(), LoadStatus::Corrupted);
         EXPECT_TRUE(controller->document().items().empty());
         EXPECT_FALSE(std::filesystem::exists(documentPath()));
+    }
+
+    TEST_F(CollectionControllerTest, UnusedImagesAreRemovedAndUsedOnesKept)
+    {
+        const auto controller = openController();
+        auto& store = controller->imageLibrary().store();
+        const auto used = store.add({ 'u', 's', 'e', 'd' });
+        const auto unused = store.add({ 'u', 'n', 'u', 's', 'e', 'd' });
+
+        auto item = sampleAlbum();
+        item.image = used;
+        controller->addItem(item);
+
+        EXPECT_EQ(controller->removeUnusedImages(), 1U);
+        EXPECT_TRUE(store.contains(used));
+        EXPECT_FALSE(store.contains(unused));
+    }
+
+    TEST_F(CollectionControllerTest, ImagesAreKeptWhenTheCollectionCouldNotBeRead)
+    {
+        writeTextFile(documentPath(), "{ this is not json");
+        const auto controller = openController();
+        auto& store = controller->imageLibrary().store();
+        const auto image = store.add({ 'i', 'm', 'g' });
+
+        ASSERT_EQ(controller->loadStatus(), LoadStatus::Corrupted);
+        EXPECT_EQ(controller->removeUnusedImages(), 0U);
+        EXPECT_TRUE(store.contains(image));
     }
 
     TEST_F(CollectionControllerTest, FileFromNewerVersionIsReportedAndLeftUntouched)

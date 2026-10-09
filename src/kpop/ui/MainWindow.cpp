@@ -39,7 +39,7 @@ namespace kpop::ui
         return options;
     }
 
-    MainWindow::MainWindow(app::CollectionController& controller, const stapik::theme::ThemeRegistry& themes) :
+    MainWindow::MainWindow(app::CollectionController& controller, app::ImageSync& imageSync, const stapik::theme::ThemeRegistry& themes) :
         m_controller(controller),
         m_menu(*this, menuOptions(themes, controller.undoStack())),
         m_rootBox(Gtk::Orientation::VERTICAL),
@@ -54,7 +54,7 @@ namespace kpop::ui
         initActions();
         initMenu();
         initLayout();
-        initSignals();
+        initSignals(imageSync);
 
         m_syncIndicator.set_visible(m_controller.isCloudConnected());
         m_syncIndicator.setStatus(m_controller.syncStatus());
@@ -66,6 +66,7 @@ namespace kpop::ui
     MainWindow::~MainWindow()
     {
         m_documentConnection.disconnect();
+        m_imagesConnection.disconnect();
         m_syncConnection.disconnect();
         m_localeConnection.disconnect();
         m_saveFailedConnection.disconnect();
@@ -161,7 +162,7 @@ namespace kpop::ui
         set_child(m_rootBox);
     }
 
-    void MainWindow::initSignals()
+    void MainWindow::initSignals(app::ImageSync& imageSync)
     {
         m_addButton.signal_clicked().connect([this] { onAddRequested(); });
 
@@ -192,6 +193,7 @@ namespace kpop::ui
         });
 
         m_documentConnection = m_controller.signalDocumentChanged().connect([this] { refreshAll(); });
+        m_imagesConnection = imageSync.signalImagesDownloaded().connect([this] { refreshList(); });
         m_syncConnection = m_controller.signalSyncStatusChanged().connect([this](const stapik::sync::SyncStatus status)
         {
             m_syncIndicator.setStatus(status);
@@ -258,7 +260,18 @@ namespace kpop::ui
         std::vector<ItemRow> pageRows;
         const auto& languageCode = LocaleManager::instance().languageCode();
         for (auto index = firstIndex; index < lastIndex; ++index)
-            pageRows.push_back(describeItem(*matchingItems[index].item, matchingItems[index].artist, languageCode));
+        {
+            const auto& item = *matchingItems[index].item;
+
+            auto row = describeItem(item, matchingItems[index].artist, languageCode);
+            if (item.image)
+            {
+                if (const auto imagePath = m_controller.imageLibrary().pathOf(*item.image))
+                    row.imagePath = *imagePath;
+            }
+
+            pageRows.push_back(std::move(row));
+        }
 
         m_listView.setRows(pageRows);
         m_paginationBar.setPage(m_currentPage, pageCount);

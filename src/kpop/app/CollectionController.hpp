@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kpop/document/CollectionDocument.hpp"
+#include "kpop/image/ImageLibrary.hpp"
 
 #include "stapik/command/UndoStack.hpp"
 #include "stapik/document/DocumentFile.hpp"
@@ -24,7 +25,7 @@ namespace kpop::app
     class CollectionController
     {
     public:
-        CollectionController(std::filesystem::path documentPath, stapik::sync::CloudSessionHooks cloudHooks);
+        CollectionController(std::filesystem::path documentPath, std::filesystem::path imagesDirectory, stapik::sync::CloudSessionHooks cloudHooks);
 
         CollectionController(const CollectionController&) = delete;
         CollectionController& operator=(const CollectionController&) = delete;
@@ -34,6 +35,11 @@ namespace kpop::app
 
         [[nodiscard]] const document::CollectionDocument& document() const;
         [[nodiscard]] stapik::command::UndoStack& undoStack();
+
+        [[nodiscard]] image::ImageLibrary& imageLibrary();
+        [[nodiscard]] const image::ImageLibrary& imageLibrary() const;
+
+        std::size_t removeUnusedImages();
 
         std::string addItem(domain::CollectionItem item);
         void updateItem(const domain::CollectionItem& item);
@@ -70,6 +76,7 @@ namespace kpop::app
         stapik::document::LoadStatus m_loadStatus = stapik::document::LoadStatus::Missing;
         document::CollectionDocument m_document;
         stapik::command::UndoStack m_undoStack;
+        image::ImageLibrary m_imageLibrary;
         stapik::sync::CloudSession<document::CollectionDocument> m_cloudSession;
         bool m_ignoreHistoryChanges = false;
         sigc::signal<void()> m_signalDocumentChanged;
