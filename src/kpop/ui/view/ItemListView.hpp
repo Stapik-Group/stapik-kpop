@@ -26,7 +26,7 @@ namespace kpop::ui
 
     private:
         void clear();
-        void appendRow(const ItemRow& row);
+        void appendRow(const ItemRow& row, bool showThumbnail);
 
         Gtk::ListBox m_listBox;
         Gtk::Label m_placeholderLabel;

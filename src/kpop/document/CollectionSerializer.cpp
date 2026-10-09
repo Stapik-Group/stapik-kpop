@@ -319,6 +319,9 @@ namespace kpop::document::serializer
         if (item.price)
             result["price"] = moneyToJson(*item.price);
 
+        if (item.image)
+            result["image"] = item.image->hash();
+
         setDate(result, "acquiredOn", item.acquiredOn);
         return result;
     }
@@ -351,6 +354,13 @@ namespace kpop::document::serializer
 
         if (json.contains("price") && !json.at("price").is_null())
             item.price = moneyFromJson(json.at("price"));
+
+        if (json.contains("image") && !json.at("image").is_null())
+        {
+            item.image = domain::ImageId::parse(json.at("image").get<std::string>());
+            if (!item.image)
+                throw std::invalid_argument("Invalid image id");
+        }
 
         return item;
     }

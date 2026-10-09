@@ -15,11 +15,18 @@ add_executable(stapikkpop_tests
         CollectionDocumentTest.cpp
         CollectionStatisticsTest.cpp
         EnumCatalogTest.cpp
+        ImageEncoderTest.cpp
+        ImageIdTest.cpp
+        ImageLibraryTest.cpp
+        ImageStoreTest.cpp
+        ImageSynchronizerTest.cpp
         ItemFilterTest.cpp
         ItemSortTest.cpp
         LocaleResourcesTest.cpp
         PartialDateTest.cpp
         TracklistTest.cpp
+        support/FakeAssetStorage.hpp
+        support/ImageFixtures.hpp
         support/TestFixtures.hpp
 )
 target_link_libraries(stapikkpop_tests PRIVATE kpopcore GTest::gtest_main)

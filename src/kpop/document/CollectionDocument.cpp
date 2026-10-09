@@ -63,6 +63,21 @@ namespace kpop::document
         return m_items;
     }
 
+    std::vector<domain::ImageId> CollectionDocument::referencedImages() const
+    {
+        std::vector<domain::ImageId> images;
+        for (const auto& item : m_items)
+        {
+            if (item.image)
+                images.push_back(*item.image);
+        }
+
+        std::ranges::sort(images);
+        const auto repeated = std::ranges::unique(images);
+        images.erase(repeated.begin(), repeated.end());
+        return images;
+    }
+
     const domain::Artist* CollectionDocument::findArtist(const std::string_view artistId) const
     {
         const auto index = indexById(m_artists, artistId);

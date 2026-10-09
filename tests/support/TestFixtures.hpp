@@ -40,6 +40,7 @@ namespace kpop::test
         item.acquiredOn = domain::PartialDate::tryCreate(2024, 3, 15);
         item.acquiredFrom = "Kpopstore";
         item.notes = "Limited ver.";
+        item.image = domain::ImageId::parse("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
         item.details = domain::AlbumDetails{
             .type = domain::AlbumType::Full,
             .format = domain::AlbumFormat::Cd,

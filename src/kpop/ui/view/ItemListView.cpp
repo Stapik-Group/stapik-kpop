@@ -1,11 +1,15 @@
 #include "ItemListView.hpp"
 
 #include "kpop/ui/Translate.hpp"
+#include "kpop/ui/widget/ImageTexture.hpp"
 
 #include "stapik/domain/Category.hpp"
 
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
+#include <gtkmm/picture.h>
+
+#include <algorithm>
 
 namespace kpop::ui
 {
@@ -15,6 +19,24 @@ namespace kpop::ui
         constexpr int ROW_MARGIN = 6;
         constexpr int SWATCH_WIDTH = 6;
         constexpr int PLACEHOLDER_MARGIN = 24;
+        constexpr int THUMBNAIL_SIZE = 48;
+        constexpr int THUMBNAIL_DECODE_SIZE = THUMBNAIL_SIZE * 2;
+
+        Gtk::Picture* makeThumbnail(const std::filesystem::path& imagePath)
+        {
+            auto* thumbnail = Gtk::make_managed<Gtk::Picture>();
+            thumbnail->set_size_request(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            thumbnail->set_content_fit(Gtk::ContentFit::CONTAIN);
+            thumbnail->set_valign(Gtk::Align::CENTER);
+
+            if (!imagePath.empty())
+            {
+                const Glib::RefPtr<Gdk::Paintable> texture = loadTexture(imagePath, THUMBNAIL_DECODE_SIZE);
+                thumbnail->set_paintable(texture);
+            }
+
+            return thumbnail;
+        }
 
         Gtk::Label* makeLabel(const std::string& text, const char* cssClass)
         {
@@ -64,8 +86,11 @@ namespace kpop::ui
     {
         clear();
 
+        // Room for the images is only reserved when there is something to show, so the titles stay aligned.
+        const bool showThumbnails = std::ranges::any_of(rows, [](const ItemRow& row) { return !row.imagePath.empty(); });
+
         for (const auto& row : rows)
-            appendRow(row);
+            appendRow(row, showThumbnails);
     }
 
     void ItemListView::refreshPlaceholder()
@@ -91,7 +116,7 @@ namespace kpop::ui
         m_rowIds.clear();
     }
 
-    void ItemListView::appendRow(const ItemRow& row)
+    void ItemListView::appendRow(const ItemRow& row, const bool showThumbnail)
     {
         auto* box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, ROW_SPACING);
         box->add_css_class("kpop-row");
@@ -102,6 +127,9 @@ namespace kpop::ui
         swatch->add_css_class("kpop-kind-swatch");
         swatch->add_css_class(stapik::domain::categoryColorCssClass(domain::colorOf(row.kind)));
         box->append(*swatch);
+
+        if (showThumbnail)
+            box->append(*makeThumbnail(row.imagePath));
 
         auto* texts = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
         texts->set_hexpand(true);

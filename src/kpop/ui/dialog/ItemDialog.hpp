@@ -3,6 +3,7 @@
 #include "kpop/app/CollectionController.hpp"
 #include "kpop/ui/form/DetailsForm.hpp"
 #include "kpop/ui/widget/EnumDropDown.hpp"
+#include "kpop/ui/widget/ImagePicker.hpp"
 #include "kpop/ui/widget/MoneyEntry.hpp"
 #include "kpop/ui/widget/MultilineText.hpp"
 #include "kpop/ui/widget/PartialDateEntry.hpp"
@@ -55,6 +56,7 @@ namespace kpop::ui
         Gtk::Entry m_titleEntry;
         Gtk::DropDown m_artistDropDown;
         Gtk::Button m_newArtistButton;
+        ImagePicker m_imagePicker;
         Gtk::Stack m_detailsStack;
         std::vector<DetailsForm*> m_detailsForms;
         EnumDropDown<domain::ItemStatus> m_statusDropDown;

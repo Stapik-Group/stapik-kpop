@@ -7,14 +7,16 @@
 #include "stapik/domain/IdGenerator.hpp"
 #include "stapik/log/Log.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <utility>
 
 namespace kpop::app
 {
-    CollectionController::CollectionController(std::filesystem::path documentPath, stapik::sync::CloudSessionHooks cloudHooks) :
+    CollectionController::CollectionController(std::filesystem::path documentPath, std::filesystem::path imagesDirectory, stapik::sync::CloudSessionHooks cloudHooks) :
         m_file(std::move(documentPath), document::COLLECTION_SCHEMA_VERSION),
+        m_imageLibrary(std::move(imagesDirectory)),
         m_cloudSession(std::move(cloudHooks))
     {
         loadFromDisk();
@@ -39,6 +41,34 @@ namespace kpop::app
     stapik::command::UndoStack& CollectionController::undoStack()
     {
         return m_undoStack;
+    }
+
+    image::ImageLibrary& CollectionController::imageLibrary()
+    {
+        return m_imageLibrary;
+    }
+
+    const image::ImageLibrary& CollectionController::imageLibrary() const
+    {
+        return m_imageLibrary;
+    }
+
+    std::size_t CollectionController::removeUnusedImages()
+    {
+        using stapik::document::LoadStatus;
+        if (m_loadStatus != LoadStatus::Loaded && m_loadStatus != LoadStatus::Missing)
+            return 0;
+
+        const auto used = m_document.referencedImages();
+
+        std::size_t removed = 0;
+        for (const auto& id : m_imageLibrary.store().ids())
+        {
+            if (!std::ranges::binary_search(used, id) && m_imageLibrary.store().remove(id))
+                ++removed;
+        }
+
+        return removed;
     }
 
     std::string CollectionController::addItem(domain::CollectionItem item)

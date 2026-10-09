@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ImageId.hpp"
 #include "ItemDetails.hpp"
 
 #include "stapik/domain/Money.hpp"
@@ -21,6 +22,7 @@ namespace kpop::domain
         std::optional<PartialDate> acquiredOn;
         std::string acquiredFrom;
         std::string notes;
+        std::optional<ImageId> image;
         ItemDetails details = AlbumDetails{};
 
         bool operator==(const CollectionItem&) const = default;
