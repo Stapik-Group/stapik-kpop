@@ -55,7 +55,8 @@ namespace kpop::app
 
     std::size_t CollectionController::removeUnusedImages()
     {
-        if (m_loadStatus != stapik::document::LoadStatus::Loaded)
+        using stapik::document::LoadStatus;
+        if (m_loadStatus != LoadStatus::Loaded && m_loadStatus != LoadStatus::Missing)
             return 0;
 
         const auto used = m_document.referencedImages();
