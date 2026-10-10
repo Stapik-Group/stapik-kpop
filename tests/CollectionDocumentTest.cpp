@@ -121,6 +121,17 @@ namespace
         EXPECT_FALSE(tracklist.front().length.has_value());
     }
 
+    TEST(CollectionDocumentTest, ReadsAlbumWithoutVariantAsEmpty)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"].erase("variant");
+
+        const auto restored = CollectionDocument::fromJson(json);
+        const auto& album = std::get<AlbumDetails>(restored.items().front().details);
+        EXPECT_TRUE(album.variant.empty());
+        EXPECT_EQ(album.edition, "Standard B");
+    }
+
     TEST(CollectionDocumentTest, ItemWithoutPhotosHasNoPhotosKey)
     {
         CollectionDocument document;

@@ -50,6 +50,7 @@ namespace kpop::ui
                 addRow("kpop.field.albumType", m_typeDropDown);
                 addRow("kpop.field.albumFormat", m_formatDropDown);
                 addRow("kpop.field.edition", m_editionEntry);
+                addRow("kpop.field.variant", m_variantEntry);
                 addRow("kpop.field.releaseDate", m_releaseDateEntry);
                 addRow("kpop.field.label", m_labelEntry);
                 addRow("kpop.field.region", m_regionEntry);
@@ -61,15 +62,16 @@ namespace kpop::ui
                 m_tracklistEditor.signalChanged().connect(onChanged);
                 m_typeDropDown.property_selected().signal_changed().connect(onChanged);
                 m_formatDropDown.property_selected().signal_changed().connect(onChanged);
-                connectChanged({ &m_editionEntry, &m_releaseDateEntry, &m_labelEntry, &m_regionEntry, &m_catalogNumberEntry, &m_inclusionsEntry }, onChanged);
+                connectChanged({ &m_editionEntry, &m_variantEntry, &m_releaseDateEntry, &m_labelEntry, &m_regionEntry, &m_catalogNumberEntry, &m_inclusionsEntry }, onChanged);
             }
 
             void setDetails(const ItemDetails& details) override
             {
-                const auto&[type, format, edition, releaseDate, label, region, catalogNumber, inclusions, tracklist] = std::get<AlbumDetails>(details);
+                const auto&[type, format, edition, variant, releaseDate, label, region, catalogNumber, inclusions, tracklist] = std::get<AlbumDetails>(details);
                 m_typeDropDown.setValue(type);
                 m_formatDropDown.setValue(format);
                 m_editionEntry.set_text(edition);
+                m_variantEntry.set_text(variant);
                 m_releaseDateEntry.setValue(releaseDate);
                 m_labelEntry.set_text(label);
                 m_regionEntry.set_text(region);
@@ -84,6 +86,7 @@ namespace kpop::ui
                     .type = m_typeDropDown.value(),
                     .format = m_formatDropDown.value(),
                     .edition = trimmedText(m_editionEntry),
+                    .variant = trimmedText(m_variantEntry),
                     .releaseDate = m_releaseDateEntry.value(),
                     .label = trimmedText(m_labelEntry),
                     .region = trimmedText(m_regionEntry),
@@ -101,6 +104,7 @@ namespace kpop::ui
             EnumDropDown<AlbumType> m_typeDropDown;
             EnumDropDown<AlbumFormat> m_formatDropDown;
             Gtk::Entry m_editionEntry;
+            Gtk::Entry m_variantEntry;
             PartialDateEntry m_releaseDateEntry;
             Gtk::Entry m_labelEntry;
             Gtk::Entry m_regionEntry;

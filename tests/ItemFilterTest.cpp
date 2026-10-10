@@ -39,6 +39,13 @@ namespace
         EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "standard missing" }, sampleAlbum(), nullptr));
     }
 
+    TEST(ItemFilterTest, TextSearchCoversEditionAndVariant)
+    {
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "standard" }, sampleAlbum(), nullptr));
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "felix" }, sampleAlbum(), nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "hyunjin" }, sampleAlbum(), nullptr));
+    }
+
     TEST(ItemFilterTest, TextSearchCoversTracklist)
     {
         EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "dance night" }, sampleAlbum(), nullptr));

@@ -49,7 +49,7 @@ namespace kpop::domain
             std::visit(Overloaded{
                 [&text](const AlbumDetails& album)
                 {
-                    appendFields(text, { album.edition, album.label, album.region, album.catalogNumber, album.inclusions });
+                    appendFields(text, { album.edition, album.variant, album.label, album.region, album.catalogNumber, album.inclusions });
                     for (const auto& track : album.tracklist)
                         appendFields(text, { track.title, track.writers });
                 },

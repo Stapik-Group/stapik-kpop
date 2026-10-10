@@ -48,6 +48,7 @@ namespace kpop::test
             .type = domain::AlbumType::Full,
             .format = domain::AlbumFormat::Cd,
             .edition = "Standard B",
+            .variant = "Felix ver.",
             .releaseDate = domain::PartialDate::tryCreate(2021, 8),
             .label = "JYP",
             .region = "KR",

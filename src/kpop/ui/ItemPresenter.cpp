@@ -52,7 +52,7 @@ namespace kpop::ui
             return std::visit(Overloaded{
                 [](const AlbumDetails& album)
                 {
-                    return joinNonEmpty({ translate(ALBUM_TYPES.nameKey(album.type)), translate(ALBUM_FORMATS.nameKey(album.format)), album.edition });
+                    return joinNonEmpty({ translate(ALBUM_TYPES.nameKey(album.type)), translate(ALBUM_FORMATS.nameKey(album.format)), album.edition, album.variant });
                 },
                 [](const PhotocardDetails& photocard)
                 {
