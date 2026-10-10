@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.2)
-project(stapikkpop VERSION 1.1.0 LANGUAGES CXX)
+project(stapikkpop VERSION 1.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
