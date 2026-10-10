@@ -51,17 +51,17 @@ namespace kpop::ui
         addCancelButton();
         addOkButton();
 
-        refreshArtists(options.existing ? options.existing->artistId : options.defaultArtistId);
+        const auto& initial = options.existing ? options.existing : options.prefill;
+        refreshArtists(initial ? initial->artistId : options.defaultArtistId);
 
-        if (options.existing)
-        {
-            populate(*options.existing);
-            m_kindDropDown.set_sensitive(false);
-        }
+        if (initial)
+            populate(*initial);
         else
-        {
             m_kindDropDown.setValue(options.defaultKind);
-        }
+
+        // The kind of an existing entry cannot change, a copy is a new entry and can still become another kind.
+        if (options.existing)
+            m_kindDropDown.set_sensitive(false);
 
         showFormOfSelectedKind();
 

@@ -75,6 +75,7 @@ stapik_add_application(
                 src/kpop/ui/widget/ImageFileDialog.cpp
                 src/kpop/ui/widget/ImagePicker.cpp
                 src/kpop/ui/widget/ImageTexture.cpp
+                src/kpop/ui/widget/ItemContextMenu.cpp
                 src/kpop/ui/widget/PartialDateEntry.cpp
                 src/kpop/ui/widget/PhotoGallery.cpp
                 src/kpop/ui/widget/QuickPickEntry.cpp

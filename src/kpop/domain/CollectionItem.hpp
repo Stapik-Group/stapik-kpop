@@ -34,4 +34,11 @@ namespace kpop::domain
             return kindOf(details);
         }
     };
+
+    // A copy that becomes a new entry once it is added: it gets its id then.
+    [[nodiscard]] inline CollectionItem duplicateOf(CollectionItem item)
+    {
+        item.id.clear();
+        return item;
+    }
 }

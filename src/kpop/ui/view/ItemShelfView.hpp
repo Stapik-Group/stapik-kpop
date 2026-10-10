@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kpop/ui/ItemPresenter.hpp"
+#include "kpop/ui/widget/ItemContextMenu.hpp"
 
 #include <gtkmm/box.h>
 #include <gtkmm/flowbox.h>
@@ -24,6 +25,8 @@ namespace kpop::ui
 
         sigc::signal<void(const std::string&)>& signalEditRequested();
         sigc::signal<void(const std::string&)>& signalDeleteRequested();
+        sigc::signal<void(const std::string&)>& signalDuplicateRequested();
+        sigc::signal<void(const std::string&)>& signalDuplicateAndEditRequested();
 
     private:
         void clear();
@@ -35,5 +38,10 @@ namespace kpop::ui
         std::vector<std::string> m_rowIds;
         sigc::signal<void(const std::string&)> m_signalEditRequested;
         sigc::signal<void(const std::string&)> m_signalDeleteRequested;
+        sigc::signal<void(const std::string&)> m_signalDuplicateRequested;
+        sigc::signal<void(const std::string&)> m_signalDuplicateAndEditRequested;
+
+        // After the flow box it is attached to, so it is destroyed first.
+        ItemContextMenu m_contextMenu;
     };
 }

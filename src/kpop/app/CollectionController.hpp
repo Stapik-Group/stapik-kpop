@@ -50,6 +50,9 @@ namespace kpop::app
         std::size_t removeUnusedImages();
 
         std::string addItem(domain::CollectionItem item);
+
+        // Adds a copy of the entry (with a new id) and returns that id, or an empty text when there is no such entry.
+        std::string duplicateItem(const std::string& itemId);
         void updateItem(const domain::CollectionItem& item);
         void removeItem(const std::string& itemId);
 

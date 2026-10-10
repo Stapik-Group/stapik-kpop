@@ -5,6 +5,7 @@
 
 #include <gdk/gdk.h>
 #include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/gestureclick.h>
 #include <gtkmm/overlay.h>
 #include <gtkmm/picture.h>
 
@@ -73,7 +74,8 @@ namespace kpop::ui
     }
 
     ItemShelfView::ItemShelfView() :
-        m_content(Gtk::Orientation::VERTICAL)
+        m_content(Gtk::Orientation::VERTICAL),
+        m_contextMenu(m_flowBox)
     {
         set_policy(Gtk::PolicyType::NEVER, Gtk::PolicyType::AUTOMATIC);
         set_vexpand(true);
@@ -124,6 +126,28 @@ namespace kpop::ui
             return true;
         }, false);
         m_flowBox.add_controller(keyController);
+
+        m_contextMenu.signalEditRequested().connect([this](const std::string& itemId) { m_signalEditRequested.emit(itemId); });
+        m_contextMenu.signalDeleteRequested().connect([this](const std::string& itemId) { m_signalDeleteRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateRequested().connect([this](const std::string& itemId) { m_signalDuplicateRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateAndEditRequested().connect([this](const std::string& itemId) { m_signalDuplicateAndEditRequested.emit(itemId); });
+
+        const auto rightClick = Gtk::GestureClick::create();
+        rightClick->set_button(GDK_BUTTON_SECONDARY);
+        rightClick->signal_pressed().connect([this](const int, const double x, const double y)
+        {
+            auto* child = m_flowBox.get_child_at_pos(static_cast<int>(x), static_cast<int>(y));
+            if (child == nullptr)
+                return;
+
+            const auto index = static_cast<std::size_t>(child->get_index());
+            if (index >= m_rowIds.size())
+                return;
+
+            m_flowBox.select_child(*child);
+            m_contextMenu.popup(m_rowIds[index], x, y);
+        });
+        m_flowBox.add_controller(rightClick);
     }
 
     void ItemShelfView::setRows(const std::vector<ItemRow>& rows)
@@ -149,6 +173,16 @@ namespace kpop::ui
     sigc::signal<void(const std::string&)>& ItemShelfView::signalDeleteRequested()
     {
         return m_signalDeleteRequested;
+    }
+
+    sigc::signal<void(const std::string&)>& ItemShelfView::signalDuplicateRequested()
+    {
+        return m_signalDuplicateRequested;
+    }
+
+    sigc::signal<void(const std::string&)>& ItemShelfView::signalDuplicateAndEditRequested()
+    {
+        return m_signalDuplicateAndEditRequested;
     }
 
     void ItemShelfView::clear()

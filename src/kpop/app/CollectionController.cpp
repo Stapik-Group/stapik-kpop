@@ -103,6 +103,15 @@ namespace kpop::app
         return itemId;
     }
 
+    std::string CollectionController::duplicateItem(const std::string& itemId)
+    {
+        const auto* existing = m_document.findItem(itemId);
+        if (existing == nullptr)
+            return {};
+
+        return addItem(domain::duplicateOf(*existing));
+    }
+
     void CollectionController::updateItem(const domain::CollectionItem& item)
     {
         const auto* existing = m_document.findItem(item.id);

@@ -28,6 +28,9 @@ namespace kpop::ui
     struct ItemDialogOptions
     {
         std::optional<domain::CollectionItem> existing;
+
+        // The initial values of a new entry (a copy of another one); ignored when "existing" is set.
+        std::optional<domain::CollectionItem> prefill;
         domain::ItemKind defaultKind = domain::ItemKind::Album;
         std::string defaultArtistId;
     };

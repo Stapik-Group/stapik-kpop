@@ -6,7 +6,9 @@
 #include "stapik/domain/Category.hpp"
 
 #include <gtkmm/box.h>
+#include <gdk/gdk.h>
 #include <gtkmm/button.h>
+#include <gtkmm/gestureclick.h>
 #include <gtkmm/picture.h>
 
 #include <algorithm>
@@ -46,7 +48,8 @@ namespace kpop::ui
         }
     }
 
-    ItemListView::ItemListView()
+    ItemListView::ItemListView() :
+        m_contextMenu(m_listBox)
     {
         set_policy(Gtk::PolicyType::NEVER, Gtk::PolicyType::AUTOMATIC);
         set_vexpand(true);
@@ -67,6 +70,28 @@ namespace kpop::ui
             if (const auto index = static_cast<std::size_t>(row->get_index()); index < m_rowIds.size())
                 m_signalEditRequested.emit(m_rowIds[index]);
         });
+
+        m_contextMenu.signalEditRequested().connect([this](const std::string& itemId) { m_signalEditRequested.emit(itemId); });
+        m_contextMenu.signalDeleteRequested().connect([this](const std::string& itemId) { m_signalDeleteRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateRequested().connect([this](const std::string& itemId) { m_signalDuplicateRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateAndEditRequested().connect([this](const std::string& itemId) { m_signalDuplicateAndEditRequested.emit(itemId); });
+
+        const auto rightClick = Gtk::GestureClick::create();
+        rightClick->set_button(GDK_BUTTON_SECONDARY);
+        rightClick->signal_pressed().connect([this](const int, const double x, const double y)
+        {
+            auto* row = m_listBox.get_row_at_y(static_cast<int>(y));
+            if (row == nullptr)
+                return;
+
+            const auto index = static_cast<std::size_t>(row->get_index());
+            if (index >= m_rowIds.size())
+                return;
+
+            m_listBox.select_row(*row);
+            m_contextMenu.popup(m_rowIds[index], x, y);
+        });
+        m_listBox.add_controller(rightClick);
     }
 
     void ItemListView::setRows(const std::vector<ItemRow>& rows)
@@ -93,6 +118,16 @@ namespace kpop::ui
     sigc::signal<void(const std::string&)>& ItemListView::signalDeleteRequested()
     {
         return m_signalDeleteRequested;
+    }
+
+    sigc::signal<void(const std::string&)>& ItemListView::signalDuplicateRequested()
+    {
+        return m_signalDuplicateRequested;
+    }
+
+    sigc::signal<void(const std::string&)>& ItemListView::signalDuplicateAndEditRequested()
+    {
+        return m_signalDuplicateAndEditRequested;
     }
 
     void ItemListView::clear()

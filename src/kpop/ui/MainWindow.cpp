@@ -199,6 +199,12 @@ namespace kpop::ui
         m_shelfView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
         m_shelfView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
 
+        for (auto* signals : { &m_listView.signalDuplicateRequested(), &m_shelfView.signalDuplicateRequested() })
+            signals->connect([this](const std::string& itemId) { onDuplicateRequested(itemId); });
+
+        for (auto* signals : { &m_listView.signalDuplicateAndEditRequested(), &m_shelfView.signalDuplicateAndEditRequested() })
+            signals->connect([this](const std::string& itemId) { onDuplicateAndEditRequested(itemId); });
+
         m_paginationBar.signalPreviousRequested().connect([this]
         {
             m_currentPage = std::max<std::size_t>(m_currentPage, 2) - 1;
@@ -351,6 +357,27 @@ namespace kpop::ui
         showItemDialog(*this, m_controller, options, [this](const domain::CollectionItem& edited)
         {
             m_controller.updateItem(edited);
+        });
+    }
+
+    void MainWindow::onDuplicateRequested(const std::string& itemId)
+    {
+        m_controller.duplicateItem(itemId);
+    }
+
+    // The copy is only added when the dialog is accepted.
+    void MainWindow::onDuplicateAndEditRequested(const std::string& itemId)
+    {
+        const auto* item = m_controller.document().findItem(itemId);
+        if (item == nullptr)
+            return;
+
+        ItemDialogOptions options;
+        options.prefill = domain::duplicateOf(*item);
+
+        showItemDialog(*this, m_controller, options, [this](domain::CollectionItem copy)
+        {
+            m_controller.addItem(std::move(copy));
         });
     }
 

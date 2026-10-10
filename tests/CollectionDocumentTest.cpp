@@ -121,6 +121,17 @@ namespace
         EXPECT_FALSE(tracklist.front().length.has_value());
     }
 
+    TEST(CollectionDocumentTest, DuplicateOfAnItemHasNoIdButTheSameContent)
+    {
+        const auto item = sampleAlbum();
+        const auto copy = kpop::domain::duplicateOf(item);
+
+        EXPECT_TRUE(copy.id.empty());
+        EXPECT_EQ(copy.title, item.title);
+        EXPECT_EQ(copy.details, item.details);
+        EXPECT_EQ(copy.photos, item.photos);
+    }
+
     TEST(CollectionDocumentTest, ReadsAlbumWithoutVariantAsEmpty)
     {
         auto json = sampleDocument().toJson();

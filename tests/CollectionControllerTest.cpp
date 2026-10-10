@@ -82,6 +82,54 @@ namespace
         EXPECT_NE(controller->document().findItem(itemId), nullptr);
     }
 
+    TEST_F(CollectionControllerTest, DuplicateIsACopyWithANewId)
+    {
+        const auto controller = openController();
+        const auto itemId = controller->addItem(sampleAlbum());
+
+        const auto copyId = controller->duplicateItem(itemId);
+
+        ASSERT_FALSE(copyId.empty());
+        EXPECT_NE(copyId, itemId);
+        ASSERT_EQ(controller->document().items().size(), 2U);
+
+        auto copy = *controller->document().findItem(copyId);
+        copy.id = itemId;
+        EXPECT_EQ(copy, *controller->document().findItem(itemId));
+    }
+
+    TEST_F(CollectionControllerTest, DuplicatingAnUnknownItemChangesNothing)
+    {
+        const auto controller = openController();
+        controller->addItem(sampleAlbum());
+
+        EXPECT_TRUE(controller->duplicateItem("missing").empty());
+        EXPECT_EQ(controller->document().items().size(), 1U);
+    }
+
+    TEST_F(CollectionControllerTest, DuplicateIsUndoable)
+    {
+        const auto controller = openController();
+        const auto itemId = controller->addItem(sampleAlbum());
+        const auto copyId = controller->duplicateItem(itemId);
+
+        EXPECT_TRUE(controller->undoStack().undo());
+        EXPECT_EQ(controller->document().findItem(copyId), nullptr);
+        EXPECT_NE(controller->document().findItem(itemId), nullptr);
+    }
+
+    TEST_F(CollectionControllerTest, DuplicateKeepsTheImagesOfTheOriginal)
+    {
+        const auto controller = openController();
+        const auto itemId = controller->addItem(sampleAlbum());
+        const auto copyId = controller->duplicateItem(itemId);
+
+        const auto& original = *controller->document().findItem(itemId);
+        const auto& copy = *controller->document().findItem(copyId);
+        EXPECT_EQ(copy.image, original.image);
+        EXPECT_EQ(copy.photos, original.photos);
+    }
+
     TEST_F(CollectionControllerTest, UndoRestoresTheOriginalPositionOfARemovedItem)
     {
         const auto controller = openController();

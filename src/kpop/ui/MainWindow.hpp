@@ -58,6 +58,8 @@ namespace kpop::ui
         void onAddRequested();
         void onEditRequested(const std::string& itemId);
         void onDeleteRequested(const std::string& itemId);
+        void onDuplicateRequested(const std::string& itemId);
+        void onDuplicateAndEditRequested(const std::string& itemId);
         void onConnectRequested();
         void onSyncRequested();
         void onManageArtistsRequested();

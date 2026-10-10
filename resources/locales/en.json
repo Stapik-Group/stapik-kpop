@@ -2,6 +2,8 @@
   "kpop.date.placeholder": "MM/DD/YYYY",
   "kpop.menu.collection": "Collection",
   "kpop.menu.addItem": "Add entry…",
+  "kpop.menu.item.duplicate": "Duplicate",
+  "kpop.menu.item.duplicateAndEdit": "Duplicate and edit…",
   "kpop.menu.manageArtists": "Artists…",
   "kpop.kind.all": "All",
   "kpop.kind.album": "Albums",
