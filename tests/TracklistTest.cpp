@@ -2,9 +2,20 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+#include <utility>
+
 namespace
 {
     using namespace kpop::domain;
+
+    Track trackOnDisc(std::string title, const int disc)
+    {
+        Track track;
+        track.title = std::move(title);
+        track.disc = disc;
+        return track;
+    }
 
     TEST(TrackLengthTest, ParsesMinutesAndSeconds)
     {
@@ -88,13 +99,13 @@ namespace
     {
         EXPECT_EQ(discCount({}), 0);
 
-        const Tracklist tracklist = { { .title = "A", .disc = 1 }, { .title = "B", .disc = 2 } };
+        const Tracklist tracklist = { trackOnDisc("A", 1), trackOnDisc("B", 2) };
         EXPECT_EQ(discCount(tracklist), 2);
     }
 
     TEST(TracklistTest, NormalizingKeepsAnOrderedTracklistAsItIs)
     {
-        Tracklist tracklist = { { .title = "A", .disc = 1 }, { .title = "B", .disc = 1 }, { .title = "C", .disc = 2 } };
+        Tracklist tracklist = { trackOnDisc("A", 1), trackOnDisc("B", 1), trackOnDisc("C", 2) };
         const auto expected = tracklist;
 
         normalizeDiscs(tracklist);
@@ -103,8 +114,7 @@ namespace
 
     TEST(TracklistTest, NormalizingClosesGapsAndGroupsTheDiscs)
     {
-        Tracklist tracklist = {
-            { .title = "A", .disc = 5 }, { .title = "B", .disc = 2 }, { .title = "C", .disc = 5 }, { .title = "D", .disc = 0 } };
+        Tracklist tracklist = { trackOnDisc("A", 5), trackOnDisc("B", 2), trackOnDisc("C", 5), trackOnDisc("D", 0) };
 
         normalizeDiscs(tracklist);
 
