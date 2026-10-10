@@ -2,6 +2,8 @@
 
 #include "Translate.hpp"
 
+#include "kpop/domain/PartialDateFormatter.hpp"
+
 #include "stapik/domain/MoneyFormatter.hpp"
 
 #include <initializer_list>
@@ -42,12 +44,12 @@ namespace kpop::ui
             return joined;
         }
 
-        std::string dateText(const std::optional<PartialDate>& date)
+        std::string dateText(const std::optional<PartialDate>& date, const std::string_view languageCode)
         {
-            return date ? date->toKey() : std::string();
+            return date ? formatPartialDate(*date, languageCode) : std::string();
         }
 
-        std::string detailsSummary(const ItemDetails& details)
+        std::string detailsSummary(const ItemDetails& details, const std::string_view languageCode)
         {
             return std::visit(Overloaded{
                 [](const AlbumDetails& album)
@@ -70,9 +72,9 @@ namespace kpop::ui
                 {
                     return joinNonEmpty({ lyrics.albumTitle, lyrics.writers });
                 },
-                [](const EventDetails& event)
+                [languageCode](const EventDetails& event)
                 {
-                    return joinNonEmpty({ translate(EVENT_TYPES.nameKey(event.type)), dateText(event.date), event.city });
+                    return joinNonEmpty({ translate(EVENT_TYPES.nameKey(event.type)), dateText(event.date, languageCode), event.city });
                 }
             }, details);
         }
@@ -98,7 +100,7 @@ namespace kpop::ui
         row.kind = item.kind();
         row.status = item.status;
         row.title = item.title;
-        row.subtitle = joinNonEmpty({ artist != nullptr ? artist->name : std::string(), detailsSummary(item.details) });
+        row.subtitle = joinNonEmpty({ artist != nullptr ? artist->name : std::string(), detailsSummary(item.details, languageCode) });
         row.statusText = translate(ITEM_STATUSES.nameKey(item.status));
 
         if (item.quantity > 1)

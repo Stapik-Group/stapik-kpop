@@ -23,6 +23,7 @@ add_executable(stapikkpop_tests
         ItemFilterTest.cpp
         ItemSortTest.cpp
         LocaleResourcesTest.cpp
+        PartialDateFormatterTest.cpp
         PartialDateTest.cpp
         TracklistTest.cpp
         support/FakeAssetStorage.hpp

@@ -34,6 +34,7 @@ add_library(kpopcore STATIC
         src/kpop/domain/ItemFilter.cpp
         src/kpop/domain/ItemSort.cpp
         src/kpop/domain/PartialDate.cpp
+        src/kpop/domain/PartialDateFormatter.cpp
         src/kpop/domain/TrackLength.cpp
         src/kpop/domain/Tracklist.cpp
         src/kpop/image/ImageEncoder.cpp
