@@ -121,6 +121,62 @@ namespace
         EXPECT_FALSE(tracklist.front().length.has_value());
     }
 
+    TEST(CollectionDocumentTest, ItemWithoutPhotosHasNoPhotosKey)
+    {
+        CollectionDocument document;
+        auto item = sampleAlbum();
+        item.photos.clear();
+        document.insertItem(0, item);
+
+        EXPECT_EQ(document.toJson().dump().find("\"photos\""), std::string::npos);
+        EXPECT_TRUE(roundTrip(document).items().front().photos.empty());
+    }
+
+    TEST(CollectionDocumentTest, PreservesThePhotosInTheirOrder)
+    {
+        CollectionDocument document;
+        const auto item = sampleAlbum();
+        ASSERT_EQ(item.photos.size(), 2U);
+        document.insertItem(0, item);
+
+        EXPECT_EQ(roundTrip(document).items().front().photos, item.photos);
+    }
+
+    TEST(CollectionDocumentTest, RejectsInvalidPhotoId)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["photos"][0] = "not-a-hash";
+
+        EXPECT_THROW(static_cast<void>(CollectionDocument::fromJson(json)), std::invalid_argument);
+    }
+
+    TEST(CollectionDocumentTest, ReferencedPhotosAreSortedAndWithoutRepeats)
+    {
+        CollectionDocument document;
+
+        auto first = sampleAlbum("first", "First");
+        auto second = sampleAlbum("second", "Second");
+        second.photos = { first.photos.back() };
+
+        document.insertItem(0, first);
+        document.insertItem(1, second);
+
+        const auto photos = document.referencedPhotos();
+        ASSERT_EQ(photos.size(), 2U);
+        EXPECT_LT(photos[0], photos[1]);
+    }
+
+    TEST(CollectionDocumentTest, PhotosAreNotReferencedAsCovers)
+    {
+        CollectionDocument document;
+        auto item = sampleAlbum();
+        item.image.reset();
+        document.insertItem(0, item);
+
+        EXPECT_TRUE(document.referencedImages().empty());
+        EXPECT_EQ(document.referencedPhotos().size(), 2U);
+    }
+
     TEST(CollectionDocumentTest, PreservesTheDiscOfEveryTrack)
     {
         CollectionDocument document;

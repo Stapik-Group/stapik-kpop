@@ -326,6 +326,15 @@ namespace kpop::document::serializer
         if (item.image)
             result["image"] = item.image->hash();
 
+        if (!item.photos.empty())
+        {
+            auto photos = json::array();
+            for (const auto& photo : item.photos)
+                photos.push_back(photo.hash());
+
+            result["photos"] = std::move(photos);
+        }
+
         setDate(result, "acquiredOn", item.acquiredOn);
         return result;
     }
@@ -364,6 +373,21 @@ namespace kpop::document::serializer
             item.image = domain::ImageId::parse(json.at("image").get<std::string>());
             if (!item.image)
                 throw std::invalid_argument("Invalid image id");
+        }
+
+        if (json.contains("photos") && !json.at("photos").is_null())
+        {
+            if (!json.at("photos").is_array())
+                throw std::invalid_argument("Expected a list for 'photos'");
+
+            for (const auto& photo : json.at("photos"))
+            {
+                const auto id = domain::ImageId::parse(photo.get<std::string>());
+                if (!id)
+                    throw std::invalid_argument("Invalid photo id");
+
+                item.photos.push_back(*id);
+            }
         }
 
         return item;

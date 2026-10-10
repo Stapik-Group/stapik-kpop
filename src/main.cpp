@@ -29,6 +29,8 @@ namespace
     constexpr auto IMAGES_DIRECTORY_NAME = "images";
     constexpr auto CLOUD_SLOT_KEY = "stapikkpop.json";
     constexpr auto IMAGES_SLOT_KEY = "covers";
+    constexpr auto PHOTOS_DIRECTORY_NAME = "photos";
+    constexpr auto PHOTOS_SLOT_KEY = "photos";
     constexpr auto SELF_TEST_OPTION = "--self-test";
     constexpr unsigned SELF_TEST_DELAY_MILLISECONDS = 2000;
 
@@ -71,6 +73,7 @@ int main(int argumentCount, char* arguments[])
 
     std::unique_ptr<kpop::app::CollectionController> controller;
     std::unique_ptr<kpop::app::ImageSync> imageSync;
+    std::unique_ptr<kpop::app::ImageSync> photoSync;
     int selfTestFailures = 0;
 
     application->signal_activate().connect([&]
@@ -94,11 +97,23 @@ int main(int argumentCount, char* arguments[])
         controller = std::make_unique<kpop::app::CollectionController>(
             dataDirectory / COLLECTION_FILE_NAME,
             dataDirectory / IMAGES_DIRECTORY_NAME,
+            dataDirectory / PHOTOS_DIRECTORY_NAME,
             stapik::sync::defaultCloudSessionHooks(CLOUD_SLOT_KEY));
 
         controller->removeUnusedImages();
-        imageSync = std::make_unique<kpop::app::ImageSync>(*controller, IMAGES_SLOT_KEY);
+        imageSync = std::make_unique<kpop::app::ImageSync>(
+            *controller,
+            controller->imageLibrary(),
+            [&controller] { return controller->document().referencedImages(); },
+            IMAGES_SLOT_KEY);
         imageSync->requestSync();
+
+        photoSync = std::make_unique<kpop::app::ImageSync>(
+            *controller,
+            controller->photoLibrary(),
+            [&controller] { return controller->document().referencedPhotos(); },
+            PHOTOS_SLOT_KEY);
+        photoSync->requestSync();
 
         auto* window = new kpop::ui::MainWindow(*controller, *imageSync, styleProvider.themes());
         application->add_window(*window);

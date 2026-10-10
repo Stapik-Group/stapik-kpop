@@ -1,21 +1,14 @@
 #include "ImagePicker.hpp"
 
+#include "ImageFileDialog.hpp"
 #include "ImageTexture.hpp"
 
 #include "kpop/image/ImageEncoder.hpp"
 #include "kpop/ui/Translate.hpp"
 
-#include <giomm/liststore.h>
-
-#include <gtkmm/error.h>
-#include <gtkmm/filedialog.h>
-#include <gtkmm/filefilter.h>
 #include <gtkmm/window.h>
 
-#include <glibmm/error.h>
-
 #include <stdexcept>
-#include <utility>
 
 namespace kpop::ui
 {
@@ -24,11 +17,6 @@ namespace kpop::ui
         constexpr int PREVIEW_SIZE = 160;
         constexpr int SPACING = 12;
         constexpr int BUTTONS_SPACING = 6;
-
-        std::filesystem::path pathFromUtf8(const std::string& text)
-        {
-            return std::filesystem::path(std::u8string(reinterpret_cast<const char8_t*>(text.data()), text.size()));
-        }
     }
 
     ImagePicker::ImagePicker(image::ImageLibrary& library) :
@@ -86,43 +74,18 @@ namespace kpop::ui
         if (window == nullptr)
             return;
 
-        auto filter = Gtk::FileFilter::create();
-        filter->set_name(translate("kpop.image.filter"));
-        filter->add_pixbuf_formats();
-
-        auto filters = Gio::ListStore<Gtk::FileFilter>::create();
-        filters->append(filter);
-
-        auto dialog = Gtk::FileDialog::create();
-        dialog->set_title(translate("kpop.image.dialogTitle"));
-        dialog->set_filters(filters);
-        dialog->set_default_filter(filter);
-
-        dialog->open(*window, [this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result)
-        {
-            try
-            {
-                onFileChosen(dialog->open_finish(result));
-            }
-            catch (const Gtk::DialogError&)
-            {
-                // The user closed the dialog without choosing anything.
-            }
-            catch (const Glib::Error& error)
-            {
-                showImportError(error.what());
-            }
-        });
+        chooseImageFile(
+            *window,
+            translate("kpop.image.dialogTitle"),
+            [this](const std::filesystem::path& file) { onFileChosen(file); },
+            [this](const std::string& reason) { showImportError(reason); });
     }
 
-    void ImagePicker::onFileChosen(const Glib::RefPtr<Gio::File>& file)
+    void ImagePicker::onFileChosen(const std::filesystem::path& file)
     {
-        if (!file)
-            return;
-
         try
         {
-            m_image = m_library.importFile(pathFromUtf8(file->get_path()));
+            m_image = m_library.importFile(file);
         }
         catch (const std::runtime_error& error)
         {

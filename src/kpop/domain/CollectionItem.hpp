@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace kpop::domain
 {
@@ -23,6 +24,7 @@ namespace kpop::domain
         std::string acquiredFrom;
         std::string notes;
         std::optional<ImageId> image;
+        std::vector<ImageId> photos;
         ItemDetails details = AlbumDetails{};
 
         bool operator==(const CollectionItem&) const = default;

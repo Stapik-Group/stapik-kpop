@@ -14,9 +14,29 @@
 
 namespace kpop::app
 {
-    CollectionController::CollectionController(std::filesystem::path documentPath, std::filesystem::path imagesDirectory, stapik::sync::CloudSessionHooks cloudHooks) :
+    namespace
+    {
+        std::size_t removeUnreferenced(image::ImageStore& store, const std::vector<domain::ImageId>& used)
+        {
+            std::size_t removed = 0;
+            for (const auto& id : store.ids())
+            {
+                if (!std::ranges::binary_search(used, id) && store.remove(id))
+                    ++removed;
+            }
+
+            return removed;
+        }
+    }
+
+    CollectionController::CollectionController(
+        std::filesystem::path documentPath,
+        std::filesystem::path imagesDirectory,
+        std::filesystem::path photosDirectory,
+        stapik::sync::CloudSessionHooks cloudHooks) :
         m_file(std::move(documentPath), document::COLLECTION_SCHEMA_VERSION),
         m_imageLibrary(std::move(imagesDirectory)),
+        m_photoLibrary(std::move(photosDirectory), image::MAX_PHOTO_DIMENSION),
         m_cloudSession(std::move(cloudHooks))
     {
         loadFromDisk();
@@ -53,22 +73,24 @@ namespace kpop::app
         return m_imageLibrary;
     }
 
+    image::ImageLibrary& CollectionController::photoLibrary()
+    {
+        return m_photoLibrary;
+    }
+
+    const image::ImageLibrary& CollectionController::photoLibrary() const
+    {
+        return m_photoLibrary;
+    }
+
     std::size_t CollectionController::removeUnusedImages()
     {
         using stapik::document::LoadStatus;
         if (m_loadStatus != LoadStatus::Loaded && m_loadStatus != LoadStatus::Missing)
             return 0;
 
-        const auto used = m_document.referencedImages();
-
-        std::size_t removed = 0;
-        for (const auto& id : m_imageLibrary.store().ids())
-        {
-            if (!std::ranges::binary_search(used, id) && m_imageLibrary.store().remove(id))
-                ++removed;
-        }
-
-        return removed;
+        return removeUnreferenced(m_imageLibrary.store(), m_document.referencedImages())
+            + removeUnreferenced(m_photoLibrary.store(), m_document.referencedPhotos());
     }
 
     std::string CollectionController::addItem(domain::CollectionItem item)

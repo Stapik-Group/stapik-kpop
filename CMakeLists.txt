@@ -71,9 +71,11 @@ stapik_add_application(
                 src/kpop/ui/widget/MoneyEntry.cpp
                 src/kpop/ui/widget/MultilineText.cpp
                 src/kpop/ui/widget/PaginationBar.cpp
+                src/kpop/ui/widget/ImageFileDialog.cpp
                 src/kpop/ui/widget/ImagePicker.cpp
                 src/kpop/ui/widget/ImageTexture.cpp
                 src/kpop/ui/widget/PartialDateEntry.cpp
+                src/kpop/ui/widget/PhotoGallery.cpp
                 src/kpop/ui/widget/QuickPickEntry.cpp
                 src/kpop/ui/widget/TrackLengthEntry.cpp
                 src/kpop/ui/widget/TracklistEditor.cpp

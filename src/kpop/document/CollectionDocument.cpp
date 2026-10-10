@@ -8,11 +8,20 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace kpop::document
 {
     namespace
     {
+        std::vector<domain::ImageId> sortedWithoutRepeats(std::vector<domain::ImageId> images)
+        {
+            std::ranges::sort(images);
+            const auto repeated = std::ranges::unique(images);
+            images.erase(repeated.begin(), repeated.end());
+            return images;
+        }
+
         template<typename Entry>
         std::optional<std::size_t> indexById(const std::vector<Entry>& entries, const std::string_view id)
         {
@@ -72,10 +81,16 @@ namespace kpop::document
                 images.push_back(*item.image);
         }
 
-        std::ranges::sort(images);
-        const auto repeated = std::ranges::unique(images);
-        images.erase(repeated.begin(), repeated.end());
-        return images;
+        return sortedWithoutRepeats(std::move(images));
+    }
+
+    std::vector<domain::ImageId> CollectionDocument::referencedPhotos() const
+    {
+        std::vector<domain::ImageId> photos;
+        for (const auto& item : m_items)
+            photos.insert(photos.end(), item.photos.begin(), item.photos.end());
+
+        return sortedWithoutRepeats(std::move(photos));
     }
 
     const domain::Artist* CollectionDocument::findArtist(const std::string_view artistId) const

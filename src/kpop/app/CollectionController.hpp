@@ -25,7 +25,11 @@ namespace kpop::app
     class CollectionController
     {
     public:
-        CollectionController(std::filesystem::path documentPath, std::filesystem::path imagesDirectory, stapik::sync::CloudSessionHooks cloudHooks);
+        CollectionController(
+            std::filesystem::path documentPath,
+            std::filesystem::path imagesDirectory,
+            std::filesystem::path photosDirectory,
+            stapik::sync::CloudSessionHooks cloudHooks);
 
         CollectionController(const CollectionController&) = delete;
         CollectionController& operator=(const CollectionController&) = delete;
@@ -38,6 +42,10 @@ namespace kpop::app
 
         [[nodiscard]] image::ImageLibrary& imageLibrary();
         [[nodiscard]] const image::ImageLibrary& imageLibrary() const;
+
+        // The additional photos of the entries (the covers are in imageLibrary()).
+        [[nodiscard]] image::ImageLibrary& photoLibrary();
+        [[nodiscard]] const image::ImageLibrary& photoLibrary() const;
 
         std::size_t removeUnusedImages();
 
@@ -77,6 +85,7 @@ namespace kpop::app
         document::CollectionDocument m_document;
         stapik::command::UndoStack m_undoStack;
         image::ImageLibrary m_imageLibrary;
+        image::ImageLibrary m_photoLibrary;
         stapik::sync::CloudSession<document::CollectionDocument> m_cloudSession;
         bool m_ignoreHistoryChanges = false;
         sigc::signal<void()> m_signalDocumentChanged;

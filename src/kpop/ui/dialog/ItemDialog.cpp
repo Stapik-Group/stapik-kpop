@@ -41,6 +41,7 @@ namespace kpop::ui
         m_kindDropDown(domain::ITEM_KINDS),
         m_newArtistButton("+"),
         m_imagePicker(controller.imageLibrary()),
+        m_photoGallery(controller.photoLibrary()),
         m_statusDropDown(domain::ITEM_STATUSES),
         m_conditionDropDown(domain::ITEM_CONDITIONS),
         m_notesText(NOTES_MIN_HEIGHT)
@@ -91,6 +92,7 @@ namespace kpop::ui
         m_topGrid.addRow("kpop.field.title", m_titleEntry);
         m_topGrid.addRow("kpop.field.artist", *artistRow);
         m_topGrid.addRow("kpop.field.image", m_imagePicker);
+        m_topGrid.addRow("kpop.field.photos", m_photoGallery);
 
         for (const auto&[value, id] : domain::ITEM_KINDS.entries())
         {
@@ -144,6 +146,7 @@ namespace kpop::ui
         m_kindDropDown.setValue(item.kind());
         m_titleEntry.set_text(item.title);
         m_imagePicker.setImage(item.image);
+        m_photoGallery.setPhotos(item.photos);
         m_statusDropDown.setValue(item.status);
         m_conditionDropDown.setValue(item.condition);
         m_quantitySpin.set_value(static_cast<double>(item.quantity));
@@ -221,6 +224,7 @@ namespace kpop::ui
         item.acquiredFrom = trimmedText(m_acquiredFromEntry);
         item.notes = m_notesText.text();
         item.image = m_imagePicker.image();
+        item.photos = m_photoGallery.photos();
         item.details = m_detailsForms.at(static_cast<std::size_t>(m_kindDropDown.value()))->details();
         return item;
     }

@@ -25,7 +25,7 @@ namespace
 
         [[nodiscard]] std::unique_ptr<CollectionController> openController() const
         {
-            return std::make_unique<CollectionController>(documentPath(), m_directory.path() / "images", stapik::sync::CloudSessionHooks{});
+            return std::make_unique<CollectionController>(documentPath(), m_directory.path() / "images", m_directory.path() / "photos", stapik::sync::CloudSessionHooks{});
         }
 
     private:
@@ -206,6 +206,36 @@ namespace
         EXPECT_EQ(controller->removeUnusedImages(), 1U);
         EXPECT_TRUE(store.contains(used));
         EXPECT_FALSE(store.contains(unused));
+    }
+
+    TEST_F(CollectionControllerTest, UnusedPhotosAreRemovedAndUsedOnesKept)
+    {
+        const auto controller = openController();
+        auto& store = controller->photoLibrary().store();
+        const auto used = store.add({ 'u', 's', 'e', 'd' });
+        const auto unused = store.add({ 'u', 'n', 'u', 's', 'e', 'd' });
+
+        auto item = sampleAlbum();
+        item.photos = { used };
+        controller->addItem(item);
+
+        EXPECT_EQ(controller->removeUnusedImages(), 1U);
+        EXPECT_TRUE(store.contains(used));
+        EXPECT_FALSE(store.contains(unused));
+    }
+
+    TEST_F(CollectionControllerTest, ACoverIsNotKeptJustBecauseItIsUsedAsAPhoto)
+    {
+        const auto controller = openController();
+        auto& covers = controller->imageLibrary().store();
+        const auto cover = covers.add({ 'c', 'o', 'v', 'e', 'r' });
+
+        auto item = sampleAlbum();
+        item.photos = { cover };
+        controller->addItem(item);
+
+        EXPECT_EQ(controller->removeUnusedImages(), 1U);
+        EXPECT_FALSE(covers.contains(cover));
     }
 
     TEST_F(CollectionControllerTest, ImagesAreKeptWhenTheCollectionCouldNotBeRead)

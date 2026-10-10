@@ -24,8 +24,10 @@ namespace kpop::app
         constexpr milliseconds RETRY_MAX_DELAY = std::chrono::minutes(10);
     }
 
-    ImageSync::ImageSync(CollectionController& controller, std::string slotKey) :
+    ImageSync::ImageSync(CollectionController& controller, image::ImageLibrary& library, ReferencedImages referenced, std::string slotKey) :
         m_controller(controller),
+        m_library(library),
+        m_referenced(std::move(referenced)),
         m_slotKey(std::move(slotKey)),
         m_debounce(DEBOUNCE_DELAY, [this] { start(); }),
         m_retry(RETRY_INITIAL_DELAY, [this] { start(); })
@@ -68,8 +70,8 @@ namespace kpop::app
             return;
 
         auto storage = std::make_shared<stapik::cloud::CloudAssetClient>(*config, m_slotKey);
-        auto* store = &m_controller.imageLibrary().store();
-        auto referenced = m_controller.document().referencedImages();
+        auto* store = &m_library.store();
+        auto referenced = m_referenced();
 
         m_inFlight = true;
         m_requestedWhileRunning = false;

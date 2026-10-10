@@ -22,7 +22,9 @@ namespace kpop::document
 
         [[nodiscard]] const std::vector<domain::Artist>& artists() const;
         [[nodiscard]] const std::vector<domain::CollectionItem>& items() const;
+        // Covers and additional photos live in separate collections; both lists are sorted and without repeats.
         [[nodiscard]] std::vector<domain::ImageId> referencedImages() const;
+        [[nodiscard]] std::vector<domain::ImageId> referencedPhotos() const;
         [[nodiscard]] const domain::Artist* findArtist(std::string_view artistId) const;
         [[nodiscard]] const domain::CollectionItem* findItem(std::string_view itemId) const;
         [[nodiscard]] std::optional<std::size_t> indexOfArtist(std::string_view artistId) const;
