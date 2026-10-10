@@ -39,7 +39,8 @@
     opacity: 1;
 }
 
-.kpop-kind-swatch {
+.kpop-kind-swatch,
+.kpop-artist-swatch {
     min-width: 6px;
     border: 1px solid #ffffff;
     border-radius: 0;

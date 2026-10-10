@@ -2,6 +2,7 @@
 
 #include "Translate.hpp"
 
+#include "kpop/domain/ArtistColor.hpp"
 #include "kpop/domain/CollectionStatistics.hpp"
 #include "kpop/domain/ItemFilter.hpp"
 #include "kpop/domain/ItemSort.hpp"
@@ -291,6 +292,12 @@ namespace kpop::ui
             const auto& item = *matchingItems[index].item;
 
             auto row = describeItem(item, matchingItems[index].artist, languageCode);
+            if (matchingItems[index].artist != nullptr)
+            {
+                if (const auto artistIndex = m_controller.document().indexOfArtist(item.artistId))
+                    row.artistColor = domain::artistColor(*artistIndex);
+            }
+
             if (item.image)
             {
                 if (const auto imagePath = m_controller.imageLibrary().pathOf(*item.image))

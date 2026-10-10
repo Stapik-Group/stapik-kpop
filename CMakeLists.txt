@@ -28,6 +28,7 @@ add_library(kpopcore STATIC
         src/kpop/command/CollectionCommands.cpp
         src/kpop/document/CollectionDocument.cpp
         src/kpop/document/CollectionSerializer.cpp
+        src/kpop/domain/ArtistColor.cpp
         src/kpop/domain/CollectionStatistics.cpp
         src/kpop/domain/ImageId.cpp
         src/kpop/domain/ItemDetails.cpp

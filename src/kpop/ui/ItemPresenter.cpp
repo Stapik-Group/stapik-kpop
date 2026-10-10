@@ -102,6 +102,7 @@ namespace kpop::ui
         row.title = item.title;
         row.subtitle = joinNonEmpty({ artist != nullptr ? artist->name : std::string(), detailsSummary(item.details, languageCode) });
         row.statusText = translate(ITEM_STATUSES.nameKey(item.status));
+        row.artistName = artist != nullptr ? artist->name : std::string();
 
         if (item.quantity > 1)
             row.quantityText = "×" + std::to_string(item.quantity);

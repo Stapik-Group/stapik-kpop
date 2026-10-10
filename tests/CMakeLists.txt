@@ -11,6 +11,7 @@ FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 
 add_executable(stapikkpop_tests
+        ArtistColorTest.cpp
         CollectionControllerTest.cpp
         CollectionDocumentTest.cpp
         CollectionStatisticsTest.cpp

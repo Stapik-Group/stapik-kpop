@@ -3,7 +3,10 @@
 #include "kpop/domain/Artist.hpp"
 #include "kpop/domain/CollectionItem.hpp"
 
+#include "stapik/domain/CategoryColor.hpp"
+
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -19,6 +22,9 @@ namespace kpop::ui
         std::string statusText;
         std::string quantityText;
         std::string priceText;
+
+        std::string artistName;
+        std::optional<stapik::domain::CategoryColor> artistColor;
 
         std::filesystem::path imagePath;
     };

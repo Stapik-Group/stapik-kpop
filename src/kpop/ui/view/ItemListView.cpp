@@ -20,6 +20,7 @@ namespace kpop::ui
         constexpr int ROW_SPACING = 10;
         constexpr int ROW_MARGIN = 6;
         constexpr int SWATCH_WIDTH = 6;
+        constexpr int SWATCHES_SPACING = 2;
         constexpr int PLACEHOLDER_MARGIN = 24;
         constexpr int THUMBNAIL_SIZE = 48;
         constexpr int THUMBNAIL_DECODE_SIZE = THUMBNAIL_SIZE * 2;
@@ -144,11 +145,25 @@ namespace kpop::ui
         box->add_css_class("kpop-row");
         box->set_margin(ROW_MARGIN);
 
+        auto* swatches = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, SWATCHES_SPACING);
+
         auto* swatch = Gtk::make_managed<Gtk::Label>();
         swatch->set_size_request(SWATCH_WIDTH, -1);
         swatch->add_css_class("kpop-kind-swatch");
         swatch->add_css_class(stapik::domain::categoryColorCssClass(domain::colorOf(row.kind)));
-        box->append(*swatch);
+        swatches->append(*swatch);
+
+        auto* artistSwatch = Gtk::make_managed<Gtk::Label>();
+        artistSwatch->set_size_request(SWATCH_WIDTH, -1);
+        artistSwatch->add_css_class("kpop-artist-swatch");
+        if (row.artistColor)
+        {
+            artistSwatch->add_css_class(stapik::domain::categoryColorCssClass(*row.artistColor));
+            artistSwatch->set_tooltip_text(row.artistName);
+        }
+        swatches->append(*artistSwatch);
+
+        box->append(*swatches);
 
         if (showThumbnail)
             box->append(*makeThumbnail(row.imagePath));
