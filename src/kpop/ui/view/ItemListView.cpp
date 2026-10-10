@@ -44,19 +44,6 @@ namespace kpop::ui
             label->add_css_class(cssClass);
             return label;
         }
-
-        const char* statusCssClass(const domain::ItemStatus status)
-        {
-            switch (status)
-            {
-                case domain::ItemStatus::Owned: return "kpop-status-owned";
-                case domain::ItemStatus::Ordered: return "kpop-status-ordered";
-                case domain::ItemStatus::Wishlist: return "kpop-status-wishlist";
-                case domain::ItemStatus::Sold: return "kpop-status-sold";
-            }
-
-            return "kpop-status-owned";
-        }
     }
 
     ItemListView::ItemListView()

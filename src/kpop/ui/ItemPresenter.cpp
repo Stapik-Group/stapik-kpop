@@ -78,6 +78,19 @@ namespace kpop::ui
         }
     }
 
+    const char* statusCssClass(const ItemStatus status)
+    {
+        switch (status)
+        {
+            case ItemStatus::Owned: return "kpop-status-owned";
+            case ItemStatus::Ordered: return "kpop-status-ordered";
+            case ItemStatus::Wishlist: return "kpop-status-wishlist";
+            case ItemStatus::Sold: return "kpop-status-sold";
+        }
+
+        return "kpop-status-owned";
+    }
+
     ItemRow describeItem(const CollectionItem& item, const Artist* artist, const std::string_view languageCode)
     {
         ItemRow row;

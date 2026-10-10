@@ -164,6 +164,8 @@
   "kpop.artist.none": "(kein Künstler)",
   "kpop.artist.newTooltip": "Neuen Künstler hinzufügen",
   "kpop.list.empty": "Noch nichts vorhanden. Füge einen Eintrag hinzu oder ändere die Filter.",
+  "kpop.view.list": "Liste",
+  "kpop.view.shelf": "Regal",
   "kpop.page.label": "Seite {page} von {pages}",
   "kpop.page.previous": "‹ Zurück",
   "kpop.page.next": "Weiter ›",

@@ -23,5 +23,6 @@ namespace kpop::ui
         std::filesystem::path imagePath;
     };
 
+    [[nodiscard]] const char* statusCssClass(domain::ItemStatus status);
     [[nodiscard]] ItemRow describeItem(const domain::CollectionItem& item, const domain::Artist* artist, std::string_view languageCode);
 }

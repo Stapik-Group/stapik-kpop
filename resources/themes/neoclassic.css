@@ -1,9 +1,9 @@
-/* Stapik K-Pop widgets on top of the "classic-pink" theme of stapik-common. */
+/* Stapik K-Pop widgets on top of the "neoclassic" theme of stapik-common. */
 
 /* --- Sidebar with the kinds of entries --- */
 .kpop-sidebar {
-    background-color: #7b2ff7;
-    border-right: 2px solid #8c3a72;
+    background-color: #316ac5;
+    border-right: 1px solid #003c74;
 }
 
 .kpop-sidebar list,
@@ -12,15 +12,15 @@
 }
 
 .kpop-sidebar row {
-    border-radius: 0;
+    border-radius: 3px;
 }
 
 .kpop-sidebar row:hover {
-    background-color: #9250f9;
+    background-color: #4f8de0;
 }
 
 .kpop-sidebar row:selected {
-    background-color: #f9cbe6;
+    background-color: #ece9d8;
 }
 
 .kpop-sidebar-name {
@@ -35,31 +35,31 @@
 
 .kpop-sidebar row:selected .kpop-sidebar-name,
 .kpop-sidebar row:selected .kpop-sidebar-count {
-    color: #4a0e4e;
+    color: #003c74;
     opacity: 1;
 }
 
 .kpop-kind-swatch {
     min-width: 6px;
     border: 1px solid #ffffff;
-    border-radius: 0;
+    border-radius: 2px;
 }
 
 /* --- Entry list --- */
 .kpop-list {
-    background-color: #fff5fb;
+    background-color: #ffffff;
 }
 
 .kpop-list row {
-    border-bottom: 1px solid #f4b6dd;
+    border-bottom: 1px solid #d6d2c2;
 }
 
 .kpop-list row:selected {
-    background-color: #ff6ec7;
+    background-color: #316ac5;
 }
 
 .kpop-list row:selected label {
-    color: #4a0e4e;
+    color: #ffffff;
 }
 
 .kpop-row-title {
@@ -127,7 +127,7 @@
     color: #ffffff;
     font-size: 12px;
     font-weight: bold;
-    border-radius: 0;
+    border-radius: 3px;
 }
 
 .kpop-status-owned { background-color: #2e7d32; }
@@ -147,5 +147,5 @@ entry.kpop-invalid {
 
 /* --- Footer --- */
 .kpop-footer {
-    border-top: 2px solid #8c3a72;
+    border-top: 1px solid #7f9db9;
 }
