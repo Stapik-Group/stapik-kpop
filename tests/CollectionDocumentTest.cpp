@@ -121,6 +121,37 @@ namespace
         EXPECT_FALSE(tracklist.front().length.has_value());
     }
 
+    TEST(CollectionDocumentTest, PreservesTheDiscOfEveryTrack)
+    {
+        CollectionDocument document;
+        document.insertItem(0, sampleAlbum());
+
+        const auto& tracklist = std::get<AlbumDetails>(roundTrip(document).items().front().details).tracklist;
+        ASSERT_EQ(tracklist.size(), 3U);
+        EXPECT_EQ(tracklist[0].disc, 1);
+        EXPECT_EQ(tracklist[2].disc, 2);
+    }
+
+    TEST(CollectionDocumentTest, SavesTheDiscOnlyFromTheSecondOne)
+    {
+        const auto json = sampleDocument().toJson();
+        const auto& tracks = json["items"][0]["details"]["tracklist"];
+
+        EXPECT_FALSE(tracks[0].contains("disc"));
+        EXPECT_EQ(tracks[2]["disc"], 2);
+    }
+
+    TEST(CollectionDocumentTest, ReadsTracklistWithoutDiscsAsOneDisc)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"]["tracklist"][2].erase("disc");
+
+        const auto restored = CollectionDocument::fromJson(json);
+        const auto& tracklist = std::get<AlbumDetails>(restored.items().front().details).tracklist;
+        for (const auto& track : tracklist)
+            EXPECT_EQ(track.disc, 1);
+    }
+
     TEST(CollectionDocumentTest, RejectsInvalidTrackLength)
     {
         auto json = sampleDocument().toJson();

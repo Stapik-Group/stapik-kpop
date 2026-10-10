@@ -14,13 +14,15 @@ namespace kpop::domain
         std::string writers;
         std::optional<TrackLength> length;
         bool titleTrack = false;
+        int disc = 1;
 
         bool operator==(const Track&) const = default;
     };
 
-    // The position of a track is its index; numbers are never stored.
     using Tracklist = std::vector<Track>;
+    void normalizeDiscs(Tracklist& tracklist);
 
-    // Only known when the tracklist is not empty and every track has a length.
+    [[nodiscard]] int discCount(const Tracklist& tracklist);
     [[nodiscard]] std::optional<TrackLength> totalLength(const Tracklist& tracklist);
+    [[nodiscard]] std::optional<TrackLength> totalLength(const Tracklist& tracklist, int disc);
 }

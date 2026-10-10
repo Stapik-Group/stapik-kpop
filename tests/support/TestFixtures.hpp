@@ -51,9 +51,9 @@ namespace kpop::test
             .catalogNumber = "L200002046",
             .inclusions = "photocard, poster",
             .tracklist = {
-                { .title = "Intro", .writers = "Bang Chan, Changbin", .length = domain::TrackLength::fromSeconds(65), .titleTrack = false },
-                { .title = "Dance the Night Away", .writers = "Han", .length = domain::TrackLength::fromSeconds(201), .titleTrack = true },
-                { .title = "Outro", .writers = "", .length = std::nullopt, .titleTrack = false } } };
+                { .title = "Intro", .writers = "Bang Chan, Changbin", .length = domain::TrackLength::fromSeconds(65), .titleTrack = false, .disc = 1 },
+                { .title = "Dance the Night Away", .writers = "Han", .length = domain::TrackLength::fromSeconds(201), .titleTrack = true, .disc = 1 },
+                { .title = "Outro", .writers = "", .length = std::nullopt, .titleTrack = false, .disc = 2 } } };
         return item;
     }
 

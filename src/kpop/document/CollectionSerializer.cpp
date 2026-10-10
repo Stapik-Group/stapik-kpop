@@ -94,6 +94,9 @@ namespace kpop::document::serializer
             if (track.length)
                 result["length"] = track.length->seconds();
 
+            if (track.disc > 1)
+                result["disc"] = track.disc;
+
             return result;
         }
 
@@ -101,7 +104,6 @@ namespace kpop::document::serializer
         {
             domain::Track track;
 
-            // Tracklists used to be saved as plain titles.
             if (source.is_string())
             {
                 track.title = source.get<std::string>();
@@ -111,6 +113,7 @@ namespace kpop::document::serializer
             track.title = source.at("title").get<std::string>();
             track.writers = stringOrEmpty(source, "writers");
             track.titleTrack = source.value("titleTrack", false);
+            track.disc = source.value("disc", 1);
 
             if (source.contains("length") && !source.at("length").is_null())
             {
@@ -145,6 +148,7 @@ namespace kpop::document::serializer
             for (const auto& track : tracks)
                 tracklist.push_back(trackFromJson(track));
 
+            domain::normalizeDiscs(tracklist);
             return tracklist;
         }
 

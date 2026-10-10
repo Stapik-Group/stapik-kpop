@@ -16,7 +16,6 @@
 
 namespace kpop::ui
 {
-    // Edits a tracklist as a table (No., Title, Writer(s), Length) with automatic numbering.
     class TracklistEditor : public Gtk::Box
     {
     public:
@@ -34,10 +33,20 @@ namespace kpop::ui
     private:
         class Row;
 
+        struct DiscHeader
+        {
+            int disc = 1;
+            Gtk::Label* totalLabel = nullptr;
+        };
+
         void rebuild(const domain::Tracklist& tracklist, std::optional<std::size_t> focusedRow);
         void scheduleRebuild(domain::Tracklist tracklist, std::optional<std::size_t> focusedRow);
         void addHeader();
+        void addDiscHeader(int disc, int gridRow);
         void onAddClicked();
+        void onAddDiscClicked();
+        void onAddTrackToDisc(int disc);
+        void onRemoveDisc(int disc);
         void onRemoveRequested(std::size_t index);
         void onMoveUpRequested(std::size_t index);
         void onMoveDownRequested(std::size_t index);
@@ -46,8 +55,10 @@ namespace kpop::ui
 
         Gtk::Grid m_grid;
         Gtk::Button m_addButton;
+        Gtk::Button m_addDiscButton;
         Gtk::Label m_totalLabel;
         std::vector<std::unique_ptr<Row>> m_rows;
+        std::vector<DiscHeader> m_discHeaders;
 
         domain::Tracklist m_pendingTracklist;
         std::optional<std::size_t> m_pendingFocusedRow;
