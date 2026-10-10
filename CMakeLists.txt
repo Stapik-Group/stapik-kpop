@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.2)
-project(stapikkpop VERSION 1.1.0 LANGUAGES CXX)
+project(stapikkpop VERSION 1.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,12 +28,14 @@ add_library(kpopcore STATIC
         src/kpop/command/CollectionCommands.cpp
         src/kpop/document/CollectionDocument.cpp
         src/kpop/document/CollectionSerializer.cpp
+        src/kpop/domain/ArtistColor.cpp
         src/kpop/domain/CollectionStatistics.cpp
         src/kpop/domain/ImageId.cpp
         src/kpop/domain/ItemDetails.cpp
         src/kpop/domain/ItemFilter.cpp
         src/kpop/domain/ItemSort.cpp
         src/kpop/domain/PartialDate.cpp
+        src/kpop/domain/PartialDateFormatter.cpp
         src/kpop/domain/TrackLength.cpp
         src/kpop/domain/Tracklist.cpp
         src/kpop/image/ImageEncoder.cpp
@@ -65,14 +67,18 @@ stapik_add_application(
                 src/kpop/ui/form/DetailsForms.cpp
                 src/kpop/ui/form/FormGrid.cpp
                 src/kpop/ui/view/ItemListView.cpp
+                src/kpop/ui/view/ItemShelfView.cpp
                 src/kpop/ui/view/KindSidebar.cpp
                 src/kpop/ui/widget/FilterBar.cpp
                 src/kpop/ui/widget/MoneyEntry.cpp
                 src/kpop/ui/widget/MultilineText.cpp
                 src/kpop/ui/widget/PaginationBar.cpp
+                src/kpop/ui/widget/ImageFileDialog.cpp
                 src/kpop/ui/widget/ImagePicker.cpp
                 src/kpop/ui/widget/ImageTexture.cpp
+                src/kpop/ui/widget/ItemContextMenu.cpp
                 src/kpop/ui/widget/PartialDateEntry.cpp
+                src/kpop/ui/widget/PhotoGallery.cpp
                 src/kpop/ui/widget/QuickPickEntry.cpp
                 src/kpop/ui/widget/TrackLengthEntry.cpp
                 src/kpop/ui/widget/TracklistEditor.cpp

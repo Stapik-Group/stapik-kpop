@@ -2,6 +2,8 @@
 
 #include "Translate.hpp"
 
+#include "kpop/domain/PartialDateFormatter.hpp"
+
 #include "stapik/domain/MoneyFormatter.hpp"
 
 #include <initializer_list>
@@ -42,17 +44,17 @@ namespace kpop::ui
             return joined;
         }
 
-        std::string dateText(const std::optional<PartialDate>& date)
+        std::string dateText(const std::optional<PartialDate>& date, const std::string_view languageCode)
         {
-            return date ? date->toKey() : std::string();
+            return date ? formatPartialDate(*date, languageCode) : std::string();
         }
 
-        std::string detailsSummary(const ItemDetails& details)
+        std::string detailsSummary(const ItemDetails& details, const std::string_view languageCode)
         {
             return std::visit(Overloaded{
                 [](const AlbumDetails& album)
                 {
-                    return joinNonEmpty({ translate(ALBUM_TYPES.nameKey(album.type)), translate(ALBUM_FORMATS.nameKey(album.format)), album.edition });
+                    return joinNonEmpty({ translate(ALBUM_TYPES.nameKey(album.type)), translate(ALBUM_FORMATS.nameKey(album.format)), album.edition, album.variant });
                 },
                 [](const PhotocardDetails& photocard)
                 {
@@ -70,12 +72,25 @@ namespace kpop::ui
                 {
                     return joinNonEmpty({ lyrics.albumTitle, lyrics.writers });
                 },
-                [](const EventDetails& event)
+                [languageCode](const EventDetails& event)
                 {
-                    return joinNonEmpty({ translate(EVENT_TYPES.nameKey(event.type)), dateText(event.date), event.city });
+                    return joinNonEmpty({ translate(EVENT_TYPES.nameKey(event.type)), dateText(event.date, languageCode), event.city });
                 }
             }, details);
         }
+    }
+
+    const char* statusCssClass(const ItemStatus status)
+    {
+        switch (status)
+        {
+            case ItemStatus::Owned: return "kpop-status-owned";
+            case ItemStatus::Ordered: return "kpop-status-ordered";
+            case ItemStatus::Wishlist: return "kpop-status-wishlist";
+            case ItemStatus::Sold: return "kpop-status-sold";
+        }
+
+        return "kpop-status-owned";
     }
 
     ItemRow describeItem(const CollectionItem& item, const Artist* artist, const std::string_view languageCode)
@@ -85,8 +100,9 @@ namespace kpop::ui
         row.kind = item.kind();
         row.status = item.status;
         row.title = item.title;
-        row.subtitle = joinNonEmpty({ artist != nullptr ? artist->name : std::string(), detailsSummary(item.details) });
+        row.subtitle = joinNonEmpty({ artist != nullptr ? artist->name : std::string(), detailsSummary(item.details, languageCode) });
         row.statusText = translate(ITEM_STATUSES.nameKey(item.status));
+        row.artistName = artist != nullptr ? artist->name : std::string();
 
         if (item.quantity > 1)
             row.quantityText = "×" + std::to_string(item.quantity);

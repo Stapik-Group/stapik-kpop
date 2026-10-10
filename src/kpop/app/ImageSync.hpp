@@ -2,6 +2,7 @@
 
 #include "CollectionController.hpp"
 
+#include "kpop/image/ImageLibrary.hpp"
 #include "kpop/image/ImageSynchronizer.hpp"
 
 #include "stapik/task/BackgroundTaskRunner.hpp"
@@ -10,14 +11,20 @@
 #include <sigc++/connection.h>
 #include <sigc++/signal.h>
 
+#include <functional>
 #include <string>
+#include <vector>
 
 namespace kpop::app
 {
+    // Keeps one library of images in step with one BINARY_COLLECTION slot of the cloud. "referenced" says
+    // which images the document needs right now.
     class ImageSync
     {
     public:
-        ImageSync(CollectionController& controller, std::string slotKey);
+        using ReferencedImages = std::function<std::vector<domain::ImageId>()>;
+
+        ImageSync(CollectionController& controller, image::ImageLibrary& library, ReferencedImages referenced, std::string slotKey);
         ~ImageSync();
 
         ImageSync(const ImageSync&) = delete;
@@ -32,6 +39,8 @@ namespace kpop::app
         void onFinished(const image::ImageSyncReport& report);
 
         CollectionController& m_controller;
+        image::ImageLibrary& m_library;
+        ReferencedImages m_referenced;
         std::string m_slotKey;
 
         stapik::task::BackgroundTaskRunner m_runner;

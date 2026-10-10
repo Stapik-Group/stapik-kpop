@@ -36,7 +36,7 @@ namespace kpop::image
             return message;
         }
 
-        PixbufPtr load(const std::string& path)
+        PixbufPtr load(const std::string& path, const int maxDimension)
         {
             int width = 0;
             int height = 0;
@@ -44,8 +44,8 @@ namespace kpop::image
                 throw ImageImportError("the file is not a supported image");
 
             GError* error = nullptr;
-            GdkPixbuf* pixbuf = std::max(width, height) > MAX_IMAGE_DIMENSION
-                ? gdk_pixbuf_new_from_file_at_size(path.c_str(), MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, &error)
+            GdkPixbuf* pixbuf = std::max(width, height) > maxDimension
+                ? gdk_pixbuf_new_from_file_at_size(path.c_str(), maxDimension, maxDimension, &error)
                 : gdk_pixbuf_new_from_file(path.c_str(), &error);
 
             if (pixbuf == nullptr)
@@ -86,9 +86,9 @@ namespace kpop::image
         }
     }
 
-    ImageBytes prepareImage(const std::filesystem::path& file)
+    ImageBytes prepareImage(const std::filesystem::path& file, const int maxDimension)
     {
-        auto pixbuf = load(stapik::storage::pathText(file));
+        auto pixbuf = load(stapik::storage::pathText(file), maxDimension);
 
         // Returns the very same image (with one more reference) when there is nothing to rotate.
         if (PixbufPtr oriented(gdk_pixbuf_apply_embedded_orientation(pixbuf.get())); oriented)

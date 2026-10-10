@@ -6,7 +6,9 @@
 #include "stapik/domain/Category.hpp"
 
 #include <gtkmm/box.h>
+#include <gdk/gdk.h>
 #include <gtkmm/button.h>
+#include <gtkmm/gestureclick.h>
 #include <gtkmm/picture.h>
 
 #include <algorithm>
@@ -18,6 +20,7 @@ namespace kpop::ui
         constexpr int ROW_SPACING = 10;
         constexpr int ROW_MARGIN = 6;
         constexpr int SWATCH_WIDTH = 6;
+        constexpr int SWATCHES_SPACING = 2;
         constexpr int PLACEHOLDER_MARGIN = 24;
         constexpr int THUMBNAIL_SIZE = 48;
         constexpr int THUMBNAIL_DECODE_SIZE = THUMBNAIL_SIZE * 2;
@@ -44,22 +47,10 @@ namespace kpop::ui
             label->add_css_class(cssClass);
             return label;
         }
-
-        const char* statusCssClass(const domain::ItemStatus status)
-        {
-            switch (status)
-            {
-                case domain::ItemStatus::Owned: return "kpop-status-owned";
-                case domain::ItemStatus::Ordered: return "kpop-status-ordered";
-                case domain::ItemStatus::Wishlist: return "kpop-status-wishlist";
-                case domain::ItemStatus::Sold: return "kpop-status-sold";
-            }
-
-            return "kpop-status-owned";
-        }
     }
 
-    ItemListView::ItemListView()
+    ItemListView::ItemListView() :
+        m_contextMenu(m_listBox)
     {
         set_policy(Gtk::PolicyType::NEVER, Gtk::PolicyType::AUTOMATIC);
         set_vexpand(true);
@@ -80,6 +71,28 @@ namespace kpop::ui
             if (const auto index = static_cast<std::size_t>(row->get_index()); index < m_rowIds.size())
                 m_signalEditRequested.emit(m_rowIds[index]);
         });
+
+        m_contextMenu.signalEditRequested().connect([this](const std::string& itemId) { m_signalEditRequested.emit(itemId); });
+        m_contextMenu.signalDeleteRequested().connect([this](const std::string& itemId) { m_signalDeleteRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateRequested().connect([this](const std::string& itemId) { m_signalDuplicateRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateAndEditRequested().connect([this](const std::string& itemId) { m_signalDuplicateAndEditRequested.emit(itemId); });
+
+        const auto rightClick = Gtk::GestureClick::create();
+        rightClick->set_button(GDK_BUTTON_SECONDARY);
+        rightClick->signal_pressed().connect([this](const int, const double x, const double y)
+        {
+            auto* row = m_listBox.get_row_at_y(static_cast<int>(y));
+            if (row == nullptr)
+                return;
+
+            const auto index = static_cast<std::size_t>(row->get_index());
+            if (index >= m_rowIds.size())
+                return;
+
+            m_listBox.select_row(*row);
+            m_contextMenu.popup(m_rowIds[index], x, y);
+        });
+        m_listBox.add_controller(rightClick);
     }
 
     void ItemListView::setRows(const std::vector<ItemRow>& rows)
@@ -108,6 +121,16 @@ namespace kpop::ui
         return m_signalDeleteRequested;
     }
 
+    sigc::signal<void(const std::string&)>& ItemListView::signalDuplicateRequested()
+    {
+        return m_signalDuplicateRequested;
+    }
+
+    sigc::signal<void(const std::string&)>& ItemListView::signalDuplicateAndEditRequested()
+    {
+        return m_signalDuplicateAndEditRequested;
+    }
+
     void ItemListView::clear()
     {
         while (auto* row = m_listBox.get_row_at_index(0))
@@ -122,11 +145,25 @@ namespace kpop::ui
         box->add_css_class("kpop-row");
         box->set_margin(ROW_MARGIN);
 
+        auto* swatches = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, SWATCHES_SPACING);
+
         auto* swatch = Gtk::make_managed<Gtk::Label>();
         swatch->set_size_request(SWATCH_WIDTH, -1);
         swatch->add_css_class("kpop-kind-swatch");
         swatch->add_css_class(stapik::domain::categoryColorCssClass(domain::colorOf(row.kind)));
-        box->append(*swatch);
+        swatches->append(*swatch);
+
+        auto* artistSwatch = Gtk::make_managed<Gtk::Label>();
+        artistSwatch->set_size_request(SWATCH_WIDTH, -1);
+        artistSwatch->add_css_class("kpop-artist-swatch");
+        if (row.artistColor)
+        {
+            artistSwatch->add_css_class(stapik::domain::categoryColorCssClass(*row.artistColor));
+            artistSwatch->set_tooltip_text(row.artistName);
+        }
+        swatches->append(*artistSwatch);
+
+        box->append(*swatches);
 
         if (showThumbnail)
             box->append(*makeThumbnail(row.imagePath));

@@ -50,7 +50,8 @@ dialog {
     opacity: 1;
 }
 
-.kpop-kind-swatch {
+.kpop-kind-swatch,
+.kpop-artist-swatch {
     min-width: 6px;
     border: none;
     border-radius: 3px;
@@ -90,6 +91,55 @@ dialog {
 .kpop-row-extra {
     font-weight: bold;
     opacity: 0.85;
+}
+
+/* --- Shelf view: covers standing on a wooden board; what is not owned is greyed out --- */
+/* The board is the background of .kpop-shelf, repeated every row, so it runs through the whole width. */
+/* The measures (px) match ItemShelfView.cpp: row = 8 above + 110 cover + 14 board + 12 gap = 144. */
+.kpop-shelf {
+    background-image: linear-gradient(to bottom, transparent 0px, transparent 118px, #e0b87a 118px, #e0b87a 120px, #c99a5b 120px, #8b5e34 128px, #6b4526 132px, transparent 132px, transparent 144px);
+    background-size: 100% 144px;
+    background-repeat: repeat-y;
+}
+
+.kpop-shelf flowboxchild,
+.kpop-shelf flowboxchild:hover,
+.kpop-shelf flowboxchild:selected {
+    padding: 0;
+    background-color: transparent;
+}
+
+.kpop-shelf flowboxchild:selected .kpop-shelf-cover {
+    outline: 2px solid #0a84ff;
+    outline-offset: 2px;
+}
+
+.kpop-shelf-cover {
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+}
+
+.kpop-shelf-cover-empty {
+    font-size: 40px;
+    background-color: #3a3a3c;
+    color: #f2f2f7;
+}
+
+.kpop-shelf-unowned {
+    opacity: 0.45;
+    filter: grayscale(1);
+}
+
+.kpop-shelf-title {
+    padding: 20px 4px 4px 4px;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: bold;
+    text-shadow: 0 1px 2px #000000;
+    background-image: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.8) 60%, rgba(0, 0, 0, 0));
+}
+
+.kpop-shelf-scroller {
+    background-color: #1c1c1e;
 }
 
 /* --- Status badges --- */

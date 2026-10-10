@@ -94,6 +94,9 @@ namespace kpop::document::serializer
             if (track.length)
                 result["length"] = track.length->seconds();
 
+            if (track.disc > 1)
+                result["disc"] = track.disc;
+
             return result;
         }
 
@@ -101,7 +104,6 @@ namespace kpop::document::serializer
         {
             domain::Track track;
 
-            // Tracklists used to be saved as plain titles.
             if (source.is_string())
             {
                 track.title = source.get<std::string>();
@@ -111,6 +113,7 @@ namespace kpop::document::serializer
             track.title = source.at("title").get<std::string>();
             track.writers = stringOrEmpty(source, "writers");
             track.titleTrack = source.value("titleTrack", false);
+            track.disc = source.value("disc", 1);
 
             if (source.contains("length") && !source.at("length").is_null())
             {
@@ -145,6 +148,7 @@ namespace kpop::document::serializer
             for (const auto& track : tracks)
                 tracklist.push_back(trackFromJson(track));
 
+            domain::normalizeDiscs(tracklist);
             return tracklist;
         }
 
@@ -154,6 +158,7 @@ namespace kpop::document::serializer
                 { "type", std::string(domain::ALBUM_TYPES.idOf(album.type)) },
                 { "format", std::string(domain::ALBUM_FORMATS.idOf(album.format)) },
                 { "edition", album.edition },
+                { "variant", album.variant },
                 { "label", album.label },
                 { "region", album.region },
                 { "catalogNumber", album.catalogNumber },
@@ -239,6 +244,7 @@ namespace kpop::document::serializer
                         .type = enumOr(ALBUM_TYPES, source, "type", AlbumType::Mini),
                         .format = enumOr(ALBUM_FORMATS, source, "format", AlbumFormat::Cd),
                         .edition = stringOrEmpty(source, "edition"),
+                        .variant = stringOrEmpty(source, "variant"),
                         .releaseDate = optionalDate(source, "releaseDate"),
                         .label = stringOrEmpty(source, "label"),
                         .region = stringOrEmpty(source, "region"),
@@ -322,6 +328,15 @@ namespace kpop::document::serializer
         if (item.image)
             result["image"] = item.image->hash();
 
+        if (!item.photos.empty())
+        {
+            auto photos = json::array();
+            for (const auto& photo : item.photos)
+                photos.push_back(photo.hash());
+
+            result["photos"] = std::move(photos);
+        }
+
         setDate(result, "acquiredOn", item.acquiredOn);
         return result;
     }
@@ -360,6 +375,21 @@ namespace kpop::document::serializer
             item.image = domain::ImageId::parse(json.at("image").get<std::string>());
             if (!item.image)
                 throw std::invalid_argument("Invalid image id");
+        }
+
+        if (json.contains("photos") && !json.at("photos").is_null())
+        {
+            if (!json.at("photos").is_array())
+                throw std::invalid_argument("Expected a list for 'photos'");
+
+            for (const auto& photo : json.at("photos"))
+            {
+                const auto id = domain::ImageId::parse(photo.get<std::string>());
+                if (!id)
+                    throw std::invalid_argument("Invalid photo id");
+
+                item.photos.push_back(*id);
+            }
         }
 
         return item;

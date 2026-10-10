@@ -3,8 +3,6 @@
 #include "kpop/domain/ImageId.hpp"
 #include "kpop/image/ImageLibrary.hpp"
 
-#include <giomm/file.h>
-
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/frame.h>
@@ -13,6 +11,7 @@
 
 #include <sigc++/signal.h>
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -30,7 +29,7 @@ namespace kpop::ui
 
     private:
         void onChooseClicked();
-        void onFileChosen(const Glib::RefPtr<Gio::File>& file);
+        void onFileChosen(const std::filesystem::path& file);
         void onRemoveClicked();
         void refresh();
         void showImportError(const std::string& reason);

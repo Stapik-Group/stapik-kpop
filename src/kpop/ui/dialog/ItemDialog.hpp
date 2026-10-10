@@ -7,6 +7,7 @@
 #include "kpop/ui/widget/MoneyEntry.hpp"
 #include "kpop/ui/widget/MultilineText.hpp"
 #include "kpop/ui/widget/PartialDateEntry.hpp"
+#include "kpop/ui/widget/PhotoGallery.hpp"
 
 #include "stapik/ui/dialog/StapikDialog.hpp"
 
@@ -27,6 +28,9 @@ namespace kpop::ui
     struct ItemDialogOptions
     {
         std::optional<domain::CollectionItem> existing;
+
+        // The initial values of a new entry (a copy of another one); ignored when "existing" is set.
+        std::optional<domain::CollectionItem> prefill;
         domain::ItemKind defaultKind = domain::ItemKind::Album;
         std::string defaultArtistId;
     };
@@ -57,6 +61,7 @@ namespace kpop::ui
         Gtk::DropDown m_artistDropDown;
         Gtk::Button m_newArtistButton;
         ImagePicker m_imagePicker;
+        PhotoGallery m_photoGallery;
         Gtk::Stack m_detailsStack;
         std::vector<DetailsForm*> m_detailsForms;
         EnumDropDown<domain::ItemStatus> m_statusDropDown;

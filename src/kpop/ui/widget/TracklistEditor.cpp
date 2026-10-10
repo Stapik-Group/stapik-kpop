@@ -22,6 +22,7 @@ namespace kpop::ui
         constexpr int TEXT_ENTRY_WIDTH_CHARS = 10;
         constexpr int HEADER_GRID_ROW = 0;
         constexpr int FIRST_TRACK_GRID_ROW = 1;
+        constexpr int DISC_HEADER_MARGIN_TOP = 8;
 
         constexpr int NUMBER_COLUMN = 0;
         constexpr int TITLE_COLUMN = 1;
@@ -31,6 +32,7 @@ namespace kpop::ui
         constexpr int MOVE_UP_COLUMN = 5;
         constexpr int MOVE_DOWN_COLUMN = 6;
         constexpr int REMOVE_COLUMN = 7;
+        constexpr int COLUMN_COUNT = 8;
 
         constexpr auto TITLE_TRACK_SYMBOL = "★";
 
@@ -49,13 +51,20 @@ namespace kpop::ui
             button->set_tooltip_text(tooltip);
             return button;
         }
+
+        bool isBlankTrack(const domain::Track& track)
+        {
+            return track.title.empty() && track.writers.empty() && !track.length && !track.titleTrack;
+        }
     }
 
     class TracklistEditor::Row final
     {
     public:
-        Row(Gtk::Grid& grid, const std::size_t index, const std::size_t count) :
-            m_numberLabel(Gtk::make_managed<Gtk::Label>(std::to_string(index + 1))),
+        // "number" is the position on the disc, "index" the position in the whole tracklist.
+        Row(Gtk::Grid& grid, const int gridRow, const int disc, const std::size_t number, const std::size_t index, const std::size_t count) :
+            m_disc(disc),
+            m_numberLabel(Gtk::make_managed<Gtk::Label>(std::to_string(number))),
             m_titleEntry(Gtk::make_managed<Gtk::Entry>()),
             m_writersEntry(Gtk::make_managed<Gtk::Entry>()),
             m_lengthEntry(Gtk::make_managed<TrackLengthEntry>()),
@@ -74,7 +83,6 @@ namespace kpop::ui
             m_moveUpButton->set_sensitive(index > 0);
             m_moveDownButton->set_sensitive(index + 1 < count);
 
-            const int gridRow = FIRST_TRACK_GRID_ROW + static_cast<int>(index);
             grid.attach(*m_numberLabel, NUMBER_COLUMN, gridRow);
             grid.attach(*m_titleEntry, TITLE_COLUMN, gridRow);
             grid.attach(*m_writersEntry, WRITERS_COLUMN, gridRow);
@@ -114,6 +122,7 @@ namespace kpop::ui
             track.writers = trimmedText(*m_writersEntry);
             track.length = m_lengthEntry->value();
             track.titleTrack = m_titleTrackToggle->get_active();
+            track.disc = m_disc;
             return track;
         }
 
@@ -150,6 +159,7 @@ namespace kpop::ui
                 m_titleEntry->remove_css_class("kpop-invalid");
         }
 
+        int m_disc;
         Gtk::Label* m_numberLabel;
         Gtk::Entry* m_titleEntry;
         Gtk::Entry* m_writersEntry;
@@ -167,7 +177,8 @@ namespace kpop::ui
 
     TracklistEditor::TracklistEditor() :
         Box(Gtk::Orientation::VERTICAL, EDITOR_SPACING),
-        m_addButton(translate("kpop.tracklist.add"))
+        m_addButton(translate("kpop.tracklist.add")),
+        m_addDiscButton(translate("kpop.tracklist.addDisc"))
     {
         add_css_class("kpop-tracklist");
 
@@ -177,11 +188,15 @@ namespace kpop::ui
         m_addButton.set_halign(Gtk::Align::START);
         m_addButton.signal_clicked().connect([this] { onAddClicked(); });
 
+        m_addDiscButton.set_halign(Gtk::Align::START);
+        m_addDiscButton.signal_clicked().connect([this] { onAddDiscClicked(); });
+
         m_totalLabel.set_hexpand(true);
         m_totalLabel.set_halign(Gtk::Align::END);
 
         auto* footer = Gtk::make_managed<Box>(Gtk::Orientation::HORIZONTAL, EDITOR_SPACING);
         footer->append(m_addButton);
+        footer->append(m_addDiscButton);
         footer->append(m_totalLabel);
 
         append(m_grid);
@@ -210,6 +225,8 @@ namespace kpop::ui
                 tracklist.push_back(row->value());
         }
 
+        // A disc that has only empty rows is left out, so the others are numbered again.
+        domain::normalizeDiscs(tracklist);
         return tracklist;
     }
 
@@ -238,9 +255,14 @@ namespace kpop::ui
         return tracklist;
     }
 
-    void TracklistEditor::rebuild(const domain::Tracklist& tracklist, const std::optional<std::size_t> focusedRow)
+    void TracklistEditor::rebuild(const domain::Tracklist& source, const std::optional<std::size_t> focusedRow)
     {
+        // Only reorders when the discs are out of order and closes gaps in their numbers, so the rows keep their indices.
+        auto tracklist = source;
+        domain::normalizeDiscs(tracklist);
+
         m_rows.clear();
+        m_discHeaders.clear();
         while (auto* child = m_grid.get_first_child())
             m_grid.remove(*child);
 
@@ -248,9 +270,25 @@ namespace kpop::ui
         if (!tracklist.empty())
             addHeader();
 
+        const bool showDiscHeaders = domain::discCount(tracklist) > 1;
+        int gridRow = FIRST_TRACK_GRID_ROW;
+        int currentDisc = 0;
+        std::size_t numberOnDisc = 0;
+
         for (std::size_t index = 0; index < tracklist.size(); ++index)
         {
-            auto row = std::make_unique<Row>(m_grid, index, tracklist.size());
+            if (tracklist[index].disc != currentDisc)
+            {
+                currentDisc = tracklist[index].disc;
+                numberOnDisc = 0;
+
+                if (showDiscHeaders)
+                    addDiscHeader(currentDisc, gridRow++);
+            }
+
+            ++numberOnDisc;
+
+            auto row = std::make_unique<Row>(m_grid, gridRow++, currentDisc, numberOnDisc, index, tracklist.size());
             row->setValue(tracklist[index]);
 
             row->signalChanged().connect([this]
@@ -300,12 +338,83 @@ namespace kpop::ui
         m_grid.attach(*titleTrackHeader, TITLE_TRACK_COLUMN, HEADER_GRID_ROW);
     }
 
+    void TracklistEditor::addDiscHeader(const int disc, const int gridRow)
+    {
+        auto* header = Gtk::make_managed<Box>(Gtk::Orientation::HORIZONTAL, EDITOR_SPACING);
+        header->set_margin_top(DISC_HEADER_MARGIN_TOP);
+
+        auto* title = Gtk::make_managed<Gtk::Label>(translate("kpop.tracklist.disc", { { "number", std::to_string(disc) } }));
+        title->add_css_class("heading");
+
+        auto* total = Gtk::make_managed<Gtk::Label>();
+        total->add_css_class("dim-label");
+        total->set_hexpand(true);
+        total->set_halign(Gtk::Align::START);
+
+        auto* addTrackButton = Gtk::make_managed<Gtk::Button>(translate("kpop.tracklist.add"));
+        addTrackButton->add_css_class("flat");
+        addTrackButton->signal_clicked().connect([this, disc] { onAddTrackToDisc(disc); });
+
+        auto* removeDiscButton = Gtk::make_managed<Gtk::Button>(translate("kpop.tracklist.removeDisc"));
+        removeDiscButton->add_css_class("flat");
+        removeDiscButton->signal_clicked().connect([this, disc] { onRemoveDisc(disc); });
+
+        header->append(*title);
+        header->append(*total);
+        header->append(*addTrackButton);
+        header->append(*removeDiscButton);
+
+        m_grid.attach(*header, NUMBER_COLUMN, gridRow, COLUMN_COUNT, 1);
+        m_discHeaders.push_back({ .disc = disc, .totalLabel = total });
+    }
+
+    // New tracks go to the end of the last disc.
     void TracklistEditor::onAddClicked()
     {
         auto tracklist = allRows();
-        tracklist.emplace_back();
+
+        domain::Track track;
+        track.disc = tracklist.empty() ? 1 : tracklist.back().disc;
+        tracklist.push_back(track);
+
         const auto newRow = tracklist.size() - 1;
         scheduleRebuild(std::move(tracklist), newRow);
+    }
+
+    void TracklistEditor::onAddDiscClicked()
+    {
+        auto tracklist = allRows();
+
+        domain::Track track;
+        track.disc = tracklist.empty() ? 1 : tracklist.back().disc + 1;
+        tracklist.push_back(track);
+
+        const auto newRow = tracklist.size() - 1;
+        scheduleRebuild(std::move(tracklist), newRow);
+    }
+
+    void TracklistEditor::onAddTrackToDisc(const int disc)
+    {
+        auto tracklist = allRows();
+
+        std::size_t insertAt = tracklist.size();
+        for (std::size_t index = 0; index < tracklist.size(); ++index)
+        {
+            if (tracklist[index].disc == disc)
+                insertAt = index + 1;
+        }
+
+        domain::Track track;
+        track.disc = disc;
+        tracklist.insert(tracklist.begin() + static_cast<std::ptrdiff_t>(insertAt), track);
+        scheduleRebuild(std::move(tracklist), insertAt);
+    }
+
+    void TracklistEditor::onRemoveDisc(const int disc)
+    {
+        auto tracklist = allRows();
+        std::erase_if(tracklist, [disc](const domain::Track& track) { return track.disc == disc; });
+        scheduleRebuild(std::move(tracklist), std::nullopt);
     }
 
     void TracklistEditor::onRemoveRequested(const std::size_t index)
@@ -324,8 +433,19 @@ namespace kpop::ui
         if (index == 0 || index >= tracklist.size())
             return;
 
-        std::swap(tracklist[index - 1], tracklist[index]);
-        scheduleRebuild(std::move(tracklist), index - 1);
+        // The first track of a disc moves to the end of the disc before it.
+        auto focusedRow = index - 1;
+        if (tracklist[index - 1].disc == tracklist[index].disc)
+        {
+            std::swap(tracklist[index - 1], tracklist[index]);
+        }
+        else
+        {
+            tracklist[index].disc = tracklist[index - 1].disc;
+            focusedRow = index;
+        }
+
+        scheduleRebuild(std::move(tracklist), focusedRow);
     }
 
     void TracklistEditor::onMoveDownRequested(const std::size_t index)
@@ -334,16 +454,43 @@ namespace kpop::ui
         if (index + 1 >= tracklist.size())
             return;
 
-        std::swap(tracklist[index], tracklist[index + 1]);
-        scheduleRebuild(std::move(tracklist), index + 1);
+        // The last track of a disc moves to the start of the disc after it.
+        auto focusedRow = index + 1;
+        if (tracklist[index].disc == tracklist[index + 1].disc)
+        {
+            std::swap(tracklist[index], tracklist[index + 1]);
+        }
+        else
+        {
+            tracklist[index].disc = tracklist[index + 1].disc;
+            focusedRow = index;
+        }
+
+        scheduleRebuild(std::move(tracklist), focusedRow);
     }
 
     void TracklistEditor::refreshTotal()
     {
-        const auto total = domain::totalLength(value());
+        domain::Tracklist filledRows;
+        for (const auto& track : allRows())
+        {
+            if (!isBlankTrack(track))
+                filledRows.push_back(track);
+        }
+
+        const auto total = domain::totalLength(filledRows);
         m_totalLabel.set_visible(total.has_value());
 
         if (total)
             m_totalLabel.set_text(translate("kpop.tracklist.total", { { "length", total->toText() } }));
+
+        for (const auto& header : m_discHeaders)
+        {
+            const auto discTotal = domain::totalLength(filledRows, header.disc);
+            header.totalLabel->set_visible(discTotal.has_value());
+
+            if (discTotal)
+                header.totalLabel->set_text(discTotal->toText());
+        }
     }
 }

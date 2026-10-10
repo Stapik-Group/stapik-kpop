@@ -3,8 +3,9 @@
 #include "kpop/ui/ItemPresenter.hpp"
 #include "kpop/ui/widget/ItemContextMenu.hpp"
 
+#include <gtkmm/box.h>
+#include <gtkmm/flowbox.h>
 #include <gtkmm/label.h>
-#include <gtkmm/listbox.h>
 #include <gtkmm/scrolledwindow.h>
 
 #include <sigc++/signal.h>
@@ -14,10 +15,10 @@
 
 namespace kpop::ui
 {
-    class ItemListView : public Gtk::ScrolledWindow
+    class ItemShelfView : public Gtk::ScrolledWindow
     {
     public:
-        ItemListView();
+        ItemShelfView();
 
         void setRows(const std::vector<ItemRow>& rows);
         void refreshPlaceholder();
@@ -29,17 +30,18 @@ namespace kpop::ui
 
     private:
         void clear();
-        void appendRow(const ItemRow& row, bool showThumbnail);
+        void appendRow(const ItemRow& row);
 
-        Gtk::ListBox m_listBox;
+        Gtk::Box m_content;
         Gtk::Label m_placeholderLabel;
+        Gtk::FlowBox m_flowBox;
         std::vector<std::string> m_rowIds;
         sigc::signal<void(const std::string&)> m_signalEditRequested;
         sigc::signal<void(const std::string&)> m_signalDeleteRequested;
         sigc::signal<void(const std::string&)> m_signalDuplicateRequested;
         sigc::signal<void(const std::string&)> m_signalDuplicateAndEditRequested;
 
-        // After the list box it is attached to, so it is destroyed first.
+        // After the flow box it is attached to, so it is destroyed first.
         ItemContextMenu m_contextMenu;
     };
 }

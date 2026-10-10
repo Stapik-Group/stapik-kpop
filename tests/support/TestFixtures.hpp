@@ -41,19 +41,23 @@ namespace kpop::test
         item.acquiredFrom = "Kpopstore";
         item.notes = "Limited ver.";
         item.image = domain::ImageId::parse("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+        item.photos = {
+            *domain::ImageId::parse("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+            *domain::ImageId::parse("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824") };
         item.details = domain::AlbumDetails{
             .type = domain::AlbumType::Full,
             .format = domain::AlbumFormat::Cd,
             .edition = "Standard B",
+            .variant = "Felix ver.",
             .releaseDate = domain::PartialDate::tryCreate(2021, 8),
             .label = "JYP",
             .region = "KR",
             .catalogNumber = "L200002046",
             .inclusions = "photocard, poster",
             .tracklist = {
-                { .title = "Intro", .writers = "Bang Chan, Changbin", .length = domain::TrackLength::fromSeconds(65), .titleTrack = false },
-                { .title = "Dance the Night Away", .writers = "Han", .length = domain::TrackLength::fromSeconds(201), .titleTrack = true },
-                { .title = "Outro", .writers = "", .length = std::nullopt, .titleTrack = false } } };
+                { .title = "Intro", .writers = "Bang Chan, Changbin", .length = domain::TrackLength::fromSeconds(65), .titleTrack = false, .disc = 1 },
+                { .title = "Dance the Night Away", .writers = "Han", .length = domain::TrackLength::fromSeconds(201), .titleTrack = true, .disc = 1 },
+                { .title = "Outro", .writers = "", .length = std::nullopt, .titleTrack = false, .disc = 2 } } };
         return item;
     }
 

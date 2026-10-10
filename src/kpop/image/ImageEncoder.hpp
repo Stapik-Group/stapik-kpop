@@ -13,6 +13,9 @@ namespace kpop::image
         using std::runtime_error::runtime_error;
     };
 
+    // Covers are small, additional photos keep more detail.
     inline constexpr int MAX_IMAGE_DIMENSION = 800;
-    [[nodiscard]] ImageBytes prepareImage(const std::filesystem::path& file);
+    inline constexpr int MAX_PHOTO_DIMENSION = 1600;
+
+    [[nodiscard]] ImageBytes prepareImage(const std::filesystem::path& file, int maxDimension = MAX_IMAGE_DIMENSION);
 }

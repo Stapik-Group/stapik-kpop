@@ -2,6 +2,7 @@
 
 #include "Translate.hpp"
 
+#include "kpop/domain/ArtistColor.hpp"
 #include "kpop/domain/CollectionStatistics.hpp"
 #include "kpop/domain/ItemFilter.hpp"
 #include "kpop/domain/ItemSort.hpp"
@@ -46,7 +47,8 @@ namespace kpop::ui
         m_topBar(Gtk::Orientation::HORIZONTAL, TOP_BAR_SPACING),
         m_rightBox(Gtk::Orientation::VERTICAL),
         m_footer(Gtk::Orientation::HORIZONTAL, FOOTER_SPACING),
-        m_paned(Gtk::Orientation::HORIZONTAL)
+        m_paned(Gtk::Orientation::HORIZONTAL),
+        m_viewSwitch(Gtk::Orientation::HORIZONTAL)
     {
         set_title(STAPIK_APP_DISPLAY_NAME);
         set_default_size(DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -80,18 +82,19 @@ namespace kpop::ui
 
         switch (m_controller.loadStatus())
         {
-            case LoadStatus::Loaded:
-            case LoadStatus::Missing:
+            using enum LoadStatus;
+            case Loaded:
+            case Missing:
                 return;
 
-            case LoadStatus::Corrupted:
+            case Corrupted:
                 showMessageDialog(*this, translate("kpop.startup.corrupted.header"), translate("kpop.startup.corrupted.text", { { "path", path } }), Gtk::MessageType::WARNING);
                 return;
 
-            case LoadStatus::NewerVersion:
-            case LoadStatus::MigrationFailed:
+            case NewerVersion:
+            case MigrationFailed:
             {
-                const bool isNewer = m_controller.loadStatus() == LoadStatus::NewerVersion;
+                const bool isNewer = m_controller.loadStatus() == NewerVersion;
 
                 set_sensitive(false);
 
@@ -131,15 +134,27 @@ namespace kpop::ui
         m_addButton.set_label(translate("kpop.button.addEntry"));
         m_filterBar.set_hexpand(true);
 
+        m_shelfViewButton.set_group(m_listViewButton);
+        m_listViewButton.set_active(true);
+        m_viewSwitch.add_css_class("linked");
+        m_viewSwitch.append(m_listViewButton);
+        m_viewSwitch.append(m_shelfViewButton);
+
+        m_viewStack.set_vexpand(true);
+        m_viewStack.add(m_listView);
+        m_viewStack.add(m_shelfView);
+        m_viewStack.set_visible_child(m_listView);
+
         m_topBar.set_margin(TOP_BAR_MARGIN);
         m_topBar.append(m_filterBar);
+        m_topBar.append(m_viewSwitch);
         m_topBar.append(m_addButton);
 
         m_sidebar.set_size_request(SIDEBAR_WIDTH, -1);
 
         m_rightBox.set_hexpand(true);
         m_rightBox.append(m_topBar);
-        m_rightBox.append(m_listView);
+        m_rightBox.append(m_viewStack);
         m_rightBox.append(m_paginationBar);
 
         m_paned.set_start_child(m_sidebar);
@@ -178,8 +193,18 @@ namespace kpop::ui
             refreshList();
         });
 
+        m_shelfViewButton.signal_toggled().connect([this] { refreshViewMode(); });
+
         m_listView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
         m_listView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
+        m_shelfView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
+        m_shelfView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
+
+        for (auto* signals : { &m_listView.signalDuplicateRequested(), &m_shelfView.signalDuplicateRequested() })
+            signals->connect([this](const std::string& itemId) { onDuplicateRequested(itemId); });
+
+        for (auto* signals : { &m_listView.signalDuplicateAndEditRequested(), &m_shelfView.signalDuplicateAndEditRequested() })
+            signals->connect([this](const std::string& itemId) { onDuplicateAndEditRequested(itemId); });
 
         m_paginationBar.signalPreviousRequested().connect([this]
         {
@@ -231,7 +256,10 @@ namespace kpop::ui
         m_addButton.set_label(translate("kpop.button.addEntry"));
         m_sidebar.refreshLabels();
         m_filterBar.refreshLabels();
+        m_listViewButton.set_label(translate("kpop.view.list"));
+        m_shelfViewButton.set_label(translate("kpop.view.shelf"));
         m_listView.refreshPlaceholder();
+        m_shelfView.refreshPlaceholder();
         m_paginationBar.refreshLabels();
     }
 
@@ -264,6 +292,12 @@ namespace kpop::ui
             const auto& item = *matchingItems[index].item;
 
             auto row = describeItem(item, matchingItems[index].artist, languageCode);
+            if (matchingItems[index].artist != nullptr)
+            {
+                if (const auto artistIndex = m_controller.document().indexOfArtist(item.artistId))
+                    row.artistColor = domain::artistColor(*artistIndex);
+            }
+
             if (item.image)
             {
                 if (const auto imagePath = m_controller.imageLibrary().pathOf(*item.image))
@@ -273,8 +307,23 @@ namespace kpop::ui
             pageRows.push_back(std::move(row));
         }
 
-        m_listView.setRows(pageRows);
+        if (isShelfViewActive())
+            m_shelfView.setRows(pageRows);
+        else
+            m_listView.setRows(pageRows);
+
         m_paginationBar.setPage(m_currentPage, pageCount);
+    }
+
+    void MainWindow::refreshViewMode()
+    {
+        m_viewStack.set_visible_child(isShelfViewActive() ? static_cast<Widget&>(m_shelfView) : m_listView);
+        refreshList();
+    }
+
+    bool MainWindow::isShelfViewActive() const
+    {
+        return m_shelfViewButton.get_active();
     }
 
     void MainWindow::refreshStatistics()
@@ -315,6 +364,27 @@ namespace kpop::ui
         showItemDialog(*this, m_controller, options, [this](const domain::CollectionItem& edited)
         {
             m_controller.updateItem(edited);
+        });
+    }
+
+    void MainWindow::onDuplicateRequested(const std::string& itemId)
+    {
+        m_controller.duplicateItem(itemId);
+    }
+
+    // The copy is only added when the dialog is accepted.
+    void MainWindow::onDuplicateAndEditRequested(const std::string& itemId)
+    {
+        const auto* item = m_controller.document().findItem(itemId);
+        if (item == nullptr)
+            return;
+
+        ItemDialogOptions options;
+        options.prefill = domain::duplicateOf(*item);
+
+        showItemDialog(*this, m_controller, options, [this](domain::CollectionItem copy)
+        {
+            m_controller.addItem(std::move(copy));
         });
     }
 

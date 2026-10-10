@@ -17,6 +17,7 @@ namespace kpop::domain
         AlbumType type = AlbumType::Mini;
         AlbumFormat format = AlbumFormat::Cd;
         std::string edition;
+        std::string variant;
         std::optional<PartialDate> releaseDate;
         std::string label;
         std::string region;

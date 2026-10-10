@@ -1,18 +1,17 @@
 #include "ImageLibrary.hpp"
 
-#include "ImageEncoder.hpp"
-
 #include <utility>
 
 namespace kpop::image
 {
-    ImageLibrary::ImageLibrary(std::filesystem::path directory) :
-        m_store(std::move(directory))
+    ImageLibrary::ImageLibrary(std::filesystem::path directory, const int maxDimension) :
+        m_store(std::move(directory)),
+        m_maxDimension(maxDimension)
     {}
 
     domain::ImageId ImageLibrary::importFile(const std::filesystem::path& sourceFile)
     {
-        return m_store.add(prepareImage(sourceFile));
+        return m_store.add(prepareImage(sourceFile, m_maxDimension));
     }
 
     std::optional<std::filesystem::path> ImageLibrary::pathOf(const domain::ImageId& id) const

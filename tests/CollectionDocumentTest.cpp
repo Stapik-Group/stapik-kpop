@@ -121,6 +121,115 @@ namespace
         EXPECT_FALSE(tracklist.front().length.has_value());
     }
 
+    TEST(CollectionDocumentTest, DuplicateOfAnItemHasNoIdButTheSameContent)
+    {
+        const auto item = sampleAlbum();
+        const auto copy = kpop::domain::duplicateOf(item);
+
+        EXPECT_TRUE(copy.id.empty());
+        EXPECT_EQ(copy.title, item.title);
+        EXPECT_EQ(copy.details, item.details);
+        EXPECT_EQ(copy.photos, item.photos);
+    }
+
+    TEST(CollectionDocumentTest, ReadsAlbumWithoutVariantAsEmpty)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"].erase("variant");
+
+        const auto restored = CollectionDocument::fromJson(json);
+        const auto& album = std::get<AlbumDetails>(restored.items().front().details);
+        EXPECT_TRUE(album.variant.empty());
+        EXPECT_EQ(album.edition, "Standard B");
+    }
+
+    TEST(CollectionDocumentTest, ItemWithoutPhotosHasNoPhotosKey)
+    {
+        CollectionDocument document;
+        auto item = sampleAlbum();
+        item.photos.clear();
+        document.insertItem(0, item);
+
+        EXPECT_EQ(document.toJson().dump().find("\"photos\""), std::string::npos);
+        EXPECT_TRUE(roundTrip(document).items().front().photos.empty());
+    }
+
+    TEST(CollectionDocumentTest, PreservesThePhotosInTheirOrder)
+    {
+        CollectionDocument document;
+        const auto item = sampleAlbum();
+        ASSERT_EQ(item.photos.size(), 2U);
+        document.insertItem(0, item);
+
+        EXPECT_EQ(roundTrip(document).items().front().photos, item.photos);
+    }
+
+    TEST(CollectionDocumentTest, RejectsInvalidPhotoId)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["photos"][0] = "not-a-hash";
+
+        EXPECT_THROW(static_cast<void>(CollectionDocument::fromJson(json)), std::invalid_argument);
+    }
+
+    TEST(CollectionDocumentTest, ReferencedPhotosAreSortedAndWithoutRepeats)
+    {
+        CollectionDocument document;
+
+        auto first = sampleAlbum("first", "First");
+        auto second = sampleAlbum("second", "Second");
+        second.photos = { first.photos.back() };
+
+        document.insertItem(0, first);
+        document.insertItem(1, second);
+
+        const auto photos = document.referencedPhotos();
+        ASSERT_EQ(photos.size(), 2U);
+        EXPECT_LT(photos[0], photos[1]);
+    }
+
+    TEST(CollectionDocumentTest, PhotosAreNotReferencedAsCovers)
+    {
+        CollectionDocument document;
+        auto item = sampleAlbum();
+        item.image.reset();
+        document.insertItem(0, item);
+
+        EXPECT_TRUE(document.referencedImages().empty());
+        EXPECT_EQ(document.referencedPhotos().size(), 2U);
+    }
+
+    TEST(CollectionDocumentTest, PreservesTheDiscOfEveryTrack)
+    {
+        CollectionDocument document;
+        document.insertItem(0, sampleAlbum());
+
+        const auto& tracklist = std::get<AlbumDetails>(roundTrip(document).items().front().details).tracklist;
+        ASSERT_EQ(tracklist.size(), 3U);
+        EXPECT_EQ(tracklist[0].disc, 1);
+        EXPECT_EQ(tracklist[2].disc, 2);
+    }
+
+    TEST(CollectionDocumentTest, SavesTheDiscOnlyFromTheSecondOne)
+    {
+        const auto json = sampleDocument().toJson();
+        const auto& tracks = json["items"][0]["details"]["tracklist"];
+
+        EXPECT_FALSE(tracks[0].contains("disc"));
+        EXPECT_EQ(tracks[2]["disc"], 2);
+    }
+
+    TEST(CollectionDocumentTest, ReadsTracklistWithoutDiscsAsOneDisc)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["details"]["tracklist"][2].erase("disc");
+
+        const auto restored = CollectionDocument::fromJson(json);
+        const auto& tracklist = std::get<AlbumDetails>(restored.items().front().details).tracklist;
+        for (const auto& track : tracklist)
+            EXPECT_EQ(track.disc, 1);
+    }
+
     TEST(CollectionDocumentTest, RejectsInvalidTrackLength)
     {
         auto json = sampleDocument().toJson();

@@ -48,6 +48,18 @@ namespace
         EXPECT_EQ(info->height, MAX_IMAGE_DIMENSION / 2);
     }
 
+    TEST_F(ImageEncoderTest, PhotosKeepMoreDetailThanCovers)
+    {
+        ASSERT_TRUE(writePng(path("large.png"), 3000, 1500, false, OPAQUE_BLUE));
+
+        writeBytes(path("photo.jpg"), prepareImage(path("large.png"), MAX_PHOTO_DIMENSION));
+        const auto info = inspectImage(path("photo.jpg"));
+
+        ASSERT_TRUE(info.has_value());
+        EXPECT_EQ(info->width, MAX_PHOTO_DIMENSION);
+        EXPECT_EQ(info->height, MAX_PHOTO_DIMENSION / 2);
+    }
+
     TEST_F(ImageEncoderTest, SmallImageIsNotEnlarged)
     {
         ASSERT_TRUE(writePng(path("small.png"), 100, 50, false, OPAQUE_BLUE));
