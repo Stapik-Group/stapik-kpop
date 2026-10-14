@@ -1,17 +1,24 @@
 #include "DetailsForm.hpp"
 
 #include "kpop/ui/Translate.hpp"
+#include "kpop/ui/dialog/TracklistDialog.hpp"
 #include "kpop/ui/widget/EnumDropDown.hpp"
 #include "kpop/ui/widget/MultilineText.hpp"
 #include "kpop/ui/widget/PartialDateEntry.hpp"
 #include "kpop/ui/widget/QuickPickEntry.hpp"
-#include "kpop/ui/widget/TracklistEditor.hpp"
 
+#include <gtkmm/box.h>
+#include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/entry.h>
+#include <gtkmm/label.h>
+#include <gtkmm/window.h>
 
+#include <algorithm>
 #include <initializer_list>
 #include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace kpop::ui
 {
@@ -40,12 +47,32 @@ namespace kpop::ui
                 editable->signal_changed().connect(onChanged);
         }
 
+        constexpr int TRACKLIST_ROW_SPACING = 8;
+        constexpr auto SUMMARY_SEPARATOR = "  ·  ";
+
+        std::string tracklistSummary(const Tracklist& tracklist)
+        {
+            if (tracklist.empty())
+                return translate("kpop.tracklist.summary.empty");
+
+            auto text = translate("kpop.tracklist.summary", { { "count", std::to_string(tracklist.size()) } });
+
+            if (const auto total = totalLength(tracklist))
+                text += SUMMARY_SEPARATOR + translate("kpop.tracklist.total", { { "length", total->toText() } });
+
+            if (const auto gaps = std::ranges::count_if(tracklist, isPlaceholder); gaps > 0)
+                text += SUMMARY_SEPARATOR + translate("kpop.tracklist.summary.gaps", { { "count", std::to_string(gaps) } });
+
+            return text;
+        }
+
         class AlbumForm final : public DetailsForm
         {
         public:
             AlbumForm() :
                 m_typeDropDown(ALBUM_TYPES),
-                m_formatDropDown(ALBUM_FORMATS)
+                m_formatDropDown(ALBUM_FORMATS),
+                m_tracklistRow(Gtk::Orientation::HORIZONTAL, TRACKLIST_ROW_SPACING)
             {
                 addRow("kpop.field.albumType", m_typeDropDown);
                 addRow("kpop.field.albumFormat", m_formatDropDown);
@@ -56,10 +83,17 @@ namespace kpop::ui
                 addRow("kpop.field.region", m_regionEntry);
                 addRow("kpop.field.catalogNumber", m_catalogNumberEntry);
                 addRow("kpop.field.inclusions", m_inclusionsEntry);
-                addFullWidthRow("kpop.field.tracklist", m_tracklistEditor);
+
+                // The tracklist is edited in a window of its own; here only its summary and the button are shown.
+                m_tracklistSummary.set_hexpand(true);
+                m_tracklistSummary.set_xalign(0.0F);
+                m_tracklistRow.append(m_tracklistSummary);
+                m_tracklistRow.append(m_tracklistButton);
+                addRow("kpop.field.tracklist", m_tracklistRow);
+                m_tracklistButton.signal_clicked().connect([this] { onTracklistClicked(); });
+                refreshTracklistSummary();
 
                 const auto onChanged = [this] { notifyChanged(); };
-                m_tracklistEditor.signalChanged().connect(onChanged);
                 m_typeDropDown.property_selected().signal_changed().connect(onChanged);
                 m_formatDropDown.property_selected().signal_changed().connect(onChanged);
                 connectChanged({ &m_editionEntry, &m_variantEntry, &m_releaseDateEntry, &m_labelEntry, &m_regionEntry, &m_catalogNumberEntry, &m_inclusionsEntry }, onChanged);
@@ -77,7 +111,8 @@ namespace kpop::ui
                 m_regionEntry.set_text(region);
                 m_catalogNumberEntry.set_text(catalogNumber);
                 m_inclusionsEntry.set_text(inclusions);
-                m_tracklistEditor.setValue(tracklist);
+                m_tracklist = tracklist;
+                refreshTracklistSummary();
             }
 
             [[nodiscard]] ItemDetails details() const override
@@ -92,15 +127,36 @@ namespace kpop::ui
                     .region = trimmedText(m_regionEntry),
                     .catalogNumber = trimmedText(m_catalogNumberEntry),
                     .inclusions = trimmedText(m_inclusionsEntry),
-                    .tracklist = m_tracklistEditor.value() };
+                    .tracklist = m_tracklist };
             }
 
+            // The tracklist is checked by its own window, so only an accepted one ends up here.
             [[nodiscard]] bool isValid() const override
             {
-                return m_releaseDateEntry.isValid() && m_tracklistEditor.isValid();
+                return m_releaseDateEntry.isValid();
             }
 
         private:
+            void refreshTracklistSummary()
+            {
+                m_tracklistSummary.set_text(tracklistSummary(m_tracklist));
+                m_tracklistButton.set_label(translate(m_tracklist.empty() ? "kpop.tracklist.button.add" : "kpop.tracklist.button.edit"));
+            }
+
+            void onTracklistClicked()
+            {
+                auto* window = dynamic_cast<Gtk::Window*>(get_root());
+                if (window == nullptr)
+                    return;
+
+                showTracklistDialog(*window, m_tracklist, [this](Tracklist tracklist)
+                {
+                    m_tracklist = std::move(tracklist);
+                    refreshTracklistSummary();
+                    notifyChanged();
+                });
+            }
+
             EnumDropDown<AlbumType> m_typeDropDown;
             EnumDropDown<AlbumFormat> m_formatDropDown;
             Gtk::Entry m_editionEntry;
@@ -110,7 +166,10 @@ namespace kpop::ui
             Gtk::Entry m_regionEntry;
             Gtk::Entry m_catalogNumberEntry;
             Gtk::Entry m_inclusionsEntry;
-            TracklistEditor m_tracklistEditor;
+            Tracklist m_tracklist;
+            Gtk::Box m_tracklistRow;
+            Gtk::Label m_tracklistSummary;
+            Gtk::Button m_tracklistButton;
         };
 
         class PhotocardForm final : public DetailsForm

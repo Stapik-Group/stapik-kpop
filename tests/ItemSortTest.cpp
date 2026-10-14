@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,7 +20,7 @@ namespace
     };
 
     // The entries are given newest first, like the list of the application receives them.
-    std::vector<std::string> sortedTitles(const std::vector<Entry>& entries, const SortOrder order)
+    std::vector<std::string> sortedTitles(const std::vector<Entry>& entries, const SortOrder order, const std::string_view languageCode = "en")
     {
         std::vector<CollectionItem> items;
         std::vector<Artist> artists;
@@ -46,7 +47,7 @@ namespace
         for (std::size_t index = 0; index < entries.size(); ++index)
             sortable.push_back({ &items[index], entries[index].artistName ? &artists[index] : nullptr });
 
-        sortItems(sortable, order);
+        sortItems(sortable, order, languageCode);
 
         std::vector<std::string> titles;
         for (const auto& entry : sortable)
@@ -83,6 +84,29 @@ namespace
 
         EXPECT_EQ(sortedTitles(entries, SortOrder::ArtistAscending), (Titles{ "by aespa", "by Stray Kids", "by Twice", "no artist" }));
         EXPECT_EQ(sortedTitles(entries, SortOrder::ArtistDescending), (Titles{ "by Twice", "by Stray Kids", "by aespa", "no artist" }));
+    }
+
+    TEST(ItemSortTest, PolishLettersFollowThePolishAlphabet)
+    {
+        const std::vector<Entry> entries = { { "Zoo", {}, {} }, { "Żaba", {}, {} }, { "Mak", {}, {} }, { "Łaska", {}, {} }, { "Lot", {}, {} } };
+
+        EXPECT_EQ(sortedTitles(entries, SortOrder::TitleAscending, "pl"), (Titles{ "Lot", "Łaska", "Mak", "Zoo", "Żaba" }));
+        EXPECT_EQ(sortedTitles(entries, SortOrder::TitleDescending, "pl"), (Titles{ "Żaba", "Zoo", "Mak", "Łaska", "Lot" }));
+    }
+
+    TEST(ItemSortTest, OtherLanguagesTreatAccentedLettersLikeTheirBaseLetters)
+    {
+        const std::vector<Entry> entries = { { "Zoo", {}, {} }, { "Żaba", {}, {} }, { "Mak", {}, {} } };
+
+        EXPECT_EQ(sortedTitles(entries, SortOrder::TitleAscending, "en"), (Titles{ "Mak", "Żaba", "Zoo" }));
+    }
+
+    TEST(ItemSortTest, HangulTitlesFollowTheKoreanOrder)
+    {
+        const std::vector<Entry> entries = { { "다이너마이트", {}, {} }, { "가을", {}, {} }, { "나비", {}, {} } };
+
+        EXPECT_EQ(sortedTitles(entries, SortOrder::TitleAscending, "pl"), (Titles{ "가을", "나비", "다이너마이트" }));
+        EXPECT_EQ(sortedTitles(entries, SortOrder::TitleAscending, "en"), (Titles{ "가을", "나비", "다이너마이트" }));
     }
 
     TEST(ItemSortTest, ReleaseDatesAreSortedAndItemsWithoutDateComeLast)
@@ -126,7 +150,7 @@ namespace
         items[2].details = album;
 
         std::vector<SortableItem> sortable = { { &items[0], nullptr }, { &items[1], nullptr }, { &items[2], nullptr } };
-        sortItems(sortable, SortOrder::ReleaseDateOldest);
+        sortItems(sortable, SortOrder::ReleaseDateOldest, "en");
 
         ASSERT_EQ(sortable.size(), 3U);
         EXPECT_EQ(sortable[0].item->title, "clip");

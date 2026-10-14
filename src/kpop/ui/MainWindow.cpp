@@ -10,15 +10,30 @@
 #include "kpop/ui/dialog/ArtistsDialog.hpp"
 #include "kpop/ui/dialog/ItemDialog.hpp"
 
+#include "stapik/app/AppContext.hpp"
+#include "stapik/app/version.hpp"
+#include "stapik/storage/AppPaths.hpp"
 #include "stapik/storage/PathText.hpp"
 #include "stapik/domain/MoneyFormatter.hpp"
+#include "stapik/theme/FontManager.hpp"
+#include "stapik/theme/ThemeManager.hpp"
+#include "stapik/locale/DateFormatter.hpp"
 #include "stapik/ui/dialog/ConfirmDialog.hpp"
 #include "stapik/ui/dialog/ConnectDialog.hpp"
 #include "stapik/ui/dialog/DialogUtils.hpp"
+#include "stapik/ui/dialog/FileDialogs.hpp"
+#include "stapik/ui/dialog/RestoreBackupDialog.hpp"
+#include "stapik/update/UpdateChecker.hpp"
 
+#include <giomm/asyncresult.h>
 #include <giomm/menu.h>
+#include <glibmm/error.h>
+#include <gtkmm/alertdialog.h>
 
 #include <algorithm>
+#include <chrono>
+#include <ctime>
+#include <string>
 
 namespace kpop::ui
 {
@@ -30,6 +45,48 @@ namespace kpop::ui
         constexpr int TOP_BAR_SPACING = 8;
         constexpr int TOP_BAR_MARGIN = 8;
         constexpr auto ADD_ITEM_ACTION = "win.addItem";
+        constexpr auto VIEW_MODE_LIST = "list";
+        constexpr auto VIEW_MODE_SHELF = "shelf";
+        constexpr auto VIEW_MODE_GRID = "grid";
+        constexpr auto TUTORIAL_DIRECTORY = "tutorial";
+        constexpr auto ARCHIVE_DIRECTORY_KEY = "archive.lastDirectory";
+        constexpr auto ARCHIVE_EXTENSION = ".zip";
+
+        std::string defaultArchiveName()
+        {
+            const auto now = std::time(nullptr);
+            std::tm local{};
+#ifdef _WIN32
+            localtime_s(&local, &now);
+#else
+            localtime_r(&now, &local);
+#endif
+
+            char date[16] = {};
+            std::strftime(date, sizeof(date), "%Y-%m-%d", &local);
+            return std::string{ stapik::app::build::NAME } + "-" + date + ARCHIVE_EXTENSION;
+        }
+
+        std::string archiveErrorText(const stapik::archive::ArchiveError& error)
+        {
+            using stapik::archive::ArchiveErrorKind;
+
+            switch (error.kind)
+            {
+                case ArchiveErrorKind::NotAnArchive:
+                    return translate("kpop.archive.error.notAnArchive");
+                case ArchiveErrorKind::Corrupted:
+                    return translate("kpop.archive.error.corrupted");
+                case ArchiveErrorKind::Unsupported:
+                    return translate("kpop.archive.error.unsupported");
+                case ArchiveErrorKind::WrongApplication:
+                    return translate("kpop.archive.error.wrongApplication");
+                case ArchiveErrorKind::Io:
+                case ArchiveErrorKind::Cloud:
+                default:
+                    return translate("kpop.archive.error.io", { { "reason", error.message() } });
+            }
+        }
     }
 
     StandardMenuOptions MainWindow::menuOptions(const stapik::theme::ThemeRegistry& themes, stapik::command::UndoStack& undoStack)
@@ -37,20 +94,21 @@ namespace kpop::ui
         StandardMenuOptions options;
         options.themes = &themes;
         options.undoStack = &undoStack;
+        options.tutorialDirectory = AppPaths::resourcesDir() / TUTORIAL_DIRECTORY;
         return options;
     }
 
     MainWindow::MainWindow(app::CollectionController& controller, app::ImageSync& imageSync, const stapik::theme::ThemeRegistry& themes) :
         m_controller(controller),
+        m_checkForUpdates(stapik::app::AppContext::instance().settings(), stapik::update::CHECK_ENABLED_SETTING, true),
         m_menu(*this, menuOptions(themes, controller.undoStack())),
         m_rootBox(Gtk::Orientation::VERTICAL),
         m_topBar(Gtk::Orientation::HORIZONTAL, TOP_BAR_SPACING),
         m_rightBox(Gtk::Orientation::VERTICAL),
         m_footer(Gtk::Orientation::HORIZONTAL, FOOTER_SPACING),
-        m_paned(Gtk::Orientation::HORIZONTAL),
-        m_viewSwitch(Gtk::Orientation::HORIZONTAL)
+        m_paned(Gtk::Orientation::HORIZONTAL)
     {
-        set_title(STAPIK_APP_DISPLAY_NAME);
+        set_title(std::string{ stapik::app::build::DISPLAY_NAME });
         set_default_size(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
         initActions();
@@ -72,6 +130,7 @@ namespace kpop::ui
         m_syncConnection.disconnect();
         m_localeConnection.disconnect();
         m_saveFailedConnection.disconnect();
+        m_apiKeyConnection.disconnect();
     }
 
     void MainWindow::showStartupProblems()
@@ -88,7 +147,7 @@ namespace kpop::ui
                 return;
 
             case Corrupted:
-                showMessageDialog(*this, translate("kpop.startup.corrupted.header"), translate("kpop.startup.corrupted.text", { { "path", path } }), Gtk::MessageType::WARNING);
+                showMessageDialog(*this, translate("kpop.startup.corrupted.header"), translate("kpop.startup.corrupted.text", { { "path", path } }));
                 return;
 
             case NewerVersion:
@@ -98,15 +157,26 @@ namespace kpop::ui
 
                 set_sensitive(false);
 
-                auto* dialog = showAutoDeletingDialog<Gtk::MessageDialog>(
-                    *this,
-                    translate(isNewer ? "kpop.startup.newerVersion.header" : "kpop.startup.migrationFailed.header"),
-                    false,
-                    Gtk::MessageType::ERROR,
-                    Gtk::ButtonsType::CLOSE,
-                    true);
-                dialog->set_secondary_text(translate(isNewer ? "kpop.startup.newerVersion.text" : "kpop.startup.migrationFailed.text", { { "path", path } }));
-                dialog->signal_hide().connect([this] { close(); });
+                // The collection cannot be used, so closing the message closes the window too.
+                const auto dialog = Gtk::AlertDialog::create(translate(isNewer ? "kpop.startup.newerVersion.header" : "kpop.startup.migrationFailed.header"));
+                dialog->set_detail(translate(isNewer ? "kpop.startup.newerVersion.text" : "kpop.startup.migrationFailed.text", { { "path", path } }));
+                dialog->set_modal(true);
+                dialog->set_buttons({ translate("dialog.button.ok") });
+                dialog->set_default_button(0);
+                dialog->set_cancel_button(0);
+                dialog->choose(*this, [this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result)
+                {
+                    try
+                    {
+                        dialog->choose_finish(result);
+                    }
+                    catch (const Glib::Error&)
+                    {
+                        // Dismissing the message any other way ends up the same.
+                    }
+
+                    close();
+                });
             }
         }
     }
@@ -117,11 +187,33 @@ namespace kpop::ui
         add_action("manageArtists", [this] { onManageArtistsRequested(); });
         add_action("connect", [this] { onConnectRequested(); });
         add_action("sync", [this] { onSyncRequested(); });
-        add_action("quit", [this] { close(); });
+        add_action("restoreBackup", [this] { onRestoreBackupRequested(); });
+        add_action("exportArchive", [this] { onExportArchiveRequested(); });
+        add_action("importArchive", [this] { onImportArchiveRequested(); });
+
+        // A radio action: the menu marks the view that is shown now.
+        m_viewModeAction = add_action_radio_string("viewMode", [this](const Glib::ustring& mode) { onViewModeRequested(mode); }, VIEW_MODE_LIST);
     }
 
     void MainWindow::initMenu()
     {
+        m_menu.settings().addBool("kpop.settings.checkForUpdates", m_checkForUpdates);
+
+        m_menu.addToMenu(StandardMenu::Target::File, [](Gio::Menu& menu)
+        {
+            menu.append(translate("menu.file.restoreBackup"), "win.restoreBackup");
+            menu.append(translate("menu.file.exportArchive"), "win.exportArchive");
+            menu.append(translate("menu.file.importArchive"), "win.importArchive");
+        });
+
+        // Added first, so it stands before Collection: File, Edit, View, Collection, Settings, Help.
+        m_menu.addMenu("kpop.menu.view", [](Gio::Menu& menu)
+        {
+            menu.append(translate("kpop.view.list"), std::string("win.viewMode::") + VIEW_MODE_LIST);
+            menu.append(translate("kpop.view.shelf"), std::string("win.viewMode::") + VIEW_MODE_SHELF);
+            menu.append(translate("kpop.view.grid"), std::string("win.viewMode::") + VIEW_MODE_GRID);
+        });
+
         m_menu.addMenu("kpop.menu.collection", [](Gio::Menu& menu)
         {
             menu.append(translate("kpop.menu.addItem"), ADD_ITEM_ACTION);
@@ -134,20 +226,14 @@ namespace kpop::ui
         m_addButton.set_label(translate("kpop.button.addEntry"));
         m_filterBar.set_hexpand(true);
 
-        m_shelfViewButton.set_group(m_listViewButton);
-        m_listViewButton.set_active(true);
-        m_viewSwitch.add_css_class("linked");
-        m_viewSwitch.append(m_listViewButton);
-        m_viewSwitch.append(m_shelfViewButton);
-
         m_viewStack.set_vexpand(true);
         m_viewStack.add(m_listView);
         m_viewStack.add(m_shelfView);
+        m_viewStack.add(m_gridView);
         m_viewStack.set_visible_child(m_listView);
 
         m_topBar.set_margin(TOP_BAR_MARGIN);
         m_topBar.append(m_filterBar);
-        m_topBar.append(m_viewSwitch);
         m_topBar.append(m_addButton);
 
         m_sidebar.set_size_request(SIDEBAR_WIDTH, -1);
@@ -193,17 +279,19 @@ namespace kpop::ui
             refreshList();
         });
 
-        m_shelfViewButton.signal_toggled().connect([this] { refreshViewMode(); });
+        for (auto* signals : { &m_listView.signalAddRequested(), &m_shelfView.signalAddRequested(), &m_gridView.signalAddRequested() })
+            signals->connect([this] { onAddRequested(); });
 
-        m_listView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
-        m_listView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
-        m_shelfView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
-        m_shelfView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
+        for (auto* signals : { &m_listView.signalEditRequested(), &m_shelfView.signalEditRequested(), &m_gridView.signalEditRequested() })
+            signals->connect([this](const std::string& itemId) { onEditRequested(itemId); });
 
-        for (auto* signals : { &m_listView.signalDuplicateRequested(), &m_shelfView.signalDuplicateRequested() })
+        for (auto* signals : { &m_listView.signalDeleteRequested(), &m_shelfView.signalDeleteRequested(), &m_gridView.signalDeleteRequested() })
+            signals->connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
+
+        for (auto* signals : { &m_listView.signalDuplicateRequested(), &m_shelfView.signalDuplicateRequested(), &m_gridView.signalDuplicateRequested() })
             signals->connect([this](const std::string& itemId) { onDuplicateRequested(itemId); });
 
-        for (auto* signals : { &m_listView.signalDuplicateAndEditRequested(), &m_shelfView.signalDuplicateAndEditRequested() })
+        for (auto* signals : { &m_listView.signalDuplicateAndEditRequested(), &m_shelfView.signalDuplicateAndEditRequested(), &m_gridView.signalDuplicateAndEditRequested() })
             signals->connect([this](const std::string& itemId) { onDuplicateAndEditRequested(itemId); });
 
         m_paginationBar.signalPreviousRequested().connect([this]
@@ -228,13 +316,17 @@ namespace kpop::ui
             refreshLanguage();
             refreshAll();
         });
-        m_saveFailedConnection = m_controller.signalSaveFailed().connect([this]
+        m_apiKeyConnection = m_controller.signalApiKeyExpiring().connect([this](const std::chrono::system_clock::time_point expiresAt)
+        {
+            const auto date = stapik::locale::formatDate(stapik::locale::toLocalTime(expiresAt), LocaleManager::instance().languageCode());
+            showMessageDialog(*this, translate("kpop.cloud.apiKeyExpiring.header"), translate("cloud.apiKeyExpiring", { { "date", date } }));
+        });
+        m_saveFailedConnection = m_controller.signalSaveFailed().connect([this](const std::string& reason)
         {
             showMessageDialog(
                 *this,
                 translate("kpop.error.saveFailed.header"),
-                translate("kpop.error.saveFailed.text", { { "path", stapik::storage::pathText(m_controller.documentPath()) } }),
-                Gtk::MessageType::ERROR);
+                translate("kpop.error.saveFailed.text", { { "path", stapik::storage::pathText(m_controller.documentPath()) }, { "reason", reason } }));
         });
 
         signal_close_request().connect([this]
@@ -256,10 +348,6 @@ namespace kpop::ui
         m_addButton.set_label(translate("kpop.button.addEntry"));
         m_sidebar.refreshLabels();
         m_filterBar.refreshLabels();
-        m_listViewButton.set_label(translate("kpop.view.list"));
-        m_shelfViewButton.set_label(translate("kpop.view.shelf"));
-        m_listView.refreshPlaceholder();
-        m_shelfView.refreshPlaceholder();
         m_paginationBar.refreshLabels();
     }
 
@@ -277,7 +365,7 @@ namespace kpop::ui
                 matchingItems.push_back({ .item = &*item, .artist = artist });
         }
 
-        domain::sortItems(matchingItems, m_filterBar.sortOrder());
+        domain::sortItems(matchingItems, m_filterBar.sortOrder(), LocaleManager::instance().languageCode());
 
         const auto pageCount = std::max<std::size_t>(1, (matchingItems.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         m_currentPage = std::clamp<std::size_t>(m_currentPage, 1, pageCount);
@@ -307,23 +395,64 @@ namespace kpop::ui
             pageRows.push_back(std::move(row));
         }
 
-        if (isShelfViewActive())
-            m_shelfView.setRows(pageRows);
-        else
-            m_listView.setRows(pageRows);
+        const auto emptyKind = document.items().empty() ? EmptyListKind::NoEntries : EmptyListKind::NoMatches;
+
+        // Only the view that is shown is filled; the others are refilled when they are switched to.
+        switch (m_viewMode)
+        {
+            case ViewMode::Shelf:
+                m_shelfView.setEmptyKind(emptyKind);
+                m_shelfView.setRows(pageRows);
+                break;
+
+            case ViewMode::Grid:
+                m_gridView.setEmptyKind(emptyKind);
+                m_gridView.setRows(pageRows);
+                break;
+
+            case ViewMode::List:
+            default:
+                m_listView.setEmptyKind(emptyKind);
+                m_listView.setRows(pageRows);
+                break;
+        }
 
         m_paginationBar.setPage(m_currentPage, pageCount);
     }
 
     void MainWindow::refreshViewMode()
     {
-        m_viewStack.set_visible_child(isShelfViewActive() ? static_cast<Widget&>(m_shelfView) : m_listView);
+        m_viewStack.set_visible_child(activeView());
         refreshList();
     }
 
-    bool MainWindow::isShelfViewActive() const
+    Gtk::Widget& MainWindow::activeView()
     {
-        return m_shelfViewButton.get_active();
+        switch (m_viewMode)
+        {
+            case ViewMode::Shelf:
+                return m_shelfView;
+            case ViewMode::Grid:
+                return m_gridView;
+            case ViewMode::List:
+            default:
+                return m_listView;
+        }
+    }
+
+    void MainWindow::onViewModeRequested(const Glib::ustring& mode)
+    {
+        if (mode == VIEW_MODE_SHELF)
+            m_viewMode = ViewMode::Shelf;
+        else if (mode == VIEW_MODE_GRID)
+            m_viewMode = ViewMode::Grid;
+        else
+            m_viewMode = ViewMode::List;
+
+        // Without this the menu would keep marking the previous view.
+        m_viewModeAction->change_state(mode);
+
+        refreshViewMode();
     }
 
     void MainWindow::refreshStatistics()
@@ -410,12 +539,12 @@ namespace kpop::ui
         {
             if (!m_controller.connectCloud(config))
             {
-                showMessageDialog(*this, translate("cloud.failed.header"), "", Gtk::MessageType::ERROR);
+                showMessageDialog(*this, translate("cloud.failed.header"), "");
                 return;
             }
 
             m_syncIndicator.set_visible(true);
-            showMessageDialog(*this, translate("cloud.connected"), translate("cloud.connected.secondary"), Gtk::MessageType::INFO);
+            showMessageDialog(*this, translate("cloud.connected"), translate("cloud.connected.secondary"));
         });
     }
 
@@ -428,6 +557,125 @@ namespace kpop::ui
         }
 
         m_controller.syncNow();
+    }
+
+    void MainWindow::onRestoreBackupRequested()
+    {
+        showRestoreBackupDialog(*this, m_controller.listBackups(), [this](const stapik::document::BackupInfo& backup)
+        {
+            if (m_controller.restoreBackup(backup) == stapik::document::LoadStatus::Loaded)
+                return;
+
+            showMessageDialog(
+                *this,
+                translate("kpop.restore.failed.header"),
+                translate("kpop.restore.failed.text", { { "path", stapik::storage::pathText(backup.path) } }));
+        });
+    }
+
+    app::ArchiveOptions MainWindow::archiveOptions() const
+    {
+        return app::ArchiveOptions{
+            .appName = std::string{ stapik::app::build::NAME },
+            .appVersion = std::string{ stapik::app::build::VERSION },
+            .settings = &stapik::app::AppContext::instance().settings() };
+    }
+
+    void MainWindow::onExportArchiveRequested()
+    {
+        const FileDialogOptions options{
+            .title = translate("kpop.archive.export.title"),
+            .initialName = defaultArchiveName(),
+            .lastDirectoryKey = ARCHIVE_DIRECTORY_KEY };
+
+        showSaveFileDialog(*this, options, [this](const std::filesystem::path& chosen)
+        {
+            auto target = chosen;
+            if (target.extension().empty())
+                target += ARCHIVE_EXTENSION;
+
+            exportArchive(target);
+        }, [this](const std::string& reason)
+        {
+            showMessageDialog(*this, translate("kpop.archive.export.failed.header"), translate("kpop.archive.error.io", { { "reason", reason } }));
+        });
+    }
+
+    void MainWindow::exportArchive(const std::filesystem::path& target)
+    {
+        // The window waits for the copy, so nothing is edited while it is made.
+        set_sensitive(false);
+
+        m_archiveRunner.submit(m_controller.prepareArchiveExport(target, archiveOptions()), [this, target](auto outcome)
+        {
+            set_sensitive(true);
+
+            // The runner hands over an optional, which is always filled once the work has run.
+            if (!outcome)
+                return;
+
+            const auto& result = *outcome;
+            if (!result)
+            {
+                showMessageDialog(*this, translate("kpop.archive.export.failed.header"), archiveErrorText(result.error()));
+                return;
+            }
+
+            showMessageDialog(
+                *this,
+                translate("kpop.archive.export.done.header"),
+                translate("kpop.archive.export.done.text", {
+                    { "path", stapik::storage::pathText(target) },
+                    { "images", std::to_string(result->assetCount) } }));
+        });
+    }
+
+    void MainWindow::onImportArchiveRequested()
+    {
+        const FileDialogOptions options{
+            .title = translate("kpop.archive.import.title"),
+            .initialName = {},
+            .lastDirectoryKey = ARCHIVE_DIRECTORY_KEY };
+
+        showOpenFileDialog(*this, options, [this](const std::filesystem::path& source)
+        {
+            showConfirmDialog(*this, ConfirmDialogOptions{
+                .title = translate("dialog.archive.import.title"),
+                .message = translate("kpop.archive.import.message"),
+                .confirmLabel = translate("dialog.archive.import.button"),
+                .destructive = true }, [this, source] { importArchive(source); });
+        }, [this](const std::string& reason)
+        {
+            showMessageDialog(*this, translate("kpop.archive.import.failed.header"), translate("kpop.archive.error.io", { { "reason", reason } }));
+        });
+    }
+
+    void MainWindow::importArchive(const std::filesystem::path& source)
+    {
+        const auto result = m_controller.importArchive(source, archiveOptions());
+        if (!result)
+        {
+            showMessageDialog(*this, translate("kpop.archive.import.failed.header"), archiveErrorText(result.error()));
+            return;
+        }
+
+        reloadSettings();
+
+        auto text = translate("kpop.archive.import.done.text", {
+            { "images", std::to_string(result->assetsUploaded + result->assetsUnchanged) } });
+        if (!result->settingsRestored)
+            text += "\n\n" + translate("kpop.archive.import.settingsSkipped");
+
+        showMessageDialog(*this, translate("kpop.archive.import.done.header"), text);
+    }
+
+    // The settings in memory do not notice that the file was replaced, and these are the ones that are shown.
+    void MainWindow::reloadSettings()
+    {
+        LocaleManager::instance().languageSetting().reload();
+        ThemeManager::instance().themeSetting().reload();
+        FontManager::instance().fontSetting().reload();
+        m_checkForUpdates.reload();
     }
 
     void MainWindow::onManageArtistsRequested()

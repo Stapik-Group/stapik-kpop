@@ -1,5 +1,7 @@
 #pragma once
 
+#include "EmptyListKind.hpp"
+
 #include "kpop/ui/ItemPresenter.hpp"
 #include "kpop/ui/widget/ItemContextMenu.hpp"
 
@@ -21,7 +23,9 @@ namespace kpop::ui
         ItemShelfView();
 
         void setRows(const std::vector<ItemRow>& rows);
-        void refreshPlaceholder();
+        void setEmptyKind(EmptyListKind kind);
+
+        sigc::signal<void()>& signalAddRequested();
 
         sigc::signal<void(const std::string&)>& signalEditRequested();
         sigc::signal<void(const std::string&)>& signalDeleteRequested();
@@ -33,7 +37,7 @@ namespace kpop::ui
         void appendRow(const ItemRow& row);
 
         Gtk::Box m_content;
-        Gtk::Label m_placeholderLabel;
+        ::EmptyState m_emptyState;
         Gtk::FlowBox m_flowBox;
         std::vector<std::string> m_rowIds;
         sigc::signal<void(const std::string&)> m_signalEditRequested;

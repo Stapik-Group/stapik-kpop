@@ -30,7 +30,7 @@ namespace kpop::ui
 
     private:
         void onAddClicked();
-        void onFileChosen(const std::filesystem::path& file);
+        void onFilesChosen(const std::vector<std::filesystem::path>& files);
         void onRemoveRequested(std::size_t index);
         void rebuild();
         void showImportError(const std::string& reason);

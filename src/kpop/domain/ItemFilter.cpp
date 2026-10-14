@@ -1,6 +1,6 @@
 #include "ItemFilter.hpp"
 
-#include <glibmm/ustring.h>
+#include "stapik/text/TextFolding.hpp"
 
 #include <initializer_list>
 #include <sstream>
@@ -27,11 +27,6 @@ namespace kpop::domain
                 target.append(field);
                 target.push_back('\n');
             }
-        }
-
-        std::string casefolded(const std::string& text)
-        {
-            return Glib::ustring(text).casefold().raw();
         }
 
         std::string searchableText(const CollectionItem& item, const Artist* artist)
@@ -75,7 +70,7 @@ namespace kpop::domain
                 }
             }, item.details);
 
-            return casefolded(text);
+            return stapik::text::foldForSearch(text);
         }
     }
 
@@ -90,7 +85,7 @@ namespace kpop::domain
         if (filter.artistId && item.artistId != *filter.artistId)
             return false;
 
-        std::istringstream terms(casefolded(filter.text));
+        std::istringstream terms(stapik::text::foldForSearch(filter.text));
         std::string term;
         std::string haystack;
         bool haystackBuilt = false;

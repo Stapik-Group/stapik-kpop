@@ -6,9 +6,12 @@
 #include "kpop/image/ImageEncoder.hpp"
 #include "kpop/ui/Translate.hpp"
 
+#include "stapik/ui/dialog/FileDrop.hpp"
+
 #include <gtkmm/window.h>
 
 #include <stdexcept>
+#include <vector>
 
 namespace kpop::ui
 {
@@ -48,6 +51,11 @@ namespace kpop::ui
 
         m_chooseButton.signal_clicked().connect([this] { onChooseClicked(); });
         m_removeButton.signal_clicked().connect([this] { onRemoveClicked(); });
+
+        stapik::ui::acceptFileDrop(
+            *this,
+            [this](const std::vector<std::filesystem::path>& files) { onFileChosen(files.front()); },
+            { .extensions = imageFileExtensions(), .allowMultiple = false });
 
         refresh();
     }

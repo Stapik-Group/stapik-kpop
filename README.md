@@ -5,24 +5,36 @@ Retro-styled desktop manager of a K-pop collection, written in C++20 with GTK4 (
 
 ## What can be collected
 
-| Kind | Details |
-| --- | --- |
-| Albums | type, format (CD, vinyl, cassette, digital, platform album, kit), edition, variant, release date, label, region, catalog number, inclusions, tracklist (title, writers, length, title track) |
-| Photocards | member, origin (album, pre-order, lucky draw, fansign, event), source, available for trade |
-| Merchandise | lightsticks, apparel, photobooks, season's greetings, posters, keyrings, stationery |
-| Clips | type, platform, link, release date, album, watched |
-| Lyrics | original text, romanization, translation (searchable) |
-| Events | concert, fansign, fan meeting, listening party, pop-up store, venue, city, seat |
+| Kind        | Details                                                                                                                                                                                      |
+|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Albums      | type, format (CD, vinyl, cassette, digital, platform album, kit), edition, variant, release date, label, region, catalog number, inclusions, tracklist (title, writers, length, title track) |
+| Photocards  | member, origin (album, pre-order, lucky draw, fansign, event), source, available for trade                                                                                                   |
+| Merchandise | lightsticks, apparel, photobooks, season's greetings, posters, keyrings, stationery                                                                                                          |
+| Clips       | type, platform, link, release date, album, watched                                                                                                                                           |
+| Lyrics      | original text, romanization, translation (searchable)                                                                                                                                        |
+| Events      | concert, fansign, fan meeting, listening party, pop-up store, venue, city, seat                                                                                                              |
 
 Every entry also has an artist, a status (owned, ordered, wishlist, sold), a condition, a number of copies,
 a price in any currency, an acquisition date and place, and notes. Dates may be partial (`2021`, `2021-08`, `2021-08-23`).
 
-Features coming from stapik-common: undo/redo of every edit, three themes, Polish/English/German, atomic saving,
-and optional synchronisation with your own Stapik Cloud.
+Features coming from stapik-common: undo/redo of every edit, themes, Polish/English/German, atomic saving, restoring
+from backups and optional synchronisation with your own Stapik Cloud. The program looks for a newer release on GitHub
+once a day and offers to open its download page; nothing is downloaded or installed, and the check can be switched off
+in *Settings → Settings…* (or with `update.checkEnabled` in the settings file).
+
+*File → Back up the whole application…* writes one ZIP file with the collection, the settings and all covers and photos,
+and *Restore the whole application…* reads it back (after asking, and the collection from before stays as the newest
+backup copy). The cloud connection is not in the file. *Help → Tutorial* (F1) is the manual of the program, in the three
+languages (`resources/tutorial`).
+
+Command line: `--version`, `--log-level=LEVEL`, `--data-dir=DIR`, `--portable` (data in the `portable` folder next to the
+program), `--reset-settings`, `--safe-mode` (no window state, clean-up or synchronisation on start) and `--self-test`.
 
 ## Building
 
-Requirements: a C++20 compiler, CMake 4.2+, gtkmm-4.0, libcurl, Ninja (optional).
+Requirements: a C++20 compiler, CMake 4.2+, gtkmm-4.0, libcurl, libsodium, zlib, Ninja (optional). On Linux,
+libsecret (keyring for the cloud key) and libx11 are used when present. On Ubuntu/Debian:
+`libgtkmm-4.0-dev libcurl4-openssl-dev libsodium-dev zlib1g-dev libsecret-1-dev libx11-dev`.
 
 ```sh
 cmake -S . -B build -G Ninja -DSTAPIK_KPOP_BUILD_TESTS=ON
@@ -40,21 +52,21 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_STAPIKCOMMON=../stapik-common
 ## Windows
 
 The Windows build is a folder with the program and everything it needs (GTK, its data, the application resources),
-distributed as a zip. There is no installer.
+distributed as an Inno Setup installer and as a portable zip.
 
-* **From CI:** the *Package* workflow builds the zip on every push and pull request, runs the program once on the
-  unpacked zip with only the Windows directories in `PATH` (`stapikkpop.exe --self-test`), and uploads it as an
-  artifact. Run it by hand (Actions > Package > Run workflow) to get a build of any branch for testers; a `v*` tag
-  publishes the zip, together with the Ubuntu package (see below), as one GitHub release.
-* **Locally**, in an MSYS2 UCRT64 shell (packages: `gcc cmake ninja pkgconf gtkmm-4.0 curl adwaita-icon-theme
-  hicolor-icon-theme librsvg`, prefixed `mingw-w64-ucrt-x86_64-`):
+* **From CI:** a pull request from `develop` to `main`/`master` builds and tests the program on Linux and Windows using
+  the reusable workflows of stapik-common (`.github/workflows/pull-request.yml`). Publishing a GitHub release runs
+  `release.yml`, which attaches the installer, the portable zip and a `.deb` for every supported image to that release
+  (the Windows files are signed when the repository has the `WINDOWS_SIGN_PFX_*` secrets).
+* **Locally**, in an MSYS2 UCRT64 shell (packages: `gcc cmake ninja pkgconf gtkmm-4.0 curl libsodium zlib
+  adwaita-icon-theme hicolor-icon-theme librsvg`, prefixed `mingw-w64-ucrt-x86_64-`):
 
   ```sh
   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-  cmake --build build --target stapikkpop_windows_bundle
+  cmake --build build --target stapikkpop_windows_portable
   ```
 
-  The folder is `build/stapikkpop-windows/`. Add `-DSTAPIK_WINDOWS_CONSOLE=ON` to keep a console window.
+  The folder is `build/stapikkpop-windows/` and the zip is next to it. Add `-DSTAPIK_WINDOWS_CONSOLE=ON` to keep a console window.
 
 Data lives in `%APPDATA%\stapikkpop\data\collection.json`, settings in `%APPDATA%\stapikkpop\config` and the log
 (stderr of the GUI program) in `%LOCALAPPDATA%\stapikkpop\cache\stapik.log`. The program draws with the Cairo
@@ -68,12 +80,10 @@ To change the stapik-common version: `-DSTAPIK_COMMON_GIT_TAG=<tag, branch or co
 
 ## Linux package
 
-The *Package* workflow also builds `stapikkpop_<version>_amd64.deb` (CPack, installed under `/opt/stapikkpop` with a
-launcher in `/usr/bin`, a `.desktop` entry and the icon) and, before uploading it, unpacks it and starts the program from
-it (`--self-test` under Xvfb, with a timeout). It needs Ubuntu 24.04 or newer (or Debian 13): the dependencies are
-those of the build machine (`libgtkmm-4.0-0`, `libstdc++6 >= 13`, `t64` library names).
-Install with `sudo apt install ./stapikkpop_<version>_amd64.deb`. Locally: `cmake --build build` and then
-`cd build && cpack -G DEB -D CPACK_DEBIAN_FILE_NAME=DEB-DEFAULT`.
+The release workflow builds `stapikkpop-<version>-Linux-<image>.deb` for `ubuntu:24.04` and `debian:13` (CPack,
+installed under `/opt/stapikkpop` with a launcher in `/usr/bin`, a `.desktop` entry, the AppStream metainfo and the icon).
+It needs Ubuntu 24.04 or newer (or Debian 13). Install with `sudo apt install ./<file>.deb`. Locally:
+`cmake --build build` and then `cd build && cpack -G DEB -D CPACK_DEBIAN_FILE_NAME=DEB-DEFAULT`.
 
 ## Layout
 

@@ -95,6 +95,52 @@ namespace
         EXPECT_FALSE(totalLength(tracklist).has_value());
     }
 
+    TEST(TracklistTest, AnEmptyTrackIsAPlaceholder)
+    {
+        EXPECT_TRUE(isPlaceholder(Track{}));
+        EXPECT_FALSE(isPlaceholder(trackOnDisc("A", 1)));
+        Track withLength;
+        withLength.length = TrackLength::fromSeconds(65);
+        EXPECT_FALSE(isPlaceholder(withLength));
+
+        Track titleTrack;
+        titleTrack.titleTrack = true;
+        EXPECT_FALSE(isPlaceholder(titleTrack));
+
+        // A bonus mark alone is enough to count as filled in.
+        Track bonus;
+        bonus.bonus = true;
+        EXPECT_FALSE(isPlaceholder(bonus));
+    }
+
+    TEST(TracklistTest, TotalLengthSkipsPlaceholders)
+    {
+        const Tracklist tracklist = {
+            { .title = "A", .writers = "", .length = TrackLength::fromSeconds(60), .titleTrack = false, .disc = 1 },
+            Track{},
+            { .title = "C", .writers = "", .length = TrackLength::fromSeconds(100), .titleTrack = false, .disc = 1 } };
+
+        ASSERT_TRUE(totalLength(tracklist).has_value());
+        EXPECT_EQ(totalLength(tracklist)->seconds(), 160);
+        EXPECT_EQ(totalLength(tracklist, 1)->seconds(), 160);
+    }
+
+    TEST(TracklistTest, TotalLengthIsUnknownWhenOnlyPlaceholdersAreThere)
+    {
+        const Tracklist tracklist = { Track{}, Track{} };
+
+        EXPECT_FALSE(totalLength(tracklist).has_value());
+    }
+
+    TEST(TracklistTest, NormalizingKeepsThePlaceholdersInTheirPlaces)
+    {
+        Tracklist tracklist = { trackOnDisc("A", 1), Track{}, trackOnDisc("C", 1), Track{} };
+        const auto expected = tracklist;
+
+        normalizeDiscs(tracklist);
+        EXPECT_EQ(tracklist, expected);
+    }
+
     TEST(TracklistTest, DiscCountIsTheLastDisc)
     {
         EXPECT_EQ(discCount({}), 0);

@@ -4,6 +4,7 @@
 #include "kpop/ui/widget/ImageTexture.hpp"
 
 #include <gdk/gdk.h>
+#include <gtkmm/box.h>
 #include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/overlay.h>
@@ -13,7 +14,6 @@ namespace kpop::ui
 {
     namespace
     {
-        constexpr int PLACEHOLDER_MARGIN = 24;
         constexpr int COVER_SIZE = 110;
         constexpr int COVER_MARGIN_TOP = 8;
         constexpr int COVER_MARGIN_SIDE = 8;
@@ -27,19 +27,35 @@ namespace kpop::ui
         {
             if (!row.imagePath.empty())
             {
+                // The texture is never larger than COVER_SIZE, so its natural size cannot grow the slot.
                 if (const Glib::RefPtr<Gdk::Texture> texture = loadTexture(row.imagePath, COVER_SIZE))
                 {
-                    auto* cover = Gtk::make_managed<Gtk::Picture>();
-                    cover->set_size_request(COVER_SIZE, COVER_SIZE);
-                    cover->set_content_fit(Gtk::ContentFit::CONTAIN);
-                    cover->set_paintable(texture);
-                    cover->add_css_class("kpop-shelf-cover");
-                    return cover;
+                    // Fixed-size slot: every cover occupies exactly COVER_SIZE x COVER_SIZE.
+                    // The picture inside is scaled (up or down) to fit it, keeping the aspect ratio.
+                    auto* slot = Gtk::make_managed<Gtk::Box>();
+                    slot->set_size_request(COVER_SIZE, COVER_SIZE);
+                    slot->set_halign(Gtk::Align::CENTER);
+                    slot->set_valign(Gtk::Align::START);
+                    slot->set_hexpand(false);
+                    slot->set_vexpand(false);
+                    slot->set_overflow(Gtk::Overflow::HIDDEN);
+                    slot->add_css_class("kpop-shelf-cover");
+
+                    auto* picture = Gtk::make_managed<Gtk::Picture>();
+                    picture->set_can_shrink(true);
+                    picture->set_content_fit(Gtk::ContentFit::CONTAIN);
+                    picture->set_hexpand(true);
+                    picture->set_vexpand(true);
+                    picture->set_paintable(texture);
+                    slot->append(*picture);
+                    return slot;
                 }
             }
 
             auto* empty = Gtk::make_managed<Gtk::Label>("♪");
             empty->set_size_request(COVER_SIZE, COVER_SIZE);
+            empty->set_halign(Gtk::Align::CENTER);
+            empty->set_valign(Gtk::Align::START);
             empty->add_css_class("kpop-shelf-cover");
             empty->add_css_class("kpop-shelf-cover-empty");
             return empty;
@@ -82,8 +98,8 @@ namespace kpop::ui
         set_child(m_content);
         add_css_class("kpop-shelf-scroller");
 
-        m_placeholderLabel.set_margin(PLACEHOLDER_MARGIN);
-        m_placeholderLabel.set_visible(false);
+        showEmptyListKind(m_emptyState, EmptyListKind::NoEntries);
+        m_emptyState.set_visible(false);
 
         m_content.add_css_class("kpop-shelf");
 
@@ -96,10 +112,8 @@ namespace kpop::ui
         m_flowBox.set_row_spacing(ROW_SPACING);
         m_flowBox.set_column_spacing(0);
 
-        m_content.append(m_placeholderLabel);
+        m_content.append(m_emptyState);
         m_content.append(m_flowBox);
-
-        refreshPlaceholder();
 
         m_flowBox.signal_child_activated().connect([this](const Gtk::FlowBoxChild* child)
         {
@@ -157,12 +171,17 @@ namespace kpop::ui
         for (const auto& row : rows)
             appendRow(row);
 
-        m_placeholderLabel.set_visible(rows.empty());
+        m_emptyState.set_visible(rows.empty());
     }
 
-    void ItemShelfView::refreshPlaceholder()
+    void ItemShelfView::setEmptyKind(const EmptyListKind kind)
     {
-        m_placeholderLabel.set_text(translate("kpop.list.empty"));
+        showEmptyListKind(m_emptyState, kind);
+    }
+
+    sigc::signal<void()>& ItemShelfView::signalAddRequested()
+    {
+        return m_emptyState.signalAction();
     }
 
     sigc::signal<void(const std::string&)>& ItemShelfView::signalEditRequested()

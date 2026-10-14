@@ -3,10 +3,12 @@
 #include "kpop/image/ImageSynchronizer.hpp"
 
 #include "stapik/cloud/CloudAssetClient.hpp"
+#include "stapik/http/IHttpClient.hpp"
 #include "stapik/log/Log.hpp"
 #include "stapik/sync/Backoff.hpp"
 #include "stapik/sync/SyncStatus.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <optional>
@@ -69,7 +71,13 @@ namespace kpop::app
         if (!config || !config->isConfigured())
             return;
 
-        auto storage = std::make_shared<stapik::cloud::CloudAssetClient>(*config, m_slotKey);
+        // The client shares the monitor of the session, so the headers of the answers about files count as well.
+        auto storage = std::make_shared<stapik::cloud::CloudAssetClient>(
+            *config,
+            m_slotKey,
+            stapik::http::defaultHttpClient(),
+            stapik::cloud::AssetChunking{},
+            m_controller.apiKeyExpiryMonitor());
         auto* store = &m_library.store();
         auto referenced = m_referenced();
 
@@ -111,7 +119,12 @@ namespace kpop::app
             ++m_consecutiveFailures;
             stapik::log::warning("Syncing images failed (attempt {}): {}", m_consecutiveFailures, report.failure);
 
-            m_retry.setDelay(stapik::sync::backoffDelay(RETRY_INITIAL_DELAY, RETRY_MAX_DELAY, m_consecutiveFailures));
+            // When the cloud asked to wait, coming back sooner would only be refused again.
+            auto delay = stapik::sync::backoffDelay(RETRY_INITIAL_DELAY, RETRY_MAX_DELAY, m_consecutiveFailures);
+            if (report.retryAfter)
+                delay = std::max(delay, std::chrono::duration_cast<milliseconds>(*report.retryAfter));
+
+            m_retry.setDelay(delay);
             m_retry.trigger();
             return;
         }

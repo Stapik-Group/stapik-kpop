@@ -1,9 +1,10 @@
 #pragma once
 
+#include "EmptyListKind.hpp"
+
 #include "kpop/ui/ItemPresenter.hpp"
 #include "kpop/ui/widget/ItemContextMenu.hpp"
 
-#include <gtkmm/label.h>
 #include <gtkmm/listbox.h>
 #include <gtkmm/scrolledwindow.h>
 
@@ -20,7 +21,9 @@ namespace kpop::ui
         ItemListView();
 
         void setRows(const std::vector<ItemRow>& rows);
-        void refreshPlaceholder();
+        void setEmptyKind(EmptyListKind kind);
+
+        sigc::signal<void()>& signalAddRequested();
 
         sigc::signal<void(const std::string&)>& signalEditRequested();
         sigc::signal<void(const std::string&)>& signalDeleteRequested();
@@ -32,7 +35,7 @@ namespace kpop::ui
         void appendRow(const ItemRow& row, bool showThumbnail);
 
         Gtk::ListBox m_listBox;
-        Gtk::Label m_placeholderLabel;
+        ::EmptyState m_emptyState;
         std::vector<std::string> m_rowIds;
         sigc::signal<void(const std::string&)> m_signalEditRequested;
         sigc::signal<void(const std::string&)> m_signalDeleteRequested;

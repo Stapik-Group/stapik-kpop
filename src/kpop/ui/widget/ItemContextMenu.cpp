@@ -4,6 +4,8 @@
 
 #include <giomm/menu.h>
 
+#include <glibmm/main.h>
+
 #include <gdkmm/rectangle.h>
 
 namespace kpop::ui
@@ -21,16 +23,30 @@ namespace kpop::ui
         m_popover.set_has_arrow(false);
         m_popover.set_halign(Gtk::Align::START);
 
-        m_actions->add_action("edit", [this] { m_signalEditRequested.emit(m_itemId); });
-        m_actions->add_action("duplicate", [this] { m_signalDuplicateRequested.emit(m_itemId); });
-        m_actions->add_action("duplicateAndEdit", [this] { m_signalDuplicateAndEditRequested.emit(m_itemId); });
-        m_actions->add_action("remove", [this] { m_signalDeleteRequested.emit(m_itemId); });
+        m_actions->add_action("edit", [this] { emitLater(m_signalEditRequested); });
+        m_actions->add_action("duplicate", [this] { emitLater(m_signalDuplicateRequested); });
+        m_actions->add_action("duplicateAndEdit", [this] { emitLater(m_signalDuplicateAndEditRequested); });
+        m_actions->add_action("remove", [this] { emitLater(m_signalDeleteRequested); });
         owner.insert_action_group(ACTION_GROUP, m_actions);
     }
 
     ItemContextMenu::~ItemContextMenu()
     {
+        *m_alive = false;
         m_popover.unparent();
+    }
+
+    // The action runs inside the popover's own click handling. Rebuilding the list or the shelf at that
+    // moment destroys widgets GTK is still using, so the request is delivered once the popover has closed.
+    void ItemContextMenu::emitLater(sigc::signal<void(const std::string&)>& signal)
+    {
+        m_popover.popdown();
+
+        Glib::signal_idle().connect_once([this, alive = m_alive, itemId = m_itemId, &signal]
+        {
+            if (*alive)
+                signal.emit(itemId);
+        });
     }
 
     void ItemContextMenu::popup(const std::string& itemId, const double x, const double y)
@@ -44,6 +60,9 @@ namespace kpop::ui
         auto destructive = Gio::Menu::create();
         destructive->append(translate("kpop.button.remove"), "item.remove");
         menu->append_section(destructive);
+
+        // A popover that is still open or closing must not get a new model underneath it.
+        m_popover.popdown();
 
         m_itemId = itemId;
         m_popover.set_menu_model(menu);

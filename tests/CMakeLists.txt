@@ -16,6 +16,7 @@ add_executable(stapikkpop_tests
         CollectionDocumentTest.cpp
         CollectionStatisticsTest.cpp
         EnumCatalogTest.cpp
+        ImageArchiveStorageTest.cpp
         ImageEncoderTest.cpp
         ImageIdTest.cpp
         ImageLibraryTest.cpp
@@ -27,7 +28,9 @@ add_executable(stapikkpop_tests
         PartialDateFormatterTest.cpp
         PartialDateTest.cpp
         TracklistTest.cpp
+        TutorialResourcesTest.cpp
         support/FakeAssetStorage.hpp
+        support/FakeClock.hpp
         support/ImageFixtures.hpp
         support/TestFixtures.hpp
 )

@@ -21,7 +21,6 @@ namespace kpop::ui
         constexpr int ROW_MARGIN = 6;
         constexpr int SWATCH_WIDTH = 6;
         constexpr int SWATCHES_SPACING = 2;
-        constexpr int PLACEHOLDER_MARGIN = 24;
         constexpr int THUMBNAIL_SIZE = 48;
         constexpr int THUMBNAIL_DECODE_SIZE = THUMBNAIL_SIZE * 2;
 
@@ -59,9 +58,8 @@ namespace kpop::ui
         m_listBox.add_css_class("kpop-list");
         m_listBox.set_selection_mode(Gtk::SelectionMode::SINGLE);
 
-        m_placeholderLabel.set_margin(PLACEHOLDER_MARGIN);
-        m_listBox.set_placeholder(m_placeholderLabel);
-        refreshPlaceholder();
+        showEmptyListKind(m_emptyState, EmptyListKind::NoEntries);
+        m_listBox.set_placeholder(m_emptyState);
 
         m_listBox.signal_row_activated().connect([this](const Gtk::ListBoxRow* row)
         {
@@ -106,9 +104,14 @@ namespace kpop::ui
             appendRow(row, showThumbnails);
     }
 
-    void ItemListView::refreshPlaceholder()
+    void ItemListView::setEmptyKind(const EmptyListKind kind)
     {
-        m_placeholderLabel.set_text(translate("kpop.list.empty"));
+        showEmptyListKind(m_emptyState, kind);
+    }
+
+    sigc::signal<void()>& ItemListView::signalAddRequested()
+    {
+        return m_emptyState.signalAction();
     }
 
     sigc::signal<void(const std::string&)>& ItemListView::signalEditRequested()

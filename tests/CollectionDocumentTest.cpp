@@ -210,6 +210,42 @@ namespace
         EXPECT_EQ(tracklist[2].disc, 2);
     }
 
+    TEST(CollectionDocumentTest, PreservesBonusTracksAndEmptyPositions)
+    {
+        CollectionDocument document;
+        auto album = sampleAlbum();
+        std::get<AlbumDetails>(album.details).tracklist = {
+            { .title = "A", .writers = "", .length = TrackLength::fromSeconds(60), .titleTrack = false, .disc = 1 },
+            Track{},
+            { .title = "C", .writers = "", .length = std::nullopt, .titleTrack = false, .disc = 1, .bonus = true },
+            Track{} };
+        document.insertItem(0, album);
+
+        const auto restored = roundTrip(document);
+        const auto& tracklist = std::get<AlbumDetails>(restored.items().front().details).tracklist;
+        ASSERT_EQ(tracklist.size(), 4U);
+        EXPECT_EQ(tracklist[0].title, "A");
+        EXPECT_TRUE(isPlaceholder(tracklist[1]));
+        EXPECT_EQ(tracklist[2].title, "C");
+        EXPECT_TRUE(tracklist[2].bonus);
+        EXPECT_FALSE(tracklist[0].bonus);
+        EXPECT_TRUE(isPlaceholder(tracklist[3]));
+    }
+
+    TEST(CollectionDocumentTest, SavesTheBonusMarkOnlyWhenSet)
+    {
+        const auto json = sampleDocument().toJson();
+        for (const auto& track : json["items"][0]["details"]["tracklist"])
+            EXPECT_FALSE(track.contains("bonus"));
+    }
+
+    TEST(CollectionDocumentTest, ReadsTracklistWithoutBonusMarksAsRegularTracks)
+    {
+        const auto restored = roundTrip(sampleDocument());
+        for (const auto& track : std::get<AlbumDetails>(restored.items().front().details).tracklist)
+            EXPECT_FALSE(track.bonus);
+    }
+
     TEST(CollectionDocumentTest, SavesTheDiscOnlyFromTheSecondOne)
     {
         const auto json = sampleDocument().toJson();

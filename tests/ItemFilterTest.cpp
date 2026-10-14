@@ -97,4 +97,45 @@ namespace
         EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "łódź" }, item, nullptr));
         EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "ŁÓDŹ" }, item, nullptr));
     }
+
+    TEST(ItemFilterTest, TextSearchIgnoresDiacritics)
+    {
+        auto item = sampleAlbum();
+        item.title = "Łódź";
+
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "lodz" }, item, nullptr));
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "LODZ" }, item, nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "lodzx" }, item, nullptr));
+
+        item.title = "Lodz";
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "łódź" }, item, nullptr));
+    }
+
+    TEST(ItemFilterTest, TextSearchIgnoresDiacriticsInArtistNames)
+    {
+        auto item = sampleAlbum();
+        auto artist = sampleArtist();
+        artist.name = "Beyoncé";
+
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "beyonce" }, item, &artist));
+    }
+
+    TEST(ItemFilterTest, TextSearchFindsHangulByItsBeginning)
+    {
+        auto item = sampleAlbum();
+        item.title = "방탄소년단";
+
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "방탄" }, item, nullptr));
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "소년단" }, item, nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "블랙핑크" }, item, nullptr));
+    }
+
+    TEST(ItemFilterTest, TextSearchFindsJapaneseTitles)
+    {
+        auto item = sampleAlbum();
+        item.title = "ありがとう";
+
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "ありが" }, item, nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .text = "さようなら" }, item, nullptr));
+    }
 }

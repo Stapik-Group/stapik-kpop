@@ -2,6 +2,7 @@
 
 #include "kpop/domain/Tracklist.hpp"
 
+#include <gtkmm/adjustment.h>
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/grid.h>
@@ -24,14 +25,33 @@ namespace kpop::ui
 
         void setValue(const domain::Tracklist& tracklist);
 
-        // Rows that are completely empty are left out.
+        // Empty rows between and after the filled ones are kept: they hold the place of tracks that are not
+        // filled in yet, and dropping them would shift the numbers of the tracks after them. A list in which
+        // nothing is filled in at all is an empty tracklist.
         [[nodiscard]] domain::Tracklist value() const;
         [[nodiscard]] bool isValid() const;
+
+        // The vertical adjustment of the scrolled window that holds the editor. Every change rebuilds the rows,
+        // and with it the scroll position is put back where it was instead of jumping to the top.
+        void setScrollAdjustment(const Glib::RefPtr<Gtk::Adjustment>& adjustment);
 
         sigc::signal<void()>& signalChanged();
 
     private:
         class Row;
+
+        enum class FocusTarget
+        {
+            Title,
+            MoveUp,
+            MoveDown
+        };
+
+        struct FocusRequest
+        {
+            std::size_t row = 0;
+            FocusTarget target = FocusTarget::Title;
+        };
 
         struct DiscHeader
         {
@@ -39,8 +59,10 @@ namespace kpop::ui
             Gtk::Label* totalLabel = nullptr;
         };
 
-        void rebuild(const domain::Tracklist& tracklist, std::optional<std::size_t> focusedRow);
-        void scheduleRebuild(domain::Tracklist tracklist, std::optional<std::size_t> focusedRow);
+        void rebuild(const domain::Tracklist& tracklist, std::optional<FocusRequest> focus);
+        void scheduleRebuild(domain::Tracklist tracklist, std::optional<FocusRequest> focus);
+        void settleView(double scrollValue, std::optional<FocusRequest> focus);
+        void focusRow(const std::optional<FocusRequest>& focus) const;
         void addHeader();
         void addDiscHeader(int disc, int gridRow);
         void onAddClicked();
@@ -50,6 +72,7 @@ namespace kpop::ui
         void onRemoveRequested(std::size_t index);
         void onMoveUpRequested(std::size_t index);
         void onMoveDownRequested(std::size_t index);
+        void onActivateRequested(std::size_t index);
         void refreshTotal();
         [[nodiscard]] domain::Tracklist allRows() const;
 
@@ -61,8 +84,12 @@ namespace kpop::ui
         std::vector<DiscHeader> m_discHeaders;
 
         domain::Tracklist m_pendingTracklist;
-        std::optional<std::size_t> m_pendingFocusedRow;
+        std::optional<FocusRequest> m_pendingFocus;
         sigc::connection m_pendingRebuild;
+
+        Glib::RefPtr<Gtk::Adjustment> m_scrollAdjustment;
+        unsigned int m_settleTick = 0;
+        int m_settleFrames = 0;
 
         sigc::signal<void()> m_signalChanged;
     };

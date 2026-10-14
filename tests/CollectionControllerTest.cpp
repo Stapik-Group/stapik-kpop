@@ -1,11 +1,17 @@
+#include "support/FakeClock.hpp"
 #include "support/TestFixtures.hpp"
 
 #include "kpop/app/CollectionController.hpp"
 #include "kpop/document/CollectionSchema.hpp"
+#include "kpop/image/ImageStore.hpp"
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <fstream>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -23,9 +29,17 @@ namespace
             return m_directory.path() / "collection.json";
         }
 
-        [[nodiscard]] std::unique_ptr<CollectionController> openController() const
+        [[nodiscard]] std::unique_ptr<CollectionController> openController(const stapik::time::IClock& clock = stapik::time::systemClock()) const
         {
-            return std::make_unique<CollectionController>(documentPath(), m_directory.path() / "images", m_directory.path() / "photos", stapik::sync::CloudSessionHooks{});
+            return std::make_unique<CollectionController>(documentPath(), m_directory.path() / "images", m_directory.path() / "photos", stapik::sync::CloudSessionHooks{}, clock);
+        }
+
+        // A path below a regular file can never be written, even by a user who ignores permissions.
+        [[nodiscard]] std::unique_ptr<CollectionController> openUnwritableController() const
+        {
+            const auto blocker = m_directory.path() / "blocker";
+            std::ofstream(blocker) << "not a directory";
+            return std::make_unique<CollectionController>(blocker / "collection.json", m_directory.path() / "images", m_directory.path() / "photos", stapik::sync::CloudSessionHooks{});
         }
 
     private:
@@ -229,6 +243,140 @@ namespace
         EXPECT_GT(controller->document().lastUpdate(), before);
     }
 
+    TEST_F(CollectionControllerTest, EditsTakeTheLastUpdateFromTheClock)
+    {
+        const auto start = std::chrono::sys_days{ std::chrono::year{ 2026 } / std::chrono::October / 3 } + std::chrono::hours{ 12 };
+        FakeClock clock(start);
+        const auto controller = openController(clock);
+
+        controller->addItem(sampleAlbum());
+        EXPECT_EQ(controller->document().lastUpdate(), start);
+
+        clock.advance(std::chrono::hours{ 5 });
+        controller->addArtist(sampleArtist("artist-2", "aespa"));
+        EXPECT_EQ(controller->document().lastUpdate(), start + std::chrono::hours{ 5 });
+    }
+
+    TEST_F(CollectionControllerTest, SharesTheExpiryMonitorOfTheCloudHooks)
+    {
+        stapik::sync::CloudSessionHooks hooks;
+        hooks.expiryMonitor = std::make_shared<stapik::cloud::ApiKeyExpiryMonitor>();
+        const auto monitor = hooks.expiryMonitor;
+
+        CollectionController controller(documentPath(), documentPath().parent_path() / "images", documentPath().parent_path() / "photos", std::move(hooks));
+
+        EXPECT_EQ(controller.apiKeyExpiryMonitor(), monitor);
+    }
+
+    TEST_F(CollectionControllerTest, HasNoExpiryMonitorWithoutCloudHooks)
+    {
+        EXPECT_EQ(openController()->apiKeyExpiryMonitor(), nullptr);
+    }
+
+    TEST_F(CollectionControllerTest, KeepsSeveralBackupsNewestFirst)
+    {
+        const auto controller = openController();
+        EXPECT_TRUE(controller->listBackups().empty());
+
+        controller->addItem(sampleAlbum("a", "First"));
+        EXPECT_TRUE(controller->listBackups().empty());
+
+        controller->addItem(sampleAlbum("b", "Second"));
+        controller->addItem(sampleAlbum("c", "Third"));
+
+        const auto backups = controller->listBackups();
+        ASSERT_EQ(backups.size(), 2U);
+        EXPECT_EQ(backups[0].index, 1);
+        EXPECT_EQ(backups[1].index, 2);
+    }
+
+    TEST_F(CollectionControllerTest, RestoringABackupBringsBackTheOlderCollection)
+    {
+        const auto controller = openController();
+        controller->addItem(sampleAlbum("a", "First"));
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        // The newest backup is the file from before the last save: only the first entry.
+        const auto backups = controller->listBackups();
+        ASSERT_FALSE(backups.empty());
+
+        int notifications = 0;
+        controller->signalDocumentChanged().connect([&notifications] { ++notifications; });
+
+        EXPECT_EQ(controller->restoreBackup(backups.front()), LoadStatus::Loaded);
+
+        EXPECT_EQ(notifications, 1);
+        ASSERT_EQ(controller->document().items().size(), 1U);
+        EXPECT_EQ(controller->document().items().front().title, "First");
+        EXPECT_FALSE(controller->undoStack().canUndo());
+        EXPECT_FALSE(controller->undoStack().canRedo());
+
+        const auto reopened = openController();
+        ASSERT_EQ(reopened->document().items().size(), 1U);
+        EXPECT_EQ(reopened->document().items().front().title, "First");
+    }
+
+    TEST_F(CollectionControllerTest, RestoringCanBeTakenBackThroughTheNewestBackup)
+    {
+        const auto controller = openController();
+        controller->addItem(sampleAlbum("a", "First"));
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        ASSERT_EQ(controller->restoreBackup(controller->listBackups().front()), LoadStatus::Loaded);
+        ASSERT_EQ(controller->document().items().size(), 1U);
+
+        // The collection from before the restore is now the newest backup.
+        ASSERT_EQ(controller->restoreBackup(controller->listBackups().front()), LoadStatus::Loaded);
+        EXPECT_EQ(controller->document().items().size(), 2U);
+    }
+
+    TEST_F(CollectionControllerTest, RestoredCollectionCountsAsChangedNow)
+    {
+        const auto start = std::chrono::sys_days{ std::chrono::year{ 2026 } / std::chrono::October / 3 } + std::chrono::hours{ 12 };
+        FakeClock clock(start);
+        const auto controller = openController(clock);
+        controller->addItem(sampleAlbum("a", "First"));
+        clock.advance(std::chrono::hours{ 1 });
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        clock.advance(std::chrono::hours{ 2 });
+        ASSERT_EQ(controller->restoreBackup(controller->listBackups().front()), LoadStatus::Loaded);
+
+        EXPECT_EQ(controller->document().lastUpdate(), start + std::chrono::hours{ 3 });
+    }
+
+    TEST_F(CollectionControllerTest, DamagedBackupIsRefusedAndChangesNothing)
+    {
+        const auto controller = openController();
+        controller->addItem(sampleAlbum("a", "First"));
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        const auto backup = controller->listBackups().front();
+        std::ofstream(backup.path, std::ios::trunc) << "{ not json";
+
+        int notifications = 0;
+        controller->signalDocumentChanged().connect([&notifications] { ++notifications; });
+
+        EXPECT_EQ(controller->restoreBackup(backup), LoadStatus::Corrupted);
+
+        EXPECT_EQ(notifications, 0);
+        EXPECT_EQ(controller->document().items().size(), 2U);
+        EXPECT_TRUE(controller->undoStack().canUndo());
+    }
+
+    TEST_F(CollectionControllerTest, FailedSaveReportsTheReason)
+    {
+        const auto controller = openUnwritableController();
+
+        std::vector<std::string> reasons;
+        controller->signalSaveFailed().connect([&reasons](const std::string& reason) { reasons.push_back(reason); });
+
+        controller->addItem(sampleAlbum());
+
+        ASSERT_EQ(reasons.size(), 1U);
+        EXPECT_FALSE(reasons.front().empty());
+    }
+
     TEST_F(CollectionControllerTest, CorruptedFileIsMovedAsideAndTheCollectionStartsEmpty)
     {
         writeTextFile(documentPath(), "{ this is not json");
@@ -321,5 +469,150 @@ namespace
 
         EXPECT_EQ(root.at("schemaVersion"), kpop::document::COLLECTION_SCHEMA_VERSION);
         EXPECT_TRUE(root.at("document").contains("items"));
+    }
+
+    class ArchiveTest : public testing::Test
+    {
+    protected:
+        static CollectionController makeController(const TemporaryDirectory& directory)
+        {
+            return CollectionController(directory.path() / "collection.json", directory.path() / "images", directory.path() / "photos", stapik::sync::CloudSessionHooks{});
+        }
+
+        static kpop::app::ArchiveOptions options(const std::string& appName = "stapikkpop")
+        {
+            return kpop::app::ArchiveOptions{ .appName = appName, .appVersion = "1.3.0", .settings = nullptr };
+        }
+
+        static kpop::image::ImageBytes bytesOf(const std::string& text)
+        {
+            return kpop::image::ImageBytes(text.begin(), text.end());
+        }
+
+        TemporaryDirectory source;
+        TemporaryDirectory target;
+        TemporaryDirectory archives;
+    };
+
+    TEST_F(ArchiveTest, ExportedArchiveRestoresCollectionAndImagesOnAnotherComputer)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            controller.addArtist(sampleArtist());
+            controller.addItem(sampleAlbum("a", "First"));
+            controller.addItem(sampleAlbum("b", "Second"));
+            static_cast<void>(controller.imageLibrary().store().add(bytesOf("cover")));
+            static_cast<void>(controller.photoLibrary().store().add(bytesOf("photo")));
+
+            const auto info = controller.prepareArchiveExport(archive, options())();
+            ASSERT_TRUE(info) << info.error().message();
+            EXPECT_EQ(info->assetCount, 2U);
+        }
+
+        auto restored = makeController(target);
+        const auto summary = restored.importArchive(archive, options());
+
+        ASSERT_TRUE(summary) << summary.error().message();
+        EXPECT_EQ(summary->assetsUploaded, 2U);
+        EXPECT_EQ(restored.document().items().size(), 2U);
+        EXPECT_EQ(restored.imageLibrary().store().ids().size(), 1U);
+        EXPECT_EQ(restored.photoLibrary().store().ids().size(), 1U);
+
+        const auto reopened = makeController(target);
+        EXPECT_EQ(reopened.document().items().size(), 2U);
+    }
+
+    TEST_F(ArchiveTest, ArchiveContainsUnsavedStateOfTheMomentOfTheExport)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        auto controller = makeController(source);
+        controller.addItem(sampleAlbum("a", "First"));
+
+        const auto task = controller.prepareArchiveExport(archive, options());
+        controller.addItem(sampleAlbum("b", "Second"));
+        ASSERT_TRUE(task());
+
+        auto restored = makeController(target);
+        ASSERT_TRUE(restored.importArchive(archive, options()));
+        EXPECT_EQ(restored.document().items().size(), 1U);
+    }
+
+    TEST_F(ArchiveTest, ArchiveOfAnotherProgramIsRefusedAndNothingChanges)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            controller.addItem(sampleAlbum("a", "First"));
+            ASSERT_TRUE(controller.prepareArchiveExport(archive, options("other"))());
+        }
+
+        auto controller = makeController(target);
+        controller.addItem(sampleAlbum("b", "Mine"));
+
+        const auto summary = controller.importArchive(archive, options());
+
+        ASSERT_FALSE(summary);
+        EXPECT_EQ(summary.error().kind, stapik::archive::ArchiveErrorKind::WrongApplication);
+        ASSERT_EQ(controller.document().items().size(), 1U);
+        EXPECT_EQ(controller.document().items().front().title, "Mine");
+    }
+
+    TEST_F(ArchiveTest, FileThatIsNotAnArchiveIsRefused)
+    {
+        const auto file = archives.path() / "notes.zip";
+        std::ofstream(file) << "just text";
+
+        auto controller = makeController(target);
+        controller.addItem(sampleAlbum("b", "Mine"));
+
+        EXPECT_FALSE(controller.importArchive(file, options()));
+        EXPECT_EQ(controller.document().items().size(), 1U);
+    }
+
+    TEST_F(ArchiveTest, RestoreReplacesTheCollectionDropsUndoAndCanBeTakenBack)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            controller.addItem(sampleAlbum("a", "Archived"));
+            ASSERT_TRUE(controller.prepareArchiveExport(archive, options())());
+        }
+
+        auto controller = makeController(target);
+        controller.addItem(sampleAlbum("b", "Mine"));
+        controller.addItem(sampleAlbum("c", "Also mine"));
+
+        int notifications = 0;
+        controller.signalDocumentChanged().connect([&notifications] { ++notifications; });
+
+        ASSERT_TRUE(controller.importArchive(archive, options()));
+
+        EXPECT_EQ(notifications, 1);
+        ASSERT_EQ(controller.document().items().size(), 1U);
+        EXPECT_EQ(controller.document().items().front().title, "Archived");
+        EXPECT_FALSE(controller.undoStack().canUndo());
+
+        // The collection from before the restore is the newest backup.
+        ASSERT_EQ(controller.restoreBackup(controller.listBackups().front()), LoadStatus::Loaded);
+        EXPECT_EQ(controller.document().items().size(), 2U);
+    }
+
+    TEST_F(ArchiveTest, RestoreKeepsImagesAlreadyHere)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            static_cast<void>(controller.imageLibrary().store().add(bytesOf("archived")));
+            ASSERT_TRUE(controller.prepareArchiveExport(archive, options())());
+        }
+
+        auto controller = makeController(target);
+        static_cast<void>(controller.imageLibrary().store().add(bytesOf("mine")));
+
+        const auto summary = controller.importArchive(archive, options());
+
+        ASSERT_TRUE(summary);
+        EXPECT_EQ(controller.imageLibrary().store().ids().size(), 2U);
     }
 }

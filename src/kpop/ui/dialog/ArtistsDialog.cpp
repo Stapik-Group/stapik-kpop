@@ -133,8 +133,7 @@ namespace kpop::ui
             showMessageDialog(
                 *this,
                 translate("kpop.dialog.artistInUse.header"),
-                translate("kpop.dialog.artistInUse.text", { { "name", artist->name }, { "count", std::to_string(entryCount) } }),
-                Gtk::MessageType::WARNING);
+                translate("kpop.dialog.artistInUse.text", { { "name", artist->name }, { "count", std::to_string(entryCount) } }));
             return;
         }
 

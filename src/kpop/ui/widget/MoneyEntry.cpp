@@ -1,9 +1,6 @@
 #include "MoneyEntry.hpp"
 
-#include "kpop/ui/Translate.hpp"
-
 #include "stapik/domain/CurrencyCatalog.hpp"
-#include "stapik/domain/MoneyFormatter.hpp"
 
 #include <glibmm/ustring.h>
 #include <gtkmm/stringlist.h>
@@ -22,23 +19,19 @@ namespace kpop::ui
         m_currencies(stapik::domain::CurrencyCatalog::instance().currencies())
     {
         m_amountEntry.set_hexpand(true);
-        m_amountEntry.set_placeholder_text("0,00");
-        m_amountEntry.set_input_purpose(Gtk::InputPurpose::NUMBER);
 
         rebuildCurrencyModel();
+        applySelectedCurrency();
 
         append(m_amountEntry);
         append(m_currencyDropDown);
 
-        m_amountEntry.signal_changed().connect([this]
-        {
-            refreshValidityStyle();
-            m_signalChanged.emit();
-        });
+        // The field validates its own text and shows it; this widget only passes the changes on.
+        m_amountEntry.signalAmountChanged().connect([this] { m_signalChanged.emit(); });
 
         m_currencyDropDown.property_selected().signal_changed().connect([this]
         {
-            refreshValidityStyle();
+            applySelectedCurrency();
             m_signalChanged.emit();
         });
     }
@@ -47,32 +40,22 @@ namespace kpop::ui
     {
         if (!money)
         {
-            m_amountEntry.set_text("");
+            m_amountEntry.setAmount(std::nullopt);
             return;
         }
 
         selectCurrency(money->currency());
-
-        m_amountEntry.set_text(stapik::domain::formatAmount(
-            money->minorUnits(),
-            money->currency().decimalPlaces,
-            LocaleManager::instance().languageCode(),
-            false));
+        m_amountEntry.setAmount(money->minorUnits());
     }
 
     std::optional<stapik::domain::Money> MoneyEntry::value() const
     {
-        const auto* currency = selectedCurrency();
-        const auto minorUnits = parsedMinorUnits();
-        if (currency == nullptr || !minorUnits)
-            return std::nullopt;
-
-        return stapik::domain::Money(*minorUnits, *currency);
+        return m_amountEntry.money();
     }
 
     bool MoneyEntry::isValid() const
     {
-        return trimmedText(m_amountEntry).empty() || value().has_value();
+        return m_amountEntry.hasValidInput();
     }
 
     sigc::signal<void()>& MoneyEntry::signalChanged()
@@ -84,19 +67,6 @@ namespace kpop::ui
     {
         const auto position = m_currencyDropDown.get_selected();
         return position < m_currencies.size() ? &m_currencies[position] : nullptr;
-    }
-
-    std::optional<std::int64_t> MoneyEntry::parsedMinorUnits() const
-    {
-        const auto* currency = selectedCurrency();
-        if (currency == nullptr)
-            return std::nullopt;
-
-        const auto text = trimmedText(m_amountEntry);
-        if (text.empty())
-            return std::nullopt;
-
-        return stapik::domain::parseAmount(text, currency->decimalPlaces);
     }
 
     void MoneyEntry::selectCurrency(const stapik::domain::Currency& currency)
@@ -111,6 +81,7 @@ namespace kpop::ui
         }
 
         m_currencyDropDown.set_selected(static_cast<guint>(position - m_currencies.begin()));
+        applySelectedCurrency();
     }
 
     void MoneyEntry::rebuildCurrencyModel()
@@ -122,11 +93,9 @@ namespace kpop::ui
         m_currencyDropDown.set_model(Gtk::StringList::create(labels));
     }
 
-    void MoneyEntry::refreshValidityStyle()
+    void MoneyEntry::applySelectedCurrency()
     {
-        if (isValid())
-            m_amountEntry.remove_css_class("kpop-invalid");
-        else
-            m_amountEntry.add_css_class("kpop-invalid");
+        if (const auto* currency = selectedCurrency())
+            m_amountEntry.setCurrency(*currency);
     }
 }
