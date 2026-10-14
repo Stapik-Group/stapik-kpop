@@ -202,5 +202,20 @@
   "kpop.cloud.apiKeyExpiring.header": "Ihr Cloud-Schlüssel läuft bald ab",
   "kpop.restore.failed.header": "Die Sicherung konnte nicht wiederhergestellt werden",
   "kpop.restore.failed.text": "Die Datei {path} ist beschädigt, stammt von einer neueren Version der Anwendung oder hat ein altes Format, das nicht umgewandelt werden konnte. Die Sammlung wurde nicht geändert.",
-  "kpop.settings.checkForUpdates": "Nach Updates suchen"
+  "kpop.settings.checkForUpdates": "Nach Updates suchen",
+  "kpop.archive.export.title": "Die ganze Anwendung sichern",
+  "kpop.archive.export.done.header": "Die Sicherung wurde gespeichert",
+  "kpop.archive.export.done.text": "{path}\n\nSie enthält die Sammlung, die Einstellungen und {images} Bilder.",
+  "kpop.archive.export.failed.header": "Die Sicherung konnte nicht erstellt werden",
+  "kpop.archive.import.title": "Sicherung zum Wiederherstellen wählen",
+  "kpop.archive.import.message": "Die Sammlung und die Einstellungen werden durch die aus der Sicherung ersetzt. Die aktuelle Sammlung bleibt als neueste Sicherungskopie erhalten (Datei → Aus Sicherung wiederherstellen…). Vorhandene Bilder bleiben erhalten.",
+  "kpop.archive.import.done.header": "Die Anwendung wurde wiederhergestellt",
+  "kpop.archive.import.done.text": "Die Sammlung, die Einstellungen und {images} Bilder wurden aus der Sicherung wiederhergestellt.",
+  "kpop.archive.import.settingsSkipped": "Die Einstellungen konnten nicht wiederhergestellt werden und blieben unverändert.",
+  "kpop.archive.import.failed.header": "Die Sicherung konnte nicht wiederhergestellt werden",
+  "kpop.archive.error.notAnArchive": "Diese Datei ist keine Sicherung einer Anwendung dieser Familie.",
+  "kpop.archive.error.corrupted": "Die Sicherung ist beschädigt, daher wurde nichts geändert.",
+  "kpop.archive.error.unsupported": "Die Sicherung stammt von einer neueren Version des Programms. Aktualisiere das Programm und versuche es erneut.",
+  "kpop.archive.error.wrongApplication": "Diese Sicherung gehört zu einer anderen Anwendung.",
+  "kpop.archive.error.io": "Die Datei konnte nicht gelesen oder geschrieben werden. Grund: {reason}"
 }

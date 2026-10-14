@@ -202,5 +202,20 @@
   "kpop.cloud.apiKeyExpiring.header": "Klucz do chmury niedługo wygaśnie",
   "kpop.restore.failed.header": "Nie udało się przywrócić kopii zapasowej",
   "kpop.restore.failed.text": "Plik {path} jest uszkodzony, pochodzi z nowszej wersji aplikacji albo ma stary format, którego nie udało się przekonwertować. Kolekcja nie została zmieniona.",
-  "kpop.settings.checkForUpdates": "Sprawdzaj aktualizacje"
+  "kpop.settings.checkForUpdates": "Sprawdzaj aktualizacje",
+  "kpop.archive.export.title": "Kopia całej aplikacji",
+  "kpop.archive.export.done.header": "Kopia została zapisana",
+  "kpop.archive.export.done.text": "{path}\n\nZawiera kolekcję, ustawienia i {images} obrazów.",
+  "kpop.archive.export.failed.header": "Nie udało się wykonać kopii",
+  "kpop.archive.import.title": "Wybierz kopię do przywrócenia",
+  "kpop.archive.import.message": "Kolekcja i ustawienia zostaną zastąpione tymi z kopii. Obecna kolekcja zostanie jako najnowsza kopia zapasowa (Plik → Przywróć z kopii zapasowej…). Obrazy, które już są, zostają.",
+  "kpop.archive.import.done.header": "Aplikacja została przywrócona",
+  "kpop.archive.import.done.text": "Kolekcja, ustawienia i {images} obrazów zostały przywrócone z kopii.",
+  "kpop.archive.import.settingsSkipped": "Nie udało się przywrócić ustawień, więc zostały bez zmian.",
+  "kpop.archive.import.failed.header": "Nie udało się przywrócić kopii",
+  "kpop.archive.error.notAnArchive": "Ten plik nie jest kopią wykonaną przez aplikację z tej rodziny.",
+  "kpop.archive.error.corrupted": "Kopia jest uszkodzona, więc nic nie zostało zmienione.",
+  "kpop.archive.error.unsupported": "Kopię wykonała nowsza wersja programu. Zaktualizuj program i spróbuj ponownie.",
+  "kpop.archive.error.wrongApplication": "Ta kopia należy do innej aplikacji.",
+  "kpop.archive.error.io": "Nie udało się odczytać lub zapisać pliku. Przyczyna: {reason}"
 }

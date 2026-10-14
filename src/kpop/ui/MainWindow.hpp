@@ -9,6 +9,7 @@
 #include "kpop/ui/widget/PaginationBar.hpp"
 
 #include "stapik/settings/ObservableSetting.hpp"
+#include "stapik/task/BackgroundTaskRunner.hpp"
 #include "stapik/theme/ThemeRegistry.hpp"
 #include "stapik/ui/menu/StandardMenu.hpp"
 #include "stapik/ui/widget/StatusIndicator.hpp"
@@ -23,6 +24,7 @@
 
 #include <sigc++/connection.h>
 
+#include <filesystem>
 #include <string>
 
 namespace kpop::ui
@@ -71,6 +73,12 @@ namespace kpop::ui
         void onSyncRequested();
         void onManageArtistsRequested();
         void onRestoreBackupRequested();
+        void onExportArchiveRequested();
+        void onImportArchiveRequested();
+        void exportArchive(const std::filesystem::path& target);
+        void importArchive(const std::filesystem::path& source);
+        void reloadSettings();
+        [[nodiscard]] app::ArchiveOptions archiveOptions() const;
 
         static std::string statisticsText(const domain::CollectionStatistics &statistics);
         [[nodiscard]] static StandardMenuOptions menuOptions(const stapik::theme::ThemeRegistry& themes, stapik::command::UndoStack& undoStack);
@@ -106,5 +114,8 @@ namespace kpop::ui
         sigc::connection m_localeConnection;
         sigc::connection m_saveFailedConnection;
         sigc::connection m_apiKeyConnection;
+
+        // Last, so that it is destroyed first and waits for a running export before the rest goes away.
+        stapik::task::BackgroundTaskRunner m_archiveRunner;
     };
 }

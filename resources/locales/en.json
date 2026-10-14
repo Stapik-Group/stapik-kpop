@@ -202,5 +202,20 @@
   "kpop.cloud.apiKeyExpiring.header": "Your cloud key is about to expire",
   "kpop.restore.failed.header": "The backup could not be restored",
   "kpop.restore.failed.text": "The file {path} is damaged, comes from a newer version of the application or has an old format that could not be converted. The collection was not changed.",
-  "kpop.settings.checkForUpdates": "Check for updates"
+  "kpop.settings.checkForUpdates": "Check for updates",
+  "kpop.archive.export.title": "Back up the whole application",
+  "kpop.archive.export.done.header": "The backup was saved",
+  "kpop.archive.export.done.text": "{path}\n\nIt holds the collection, the settings and {images} images.",
+  "kpop.archive.export.failed.header": "The backup could not be made",
+  "kpop.archive.import.title": "Choose the backup to restore",
+  "kpop.archive.import.message": "The collection and the settings will be replaced by the ones from the backup. The current collection stays available as the newest backup copy (File → Restore from backup…). Images that are here are kept.",
+  "kpop.archive.import.done.header": "The application was restored",
+  "kpop.archive.import.done.text": "The collection, the settings and {images} images were restored from the backup.",
+  "kpop.archive.import.settingsSkipped": "The settings could not be restored and were left as they were.",
+  "kpop.archive.import.failed.header": "The backup could not be restored",
+  "kpop.archive.error.notAnArchive": "This file is not a backup made by an application of this family.",
+  "kpop.archive.error.corrupted": "The backup is damaged, so nothing was changed.",
+  "kpop.archive.error.unsupported": "The backup was made by a newer version of the program. Update the program and try again.",
+  "kpop.archive.error.wrongApplication": "This backup belongs to another application.",
+  "kpop.archive.error.io": "The file could not be read or written. Reason: {reason}"
 }

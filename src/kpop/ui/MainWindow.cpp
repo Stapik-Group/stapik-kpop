@@ -15,10 +15,13 @@
 #include "stapik/storage/AppPaths.hpp"
 #include "stapik/storage/PathText.hpp"
 #include "stapik/domain/MoneyFormatter.hpp"
+#include "stapik/theme/FontManager.hpp"
+#include "stapik/theme/ThemeManager.hpp"
 #include "stapik/locale/DateFormatter.hpp"
 #include "stapik/ui/dialog/ConfirmDialog.hpp"
 #include "stapik/ui/dialog/ConnectDialog.hpp"
 #include "stapik/ui/dialog/DialogUtils.hpp"
+#include "stapik/ui/dialog/FileDialogs.hpp"
 #include "stapik/ui/dialog/RestoreBackupDialog.hpp"
 #include "stapik/update/UpdateChecker.hpp"
 
@@ -29,6 +32,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <ctime>
 #include <string>
 
 namespace kpop::ui
@@ -42,6 +46,40 @@ namespace kpop::ui
         constexpr int TOP_BAR_MARGIN = 8;
         constexpr auto ADD_ITEM_ACTION = "win.addItem";
         constexpr auto TUTORIAL_DIRECTORY = "tutorial";
+        constexpr auto ARCHIVE_DIRECTORY_KEY = "archive.lastDirectory";
+        constexpr auto ARCHIVE_EXTENSION = ".zip";
+
+        std::string defaultArchiveName()
+        {
+            const auto now = std::time(nullptr);
+            std::tm local{};
+            localtime_r(&now, &local);
+
+            char date[16] = {};
+            std::strftime(date, sizeof(date), "%Y-%m-%d", &local);
+            return std::string{ stapik::app::build::NAME } + "-" + date + ARCHIVE_EXTENSION;
+        }
+
+        std::string archiveErrorText(const stapik::archive::ArchiveError& error)
+        {
+            using stapik::archive::ArchiveErrorKind;
+
+            switch (error.kind)
+            {
+                case ArchiveErrorKind::NotAnArchive:
+                    return translate("kpop.archive.error.notAnArchive");
+                case ArchiveErrorKind::Corrupted:
+                    return translate("kpop.archive.error.corrupted");
+                case ArchiveErrorKind::Unsupported:
+                    return translate("kpop.archive.error.unsupported");
+                case ArchiveErrorKind::WrongApplication:
+                    return translate("kpop.archive.error.wrongApplication");
+                case ArchiveErrorKind::Io:
+                case ArchiveErrorKind::Cloud:
+                default:
+                    return translate("kpop.archive.error.io", { { "reason", error.message() } });
+            }
+        }
     }
 
     StandardMenuOptions MainWindow::menuOptions(const stapik::theme::ThemeRegistry& themes, stapik::command::UndoStack& undoStack)
@@ -144,6 +182,8 @@ namespace kpop::ui
         add_action("connect", [this] { onConnectRequested(); });
         add_action("sync", [this] { onSyncRequested(); });
         add_action("restoreBackup", [this] { onRestoreBackupRequested(); });
+        add_action("exportArchive", [this] { onExportArchiveRequested(); });
+        add_action("importArchive", [this] { onImportArchiveRequested(); });
     }
 
     void MainWindow::initMenu()
@@ -153,6 +193,8 @@ namespace kpop::ui
         m_menu.addToMenu(StandardMenu::Target::File, [](Gio::Menu& menu)
         {
             menu.append(translate("menu.file.restoreBackup"), "win.restoreBackup");
+            menu.append(translate("menu.file.exportArchive"), "win.exportArchive");
+            menu.append(translate("menu.file.importArchive"), "win.importArchive");
         });
 
         m_menu.addMenu("kpop.menu.collection", [](Gio::Menu& menu)
@@ -487,6 +529,111 @@ namespace kpop::ui
                 translate("kpop.restore.failed.header"),
                 translate("kpop.restore.failed.text", { { "path", stapik::storage::pathText(backup.path) } }));
         });
+    }
+
+    app::ArchiveOptions MainWindow::archiveOptions() const
+    {
+        return app::ArchiveOptions{
+            .appName = std::string{ stapik::app::build::NAME },
+            .appVersion = std::string{ stapik::app::build::VERSION },
+            .settings = &stapik::app::AppContext::instance().settings() };
+    }
+
+    void MainWindow::onExportArchiveRequested()
+    {
+        const FileDialogOptions options{
+            .title = translate("kpop.archive.export.title"),
+            .initialName = defaultArchiveName(),
+            .lastDirectoryKey = ARCHIVE_DIRECTORY_KEY };
+
+        showSaveFileDialog(*this, options, [this](const std::filesystem::path& chosen)
+        {
+            auto target = chosen;
+            if (target.extension().empty())
+                target += ARCHIVE_EXTENSION;
+
+            exportArchive(target);
+        }, [this](const std::string& reason)
+        {
+            showMessageDialog(*this, translate("kpop.archive.export.failed.header"), translate("kpop.archive.error.io", { { "reason", reason } }));
+        });
+    }
+
+    void MainWindow::exportArchive(const std::filesystem::path& target)
+    {
+        // The window waits for the copy, so nothing is edited while it is made.
+        set_sensitive(false);
+
+        m_archiveRunner.submit(m_controller.prepareArchiveExport(target, archiveOptions()), [this, target](auto outcome)
+        {
+            set_sensitive(true);
+
+            // The runner hands over an optional, which is always filled once the work has run.
+            if (!outcome)
+                return;
+
+            const auto& result = *outcome;
+            if (!result)
+            {
+                showMessageDialog(*this, translate("kpop.archive.export.failed.header"), archiveErrorText(result.error()));
+                return;
+            }
+
+            showMessageDialog(
+                *this,
+                translate("kpop.archive.export.done.header"),
+                translate("kpop.archive.export.done.text", {
+                    { "path", stapik::storage::pathText(target) },
+                    { "images", std::to_string(result->assetCount) } }));
+        });
+    }
+
+    void MainWindow::onImportArchiveRequested()
+    {
+        const FileDialogOptions options{
+            .title = translate("kpop.archive.import.title"),
+            .initialName = {},
+            .lastDirectoryKey = ARCHIVE_DIRECTORY_KEY };
+
+        showOpenFileDialog(*this, options, [this](const std::filesystem::path& source)
+        {
+            showConfirmDialog(*this, ConfirmDialogOptions{
+                .title = translate("dialog.archive.import.title"),
+                .message = translate("kpop.archive.import.message"),
+                .confirmLabel = translate("dialog.archive.import.button"),
+                .destructive = true }, [this, source] { importArchive(source); });
+        }, [this](const std::string& reason)
+        {
+            showMessageDialog(*this, translate("kpop.archive.import.failed.header"), translate("kpop.archive.error.io", { { "reason", reason } }));
+        });
+    }
+
+    void MainWindow::importArchive(const std::filesystem::path& source)
+    {
+        const auto result = m_controller.importArchive(source, archiveOptions());
+        if (!result)
+        {
+            showMessageDialog(*this, translate("kpop.archive.import.failed.header"), archiveErrorText(result.error()));
+            return;
+        }
+
+        reloadSettings();
+
+        auto text = translate("kpop.archive.import.done.text", {
+            { "images", std::to_string(result->assetsUploaded + result->assetsUnchanged) } });
+        if (!result->settingsRestored)
+            text += "\n\n" + translate("kpop.archive.import.settingsSkipped");
+
+        showMessageDialog(*this, translate("kpop.archive.import.done.header"), text);
+    }
+
+    // The settings in memory do not notice that the file was replaced, and these are the ones that are shown.
+    void MainWindow::reloadSettings()
+    {
+        LocaleManager::instance().languageSetting().reload();
+        ThemeManager::instance().themeSetting().reload();
+        FontManager::instance().fontSetting().reload();
+        m_checkForUpdates.reload();
     }
 
     void MainWindow::onManageArtistsRequested()
