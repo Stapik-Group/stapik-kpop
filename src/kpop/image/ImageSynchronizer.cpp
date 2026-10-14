@@ -55,15 +55,6 @@ namespace kpop::image
             {
                 ++report.skipped;
             }
-            catch (const stapik::cloud::AssetTypeNotAllowedException&)
-            {
-                // Like a file that is too large, this one is refused every time, so trying again would not help.
-                ++report.skipped;
-            }
-            catch (const stapik::cloud::InvalidAssetFilenameException&)
-            {
-                ++report.skipped;
-            }
         }
 
         void download(stapik::cloud::IAssetStorage& storage, ImageStore& store, const domain::ImageId& id, ImageSyncReport& report)

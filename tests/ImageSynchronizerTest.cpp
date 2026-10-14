@@ -173,9 +173,10 @@ namespace
         const auto first = addLocally("one");
         const auto second = addLocally("two");
         // Whichever image comes first is refused, the other one is accepted.
-        m_cloud.beforeUpload = [this]
+        int calls = 0;
+        m_cloud.beforeUpload = [&calls]
         {
-            if (!m_cloud.files.empty())
+            if (++calls > 1)
                 return;
 
             throw stapik::cloud::AssetTypeNotAllowedException("type not allowed");

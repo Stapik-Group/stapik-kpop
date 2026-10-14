@@ -221,7 +221,8 @@ namespace
             Track{} };
         document.insertItem(0, album);
 
-        const auto& tracklist = std::get<AlbumDetails>(roundTrip(document).items().front().details).tracklist;
+        const auto restored = roundTrip(document);
+        const auto& tracklist = std::get<AlbumDetails>(restored.items().front().details).tracklist;
         ASSERT_EQ(tracklist.size(), 4U);
         EXPECT_EQ(tracklist[0].title, "A");
         EXPECT_TRUE(isPlaceholder(tracklist[1]));
