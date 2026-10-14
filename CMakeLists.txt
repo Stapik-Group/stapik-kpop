@@ -16,7 +16,10 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/Stapik-Group/stapik-common.git
         GIT_TAG ${STAPIK_COMMON_GIT_TAG}
 )
+
+set(STAPIK_WARNINGS_AS_ERRORS OFF)
 FetchContent_MakeAvailable(stapikcommon)
+unset(STAPIK_WARNINGS_AS_ERRORS)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GDKPIXBUF REQUIRED IMPORTED_TARGET gdk-pixbuf-2.0)
