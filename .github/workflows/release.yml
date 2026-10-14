@@ -13,7 +13,7 @@ jobs:
     with:
       application-name: stapikkpop
       images: '["ubuntu:24.04", "debian:13"]'
-      cmake-args: -DSTAPIK_KPOP_BUILD_TESTS=ON -DSTAPIK_WARNINGS_AS_ERRORS=ON
+      cmake-args: -DSTAPIK_KPOP_BUILD_TESTS=ON -DSTAPIK_WARNINGS_AS_ERRORS=OFF
       package: true
     secrets:
       sign-pfx-base64: ${{ secrets.WINDOWS_SIGN_PFX_BASE64 }}

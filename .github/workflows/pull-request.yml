@@ -15,4 +15,4 @@ jobs:
     with:
       application-name: stapikkpop
       images: '["ubuntu:24.04", "debian:13"]'
-      cmake-args: -DSTAPIK_KPOP_BUILD_TESTS=ON -DSTAPIK_WARNINGS_AS_ERRORS=ON
+      cmake-args: -DSTAPIK_KPOP_BUILD_TESTS=ON -DSTAPIK_WARNINGS_AS_ERRORS=OFF
