@@ -6,6 +6,7 @@
 #include "stapik/command/UndoStack.hpp"
 #include "stapik/document/DocumentFile.hpp"
 #include "stapik/sync/CloudSession.hpp"
+#include "stapik/time/Clock.hpp"
 
 #include <sigc++/signal.h>
 
@@ -29,7 +30,8 @@ namespace kpop::app
             std::filesystem::path documentPath,
             std::filesystem::path imagesDirectory,
             std::filesystem::path photosDirectory,
-            stapik::sync::CloudSessionHooks cloudHooks);
+            stapik::sync::CloudSessionHooks cloudHooks,
+            const stapik::time::IClock& clock = stapik::time::systemClock());
 
         CollectionController(const CollectionController&) = delete;
         CollectionController& operator=(const CollectionController&) = delete;
@@ -70,7 +72,8 @@ namespace kpop::app
 
         sigc::signal<void()>& signalDocumentChanged();
         sigc::signal<void(stapik::sync::SyncStatus)>& signalSyncStatusChanged();
-        sigc::signal<void()>& signalSaveFailed();
+        // The argument is the reason reported by the system, for example "No space left on device".
+        sigc::signal<void(const std::string&)>& signalSaveFailed();
 
     private:
         using DocumentFile = stapik::document::DocumentFile<document::CollectionDocument>;
@@ -83,6 +86,7 @@ namespace kpop::app
         void onCloudBaselineChanged(TimePoint baseline);
         void persist() const;
 
+        const stapik::time::IClock& m_clock;
         DocumentFile m_file;
         stapik::document::LoadStatus m_loadStatus = stapik::document::LoadStatus::Missing;
         document::CollectionDocument m_document;
@@ -93,6 +97,6 @@ namespace kpop::app
         bool m_ignoreHistoryChanges = false;
         sigc::signal<void()> m_signalDocumentChanged;
         sigc::signal<void(stapik::sync::SyncStatus)> m_signalSyncStatusChanged;
-        sigc::signal<void()> m_signalSaveFailed;
+        sigc::signal<void(const std::string&)> m_signalSaveFailed;
     };
 }

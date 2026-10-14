@@ -110,8 +110,11 @@ namespace kpop::ui
             const auto file = AppPaths::userDataDir(std::string{ stapik::app::build::NAME }) / "selftest.tmp";
             constexpr std::string_view CONTENT = "ąęł self-test\n";
 
-            if (!stapik::storage::writeFileAtomically(file, CONTENT))
+            if (const auto written = stapik::storage::writeFileAtomically(file, CONTENT); !written)
+            {
+                stapik::log::error("self-test: cannot write the test file: {}", written.error().message());
                 return false;
+            }
 
             std::ifstream stream(file, std::ios::binary);
             const std::string readBack((std::istreambuf_iterator(stream)), std::istreambuf_iterator<char>());

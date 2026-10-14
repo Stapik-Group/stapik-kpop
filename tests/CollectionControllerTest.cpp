@@ -1,3 +1,4 @@
+#include "support/FakeClock.hpp"
 #include "support/TestFixtures.hpp"
 
 #include "kpop/app/CollectionController.hpp"
@@ -5,7 +6,11 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <fstream>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -23,9 +28,17 @@ namespace
             return m_directory.path() / "collection.json";
         }
 
-        [[nodiscard]] std::unique_ptr<CollectionController> openController() const
+        [[nodiscard]] std::unique_ptr<CollectionController> openController(const stapik::time::IClock& clock = stapik::time::systemClock()) const
         {
-            return std::make_unique<CollectionController>(documentPath(), m_directory.path() / "images", m_directory.path() / "photos", stapik::sync::CloudSessionHooks{});
+            return std::make_unique<CollectionController>(documentPath(), m_directory.path() / "images", m_directory.path() / "photos", stapik::sync::CloudSessionHooks{}, clock);
+        }
+
+        // A path below a regular file can never be written, even by a user who ignores permissions.
+        [[nodiscard]] std::unique_ptr<CollectionController> openUnwritableController() const
+        {
+            const auto blocker = m_directory.path() / "blocker";
+            std::ofstream(blocker) << "not a directory";
+            return std::make_unique<CollectionController>(blocker / "collection.json", m_directory.path() / "images", m_directory.path() / "photos", stapik::sync::CloudSessionHooks{});
         }
 
     private:
@@ -227,6 +240,33 @@ namespace
         controller->addItem(sampleAlbum());
 
         EXPECT_GT(controller->document().lastUpdate(), before);
+    }
+
+    TEST_F(CollectionControllerTest, EditsTakeTheLastUpdateFromTheClock)
+    {
+        const auto start = std::chrono::sys_days{ std::chrono::year{ 2026 } / std::chrono::October / 3 } + std::chrono::hours{ 12 };
+        FakeClock clock(start);
+        const auto controller = openController(clock);
+
+        controller->addItem(sampleAlbum());
+        EXPECT_EQ(controller->document().lastUpdate(), start);
+
+        clock.advance(std::chrono::hours{ 5 });
+        controller->addArtist(sampleArtist("artist-2", "aespa"));
+        EXPECT_EQ(controller->document().lastUpdate(), start + std::chrono::hours{ 5 });
+    }
+
+    TEST_F(CollectionControllerTest, FailedSaveReportsTheReason)
+    {
+        const auto controller = openUnwritableController();
+
+        std::vector<std::string> reasons;
+        controller->signalSaveFailed().connect([&reasons](const std::string& reason) { reasons.push_back(reason); });
+
+        controller->addItem(sampleAlbum());
+
+        ASSERT_EQ(reasons.size(), 1U);
+        EXPECT_FALSE(reasons.front().empty());
     }
 
     TEST_F(CollectionControllerTest, CorruptedFileIsMovedAsideAndTheCollectionStartsEmpty)

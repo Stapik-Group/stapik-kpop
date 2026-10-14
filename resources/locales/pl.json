@@ -195,5 +195,5 @@
   "kpop.startup.corrupted.header": "Plik kolekcji był uszkodzony",
   "kpop.startup.corrupted.text": "Uszkodzony plik został przeniesiony obok {path} (jego nazwa kończy się na .corrupt-…). Aplikacja startuje z pustą kolekcją.",
   "kpop.error.saveFailed.header": "Nie udało się zapisać kolekcji",
-  "kpop.error.saveFailed.text": "Sprawdź wolne miejsce na dysku i uprawnienia do {path}."
+  "kpop.error.saveFailed.text": "Sprawdź wolne miejsce na dysku i uprawnienia do {path}. Powód: {reason}"
 }

@@ -3,12 +3,9 @@
 #include "kpop/command/CollectionCommands.hpp"
 #include "kpop/document/CollectionSchema.hpp"
 
-#include "stapik/storage/PathText.hpp"
 #include "stapik/domain/IdGenerator.hpp"
-#include "stapik/log/Log.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <memory>
 #include <utility>
 
@@ -33,8 +30,10 @@ namespace kpop::app
         std::filesystem::path documentPath,
         std::filesystem::path imagesDirectory,
         std::filesystem::path photosDirectory,
-        stapik::sync::CloudSessionHooks cloudHooks) :
-        m_file(std::move(documentPath), document::COLLECTION_SCHEMA_VERSION),
+        stapik::sync::CloudSessionHooks cloudHooks,
+        const stapik::time::IClock& clock) :
+        m_clock(clock),
+        m_file(std::move(documentPath), document::COLLECTION_SCHEMA_VERSION, clock),
         m_imageLibrary(std::move(imagesDirectory)),
         m_photoLibrary(std::move(photosDirectory), image::MAX_PHOTO_DIMENSION),
         m_cloudSession(std::move(cloudHooks))
@@ -210,7 +209,7 @@ namespace kpop::app
         return m_signalSyncStatusChanged;
     }
 
-    sigc::signal<void()>& CollectionController::signalSaveFailed()
+    sigc::signal<void(const std::string&)>& CollectionController::signalSaveFailed()
     {
         return m_signalSaveFailed;
     }
@@ -254,7 +253,7 @@ namespace kpop::app
         if (m_ignoreHistoryChanges)
             return;
 
-        m_document.touch(std::chrono::system_clock::now());
+        m_document.touch(m_clock.now());
         persist();
         m_cloudSession.pushChange(m_document);
         m_signalDocumentChanged.emit();
@@ -280,10 +279,11 @@ namespace kpop::app
 
     void CollectionController::persist() const
     {
-        if (m_file.save(m_document))
+        // stapik-common logs the failure itself, so only the reason is passed on.
+        const auto result = m_file.save(m_document);
+        if (result)
             return;
 
-        stapik::log::error("Cannot save the collection to {}", stapik::storage::pathText(m_file.filePath()));
-        m_signalSaveFailed.emit();
+        m_signalSaveFailed.emit(result.error().code.message());
     }
 }

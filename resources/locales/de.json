@@ -195,5 +195,5 @@
   "kpop.startup.corrupted.header": "Die Sammlungsdatei war beschädigt",
   "kpop.startup.corrupted.text": "Die beschädigte Datei wurde neben {path} verschoben (der Name endet auf .corrupt-…). Die Anwendung startet mit einer leeren Sammlung.",
   "kpop.error.saveFailed.header": "Die Sammlung konnte nicht gespeichert werden",
-  "kpop.error.saveFailed.text": "Prüfe den freien Speicherplatz und die Berechtigungen für {path}."
+  "kpop.error.saveFailed.text": "Prüfe den freien Speicherplatz und die Berechtigungen für {path}. Grund: {reason}"
 }

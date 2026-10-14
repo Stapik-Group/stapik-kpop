@@ -17,8 +17,10 @@
 #include "stapik/ui/dialog/ConnectDialog.hpp"
 #include "stapik/ui/dialog/DialogUtils.hpp"
 
+#include <giomm/asyncresult.h>
 #include <giomm/menu.h>
-#include <gtkmm/messagedialog.h>
+#include <glibmm/error.h>
+#include <gtkmm/alertdialog.h>
 
 #include <algorithm>
 #include <string>
@@ -101,15 +103,26 @@ namespace kpop::ui
 
                 set_sensitive(false);
 
-                auto* dialog = showAutoDeletingDialog<Gtk::MessageDialog>(
-                    *this,
-                    translate(isNewer ? "kpop.startup.newerVersion.header" : "kpop.startup.migrationFailed.header"),
-                    false,
-                    Gtk::MessageType::ERROR,
-                    Gtk::ButtonsType::CLOSE,
-                    true);
-                dialog->set_secondary_text(translate(isNewer ? "kpop.startup.newerVersion.text" : "kpop.startup.migrationFailed.text", { { "path", path } }));
-                dialog->signal_hide().connect([this] { close(); });
+                // The collection cannot be used, so closing the message closes the window too.
+                const auto dialog = Gtk::AlertDialog::create(translate(isNewer ? "kpop.startup.newerVersion.header" : "kpop.startup.migrationFailed.header"));
+                dialog->set_detail(translate(isNewer ? "kpop.startup.newerVersion.text" : "kpop.startup.migrationFailed.text", { { "path", path } }));
+                dialog->set_modal(true);
+                dialog->set_buttons({ translate("dialog.button.ok") });
+                dialog->set_default_button(0);
+                dialog->set_cancel_button(0);
+                dialog->choose(*this, [this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result)
+                {
+                    try
+                    {
+                        dialog->choose_finish(result);
+                    }
+                    catch (const Glib::Error&)
+                    {
+                        // Dismissing the message any other way ends up the same.
+                    }
+
+                    close();
+                });
             }
         }
     }
@@ -230,12 +243,12 @@ namespace kpop::ui
             refreshLanguage();
             refreshAll();
         });
-        m_saveFailedConnection = m_controller.signalSaveFailed().connect([this]
+        m_saveFailedConnection = m_controller.signalSaveFailed().connect([this](const std::string& reason)
         {
             showMessageDialog(
                 *this,
                 translate("kpop.error.saveFailed.header"),
-                translate("kpop.error.saveFailed.text", { { "path", stapik::storage::pathText(m_controller.documentPath()) } }));
+                translate("kpop.error.saveFailed.text", { { "path", stapik::storage::pathText(m_controller.documentPath()) }, { "reason", reason } }));
         });
 
         signal_close_request().connect([this]
