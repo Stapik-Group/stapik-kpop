@@ -4,6 +4,7 @@
 #include "stapik/cloud/IAssetStorage.hpp"
 
 #include <chrono>
+#include <functional>
 #include <map>
 #include <optional>
 #include <set>
@@ -30,6 +31,9 @@ namespace kpop::test
         bool failListing = false;
         bool failUploads = false;
         std::set<std::string> vanishingFiles;
+
+        // Called at the start of every upload; a test makes it throw to simulate the answers of the cloud.
+        std::function<void()> beforeUpload;
 
         mutable int uploadCalls = 0;
         mutable int downloadCalls = 0;
@@ -66,6 +70,9 @@ namespace kpop::test
             const stapik::cloud::AssetUploadHooks& /*hooks*/) const override
         {
             ++uploadCalls;
+
+            if (beforeUpload)
+                beforeUpload();
 
             if (failUploads)
                 throw CloudStorageException("API asset upload failed with status 403");

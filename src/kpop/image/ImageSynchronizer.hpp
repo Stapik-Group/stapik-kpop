@@ -4,6 +4,8 @@
 
 #include "stapik/cloud/IAssetStorage.hpp"
 
+#include <chrono>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -31,6 +33,9 @@ namespace kpop::image
 
         bool failed = false;
         std::string failure;
+
+        // Set when the cloud refused the requests because there were too many of them and said how long to wait.
+        std::optional<std::chrono::seconds> retryAfter;
     };
 
     [[nodiscard]] ImageSyncReport synchronizeImages(

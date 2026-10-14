@@ -3,6 +3,7 @@
 #include "kpop/document/CollectionDocument.hpp"
 #include "kpop/image/ImageLibrary.hpp"
 
+#include "stapik/cloud/ApiKeyExpiry.hpp"
 #include "stapik/command/UndoStack.hpp"
 #include "stapik/document/DocumentFile.hpp"
 #include "stapik/sync/CloudSession.hpp"
@@ -10,7 +11,9 @@
 
 #include <sigc++/signal.h>
 
+#include <chrono>
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -75,6 +78,13 @@ namespace kpop::app
         // The argument is the reason reported by the system, for example "No space left on device".
         sigc::signal<void(const std::string&)>& signalSaveFailed();
 
+        // The cloud said the API key expires at the given time (it does so in the last 30 days of the key).
+        sigc::signal<void(std::chrono::system_clock::time_point)>& signalApiKeyExpiring();
+
+        // What the answers of the cloud said about the API key. The clients that talk to the cloud for files fill it
+        // too, so it is passed to them. It is empty when the application has no cloud hooks.
+        [[nodiscard]] std::shared_ptr<stapik::cloud::ApiKeyExpiryMonitor> apiKeyExpiryMonitor() const;
+
     private:
         using DocumentFile = stapik::document::DocumentFile<document::CollectionDocument>;
         using TimePoint = document::CollectionDocument::TimePoint;
@@ -93,10 +103,13 @@ namespace kpop::app
         stapik::command::UndoStack m_undoStack;
         image::ImageLibrary m_imageLibrary;
         image::ImageLibrary m_photoLibrary;
+        // Declared before the session, which takes the hooks this is copied from.
+        std::shared_ptr<stapik::cloud::ApiKeyExpiryMonitor> m_apiKeyExpiryMonitor;
         stapik::sync::CloudSession<document::CollectionDocument> m_cloudSession;
         bool m_ignoreHistoryChanges = false;
         sigc::signal<void()> m_signalDocumentChanged;
         sigc::signal<void(stapik::sync::SyncStatus)> m_signalSyncStatusChanged;
         sigc::signal<void(const std::string&)> m_signalSaveFailed;
+        sigc::signal<void(std::chrono::system_clock::time_point)> m_signalApiKeyExpiring;
     };
 }

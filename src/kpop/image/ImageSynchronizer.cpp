@@ -1,6 +1,7 @@
 #include "ImageSynchronizer.hpp"
 
 #include "stapik/cloud/CloudAssetProtocol.hpp"
+#include "stapik/cloud/CloudStorageException.hpp"
 
 #include <algorithm>
 #include <exception>
@@ -42,6 +43,24 @@ namespace kpop::image
                 ++report.uploaded;
             }
             catch (const stapik::cloud::AssetTooLargeException&)
+            {
+                ++report.skipped;
+            }
+            catch (const stapik::cloud::AssetTypeNotAllowedException&)
+            {
+                // Like a file that is too large, this one is refused every time, so trying again would not help.
+                ++report.skipped;
+            }
+            catch (const stapik::cloud::InvalidAssetFilenameException&)
+            {
+                ++report.skipped;
+            }
+            catch (const stapik::cloud::AssetTypeNotAllowedException&)
+            {
+                // Like a file that is too large, this one is refused every time, so trying again would not help.
+                ++report.skipped;
+            }
+            catch (const stapik::cloud::InvalidAssetFilenameException&)
             {
                 ++report.skipped;
             }
@@ -107,6 +126,12 @@ namespace kpop::image
 
             for (const auto& id : toDownload)
                 download(storage, store, id, report);
+        }
+        catch (const CloudRateLimitedException& error)
+        {
+            report.failed = true;
+            report.failure = error.what();
+            report.retryAfter = error.retryAfter();
         }
         catch (const std::exception& error)
         {

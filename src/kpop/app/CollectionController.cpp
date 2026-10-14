@@ -36,6 +36,7 @@ namespace kpop::app
         m_file(std::move(documentPath), document::COLLECTION_SCHEMA_VERSION, clock),
         m_imageLibrary(std::move(imagesDirectory)),
         m_photoLibrary(std::move(photosDirectory), image::MAX_PHOTO_DIMENSION),
+        m_apiKeyExpiryMonitor(cloudHooks.expiryMonitor),
         m_cloudSession(std::move(cloudHooks))
     {
         loadFromDisk();
@@ -214,6 +215,16 @@ namespace kpop::app
         return m_signalSaveFailed;
     }
 
+    sigc::signal<void(std::chrono::system_clock::time_point)>& CollectionController::signalApiKeyExpiring()
+    {
+        return m_signalApiKeyExpiring;
+    }
+
+    std::shared_ptr<stapik::cloud::ApiKeyExpiryMonitor> CollectionController::apiKeyExpiryMonitor() const
+    {
+        return m_apiKeyExpiryMonitor;
+    }
+
     void CollectionController::loadFromDisk()
     {
         auto result = m_file.load();
@@ -240,6 +251,11 @@ namespace kpop::app
         m_cloudSession.signalBaselineChanged().connect([this](const TimePoint baseline)
         {
             onCloudBaselineChanged(baseline);
+        });
+
+        m_cloudSession.signalApiKeyExpiring().connect([this](const TimePoint expiresAt)
+        {
+            m_signalApiKeyExpiring.emit(expiresAt);
         });
 
         m_cloudSession.signalStatusChanged().connect([this](const stapik::sync::SyncStatus status)

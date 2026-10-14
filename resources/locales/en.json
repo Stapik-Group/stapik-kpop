@@ -195,5 +195,6 @@
   "kpop.startup.corrupted.header": "The collection file was damaged",
   "kpop.startup.corrupted.text": "The damaged file was moved next to {path} (its name ends with .corrupt-…). The application starts with an empty collection.",
   "kpop.error.saveFailed.header": "The collection could not be saved",
-  "kpop.error.saveFailed.text": "Check the free disk space and the permissions of {path}. Reason: {reason}"
+  "kpop.error.saveFailed.text": "Check the free disk space and the permissions of {path}. Reason: {reason}",
+  "kpop.cloud.apiKeyExpiring.header": "Your cloud key is about to expire"
 }

@@ -256,6 +256,22 @@ namespace
         EXPECT_EQ(controller->document().lastUpdate(), start + std::chrono::hours{ 5 });
     }
 
+    TEST_F(CollectionControllerTest, SharesTheExpiryMonitorOfTheCloudHooks)
+    {
+        stapik::sync::CloudSessionHooks hooks;
+        hooks.expiryMonitor = std::make_shared<stapik::cloud::ApiKeyExpiryMonitor>();
+        const auto monitor = hooks.expiryMonitor;
+
+        CollectionController controller(documentPath(), documentPath().parent_path() / "images", documentPath().parent_path() / "photos", std::move(hooks));
+
+        EXPECT_EQ(controller.apiKeyExpiryMonitor(), monitor);
+    }
+
+    TEST_F(CollectionControllerTest, HasNoExpiryMonitorWithoutCloudHooks)
+    {
+        EXPECT_EQ(openController()->apiKeyExpiryMonitor(), nullptr);
+    }
+
     TEST_F(CollectionControllerTest, FailedSaveReportsTheReason)
     {
         const auto controller = openUnwritableController();

@@ -13,6 +13,7 @@
 #include "stapik/app/version.hpp"
 #include "stapik/storage/PathText.hpp"
 #include "stapik/domain/MoneyFormatter.hpp"
+#include "stapik/locale/DateFormatter.hpp"
 #include "stapik/ui/dialog/ConfirmDialog.hpp"
 #include "stapik/ui/dialog/ConnectDialog.hpp"
 #include "stapik/ui/dialog/DialogUtils.hpp"
@@ -23,6 +24,7 @@
 #include <gtkmm/alertdialog.h>
 
 #include <algorithm>
+#include <chrono>
 #include <string>
 
 namespace kpop::ui
@@ -77,6 +79,7 @@ namespace kpop::ui
         m_syncConnection.disconnect();
         m_localeConnection.disconnect();
         m_saveFailedConnection.disconnect();
+        m_apiKeyConnection.disconnect();
     }
 
     void MainWindow::showStartupProblems()
@@ -242,6 +245,11 @@ namespace kpop::ui
         {
             refreshLanguage();
             refreshAll();
+        });
+        m_apiKeyConnection = m_controller.signalApiKeyExpiring().connect([this](const std::chrono::system_clock::time_point expiresAt)
+        {
+            const auto date = stapik::locale::formatDate(stapik::locale::toLocalTime(expiresAt), LocaleManager::instance().languageCode());
+            showMessageDialog(*this, translate("kpop.cloud.apiKeyExpiring.header"), translate("cloud.apiKeyExpiring", { { "date", date } }));
         });
         m_saveFailedConnection = m_controller.signalSaveFailed().connect([this](const std::string& reason)
         {

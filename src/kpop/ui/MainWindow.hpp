@@ -100,5 +100,6 @@ namespace kpop::ui
         sigc::connection m_syncConnection;
         sigc::connection m_localeConnection;
         sigc::connection m_saveFailedConnection;
+        sigc::connection m_apiKeyConnection;
     };
 }

@@ -4,9 +4,11 @@
 #include "support/TestFixtures.hpp"
 
 #include "stapik/cloud/CloudAssetProtocol.hpp"
+#include "stapik/cloud/CloudStorageException.hpp"
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -166,6 +168,38 @@ namespace
         EXPECT_FALSE(m_cloud.files.contains(ImageStore::fileName(large)));
     }
 
+    TEST_F(ImageSynchronizerTest, ImageOfARefusedTypeIsSkippedAndTheOthersAreStillUploaded)
+    {
+        const auto first = addLocally("one");
+        const auto second = addLocally("two");
+        // Whichever image comes first is refused, the other one is accepted.
+        m_cloud.beforeUpload = [this]
+        {
+            if (!m_cloud.files.empty())
+                return;
+
+            throw stapik::cloud::AssetTypeNotAllowedException("type not allowed");
+        };
+
+        const auto report = synchronizeImages(m_cloud, m_store, { first, second });
+
+        EXPECT_FALSE(report.failed);
+        EXPECT_EQ(report.skipped, 1);
+        EXPECT_EQ(report.uploaded, 1);
+    }
+
+    TEST_F(ImageSynchronizerTest, ImageWithARejectedNameIsSkipped)
+    {
+        const auto id = addLocally("cover");
+        m_cloud.beforeUpload = [] { throw stapik::cloud::InvalidAssetFilenameException("bad name"); };
+
+        const auto report = synchronizeImages(m_cloud, m_store, { id });
+
+        EXPECT_FALSE(report.failed);
+        EXPECT_EQ(report.skipped, 1);
+        EXPECT_EQ(report.uploaded, 0);
+    }
+
     TEST_F(ImageSynchronizerTest, DamagedLocalFileIsNotUploaded)
     {
         const auto id = addLocally("cover");
@@ -228,5 +262,39 @@ namespace
 
         EXPECT_TRUE(report.failed);
         EXPECT_EQ(m_cloud.uploadCalls, 1);
+    }
+
+    TEST_F(ImageSynchronizerTest, ChecksumMismatchOfTheServerFailsTheRunSoItIsTriedAgain)
+    {
+        const auto id = addLocally("cover");
+        m_cloud.beforeUpload = [] { throw stapik::cloud::AssetChecksumMismatchException("damaged"); };
+
+        const auto report = synchronizeImages(m_cloud, m_store, { id });
+
+        EXPECT_TRUE(report.failed);
+        EXPECT_FALSE(report.retryAfter);
+    }
+
+    TEST_F(ImageSynchronizerTest, RateLimitFailsTheRunAndKeepsTheWaitTheServerAskedFor)
+    {
+        const auto id = addLocally("cover");
+        m_cloud.beforeUpload = [] { throw CloudRateLimitedException(std::chrono::seconds{ 120 }); };
+
+        const auto report = synchronizeImages(m_cloud, m_store, { id });
+
+        EXPECT_TRUE(report.failed);
+        ASSERT_TRUE(report.retryAfter);
+        EXPECT_EQ(*report.retryAfter, std::chrono::seconds{ 120 });
+    }
+
+    TEST_F(ImageSynchronizerTest, RateLimitWithoutAWaitLeavesItEmpty)
+    {
+        const auto id = addLocally("cover");
+        m_cloud.beforeUpload = [] { throw CloudRateLimitedException(std::nullopt); };
+
+        const auto report = synchronizeImages(m_cloud, m_store, { id });
+
+        EXPECT_TRUE(report.failed);
+        EXPECT_FALSE(report.retryAfter);
     }
 }
