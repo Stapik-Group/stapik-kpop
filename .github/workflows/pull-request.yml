@@ -14,5 +14,7 @@ jobs:
     uses: Stapik-Group/stapik-common/.github/workflows/build.yml@v1.5.5
     with:
       application-name: stapikkpop
+      # cpack needs the file utility to find the dependencies of the package.
+      apt-packages: file
       images: '["ubuntu:24.04", "debian:13"]'
       cmake-args: -DSTAPIK_KPOP_BUILD_TESTS=ON -DSTAPIK_WARNINGS_AS_ERRORS=OFF
