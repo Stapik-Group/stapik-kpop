@@ -52,13 +52,18 @@ int main(int argumentCount, char* arguments[])
     if (selfTest)
         g_setenv("G_MESSAGES_DEBUG", "all", FALSE);
 
+    // The self-test has to work without a network, so it does not look for a newer version.
+    stapik::app::StapikApplicationOptions options;
+    options.checkForUpdates = !selfTest;
+
     const auto application = stapik::app::StapikApplication::create(stapik::app::AppInfo{
         .applicationId = APPLICATION_ID,
         .internalName = std::string{ stapik::app::build::NAME },
         .displayName = std::string{ stapik::app::build::DISPLAY_NAME },
         .version = std::string{ stapik::app::build::VERSION },
         .author = AUTHOR,
-        .repositoryUrl = REPOSITORY_URL });
+        .repositoryUrl = REPOSITORY_URL },
+        options);
 
     // --log-level, when given, is applied later and wins over this.
     if (selfTest)

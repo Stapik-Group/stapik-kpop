@@ -10,6 +10,7 @@
 #include "kpop/ui/dialog/ArtistsDialog.hpp"
 #include "kpop/ui/dialog/ItemDialog.hpp"
 
+#include "stapik/app/AppContext.hpp"
 #include "stapik/app/version.hpp"
 #include "stapik/storage/PathText.hpp"
 #include "stapik/domain/MoneyFormatter.hpp"
@@ -18,6 +19,7 @@
 #include "stapik/ui/dialog/ConnectDialog.hpp"
 #include "stapik/ui/dialog/DialogUtils.hpp"
 #include "stapik/ui/dialog/RestoreBackupDialog.hpp"
+#include "stapik/update/UpdateChecker.hpp"
 
 #include <giomm/asyncresult.h>
 #include <giomm/menu.h>
@@ -50,6 +52,7 @@ namespace kpop::ui
 
     MainWindow::MainWindow(app::CollectionController& controller, app::ImageSync& imageSync, const stapik::theme::ThemeRegistry& themes) :
         m_controller(controller),
+        m_checkForUpdates(stapik::app::AppContext::instance().settings(), stapik::update::CHECK_ENABLED_SETTING, true),
         m_menu(*this, menuOptions(themes, controller.undoStack())),
         m_rootBox(Gtk::Orientation::VERTICAL),
         m_topBar(Gtk::Orientation::HORIZONTAL, TOP_BAR_SPACING),
@@ -142,6 +145,8 @@ namespace kpop::ui
 
     void MainWindow::initMenu()
     {
+        m_menu.settings().addBool("kpop.settings.checkForUpdates", m_checkForUpdates);
+
         m_menu.addToMenu(StandardMenu::Target::File, [](Gio::Menu& menu)
         {
             menu.append(translate("menu.file.restoreBackup"), "win.restoreBackup");

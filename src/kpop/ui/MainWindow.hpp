@@ -8,6 +8,7 @@
 #include "kpop/ui/widget/FilterBar.hpp"
 #include "kpop/ui/widget/PaginationBar.hpp"
 
+#include "stapik/settings/ObservableSetting.hpp"
 #include "stapik/theme/ThemeRegistry.hpp"
 #include "stapik/ui/menu/StandardMenu.hpp"
 #include "stapik/ui/widget/StatusIndicator.hpp"
@@ -75,6 +76,9 @@ namespace kpop::ui
         [[nodiscard]] static StandardMenuOptions menuOptions(const stapik::theme::ThemeRegistry& themes, stapik::command::UndoStack& undoStack);
 
         app::CollectionController& m_controller;
+
+        // Declared before the menu, whose settings window refers to it.
+        stapik::settings::ObservableSetting<bool> m_checkForUpdates;
         StandardMenu m_menu;
 
         Gtk::Box m_rootBox;

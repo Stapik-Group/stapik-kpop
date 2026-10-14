@@ -201,5 +201,6 @@
   "kpop.error.saveFailed.text": "Check the free disk space and the permissions of {path}. Reason: {reason}",
   "kpop.cloud.apiKeyExpiring.header": "Your cloud key is about to expire",
   "kpop.restore.failed.header": "The backup could not be restored",
-  "kpop.restore.failed.text": "The file {path} is damaged, comes from a newer version of the application or has an old format that could not be converted. The collection was not changed."
+  "kpop.restore.failed.text": "The file {path} is damaged, comes from a newer version of the application or has an old format that could not be converted. The collection was not changed.",
+  "kpop.settings.checkForUpdates": "Check for updates"
 }

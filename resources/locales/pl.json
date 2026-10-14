@@ -201,5 +201,6 @@
   "kpop.error.saveFailed.text": "Sprawdź wolne miejsce na dysku i uprawnienia do {path}. Powód: {reason}",
   "kpop.cloud.apiKeyExpiring.header": "Klucz do chmury niedługo wygaśnie",
   "kpop.restore.failed.header": "Nie udało się przywrócić kopii zapasowej",
-  "kpop.restore.failed.text": "Plik {path} jest uszkodzony, pochodzi z nowszej wersji aplikacji albo ma stary format, którego nie udało się przekonwertować. Kolekcja nie została zmieniona."
+  "kpop.restore.failed.text": "Plik {path} jest uszkodzony, pochodzi z nowszej wersji aplikacji albo ma stary format, którego nie udało się przekonwertować. Kolekcja nie została zmieniona.",
+  "kpop.settings.checkForUpdates": "Sprawdzaj aktualizacje"
 }
