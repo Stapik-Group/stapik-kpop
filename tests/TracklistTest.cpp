@@ -99,11 +99,18 @@ namespace
     {
         EXPECT_TRUE(isPlaceholder(Track{}));
         EXPECT_FALSE(isPlaceholder(trackOnDisc("A", 1)));
-        EXPECT_FALSE(isPlaceholder(Track{ .length = TrackLength::fromSeconds(65) }));
-        EXPECT_FALSE(isPlaceholder(Track{ .titleTrack = true }));
+        Track withLength;
+        withLength.length = TrackLength::fromSeconds(65);
+        EXPECT_FALSE(isPlaceholder(withLength));
+
+        Track titleTrack;
+        titleTrack.titleTrack = true;
+        EXPECT_FALSE(isPlaceholder(titleTrack));
 
         // A bonus mark alone is enough to count as filled in.
-        EXPECT_FALSE(isPlaceholder(Track{ .bonus = true }));
+        Track bonus;
+        bonus.bonus = true;
+        EXPECT_FALSE(isPlaceholder(bonus));
     }
 
     TEST(TracklistTest, TotalLengthSkipsPlaceholders)
