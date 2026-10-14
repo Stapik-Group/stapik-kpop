@@ -35,5 +35,5 @@ that cannot be understood is marked, and the entry cannot be confirmed until you
 - Double-click an entry, or choose **Edit** from its context menu (right-click), to change it.
 - **Duplicate** makes a copy with a new identity, **Duplicate and edit…** opens the copy at once. It is handy for
   several versions of one album.
-- **Delete** asks for confirmation. In the shelf view you can also select an entry and press the Delete key.
+- **Delete** asks for confirmation. In the shelf and grid views you can also select an entry and press the Delete key.
 - **Edit → Undo** and **Redo** (Ctrl+Z and Ctrl+Shift+Z) work for every change, including deleting.

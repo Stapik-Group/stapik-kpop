@@ -21,9 +21,10 @@ Die letzte Liste oben legt die Reihenfolge fest: zuletzt oder zuerst hinzugefüg
 Veröffentlichungsdatum. Titel und Künstler werden nach dem Alphabet der Programmsprache sortiert, auf Polnisch steht
 also *Ł* nach *L*.
 
-## Liste oder Regal
+## Liste, Regal oder Raster
 
-Mit **Liste** und **Regal** wechselst du die Ansicht. Das Regal zeigt Cover, was bei Alben und Photocards schöner
-aussieht. Lange Listen werden in Seiten zu 50 Einträgen geteilt, mit Schaltflächen darunter.
+Die Ansicht wählst du im Menü **Ansicht**: **Liste**, **Regal** oder **Raster**. Regal und Raster zeigen Cover, was bei
+Alben und Photocards schöner aussieht; das Raster zeigt unter jedem Cover auch Titel und Untertitel. Lange Listen werden
+in Seiten zu 50 Einträgen geteilt, mit Schaltflächen darunter.
 
 Wenn nichts passt, sagt das Fenster es. Ändere dann den Suchtext oder die Filter.

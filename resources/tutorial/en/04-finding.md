@@ -20,9 +20,10 @@ at, tracklists, writers, lyrics (original, romanization and translation), clip a
 The last list at the top sets the order: recently or oldest added, title, artist or release date. Titles and artists
 are put in alphabetical order of the language of the program, so in Polish *Ł* comes after *L*.
 
-## List or shelf
+## List, shelf or grid
 
-Use **List** and **Shelf** to switch the view. The shelf shows covers, which is nicer for albums and photocards. Long
-lists are split into pages of 50 entries, with buttons below.
+Choose **List**, **Shelf** or **Grid** in the **View** menu. The shelf and the grid show covers, which is nicer for
+albums and photocards; the grid also shows the title and the subtitle under each cover. Long lists are split into
+pages of 50 entries, with buttons below.
 
 When nothing matches, the window says so. Change the search text or the filters.

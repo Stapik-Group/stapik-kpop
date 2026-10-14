@@ -9,7 +9,7 @@ went to. Everything is stored on your computer, and you can optionally synchroni
 - On the left is the list of kinds: **All**, **Albums**, **Photocards**, **Merchandise**, **Clips**, **Lyrics** and
   **Events**. Click one to see only that kind.
 - At the top there is the search field, the filters for status and artist and the sort order.
-- In the middle is the list of entries, shown as a **List** or as a **Shelf** of covers.
+- In the middle is the list of entries, shown as a **List**, as a **Shelf** of covers or as a **Grid** of tiles (see the **View** menu).
 - At the bottom you see how many entries you have, how many copies you own and how much you spent, and, when the cloud
   is connected, the state of the synchronisation.
 

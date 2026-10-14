@@ -20,9 +20,10 @@ listach utworów, autorach, tekstach piosenek (oryginał, romanizacja i tłumacz
 Ostatnia lista u góry ustala kolejność: ostatnio lub najdawniej dodane, tytuł, artysta albo data wydania. Tytuły i
 artyści są ustawiani w kolejności alfabetu języka programu, więc po polsku *Ł* jest po *L*.
 
-## Lista czy półka
+## Lista, półka czy siatka
 
-Przyciskami **Lista** i **Półka** przełączasz widok. Półka pokazuje okładki, co lepiej wygląda przy albumach i
-photocardach. Długie listy są dzielone na strony po 50 wpisów, z przyciskami poniżej.
+Widok wybierasz w menu **Widok**: **Lista**, **Półka** albo **Siatka**. Półka i siatka pokazują okładki, co lepiej
+wygląda przy albumach i photocardach; siatka pokazuje też tytuł i podtytuł pod każdą okładką. Długie listy są dzielone
+na strony po 50 wpisów, z przyciskami poniżej.
 
 Gdy nic nie pasuje, okno to mówi. Zmień wtedy szukany tekst albo filtry.

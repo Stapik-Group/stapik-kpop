@@ -77,6 +77,7 @@ stapik_add_application(
                 src/kpop/ui/dialog/ItemDialog.cpp
                 src/kpop/ui/form/DetailsForms.cpp
                 src/kpop/ui/form/FormGrid.cpp
+                src/kpop/ui/view/ItemGridView.cpp
                 src/kpop/ui/view/ItemListView.cpp
                 src/kpop/ui/view/ItemShelfView.cpp
                 src/kpop/ui/view/KindSidebar.cpp

@@ -1,5 +1,6 @@
 {
   "kpop.date.placeholder": "TT.MM.JJJJ",
+  "kpop.menu.view": "Ansicht",
   "kpop.menu.collection": "Sammlung",
   "kpop.menu.addItem": "Eintrag hinzufügen…",
   "kpop.menu.item.duplicate": "Duplizieren",
@@ -180,6 +181,7 @@
   "kpop.list.noMatches.hint": "Ändere den Suchtext oder die Filter.",
   "kpop.view.list": "Liste",
   "kpop.view.shelf": "Regal",
+  "kpop.view.grid": "Raster",
   "kpop.page.label": "Seite {page} von {pages}",
   "kpop.page.previous": "‹ Zurück",
   "kpop.page.next": "Weiter ›",

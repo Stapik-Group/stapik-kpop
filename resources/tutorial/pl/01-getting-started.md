@@ -9,7 +9,7 @@ własną chmurą Stapik Cloud (zobacz [Synchronizacja z chmurą](#cloud)).
 - Po lewej jest lista rodzajów: **Wszystko**, **Albumy**, **Photocardy**, **Gadżety**, **Klipy**, **Teksty piosenek** i
   **Wydarzenia**. Kliknij jeden, aby zobaczyć tylko ten rodzaj.
 - U góry znajdziesz pole wyszukiwania, filtry statusu i artysty oraz kolejność sortowania.
-- Pośrodku jest lista wpisów, pokazana jako **Lista** albo jako **Półka** z okładkami.
+- Pośrodku jest lista wpisów, pokazana jako **Lista**, jako **Półka** z okładkami albo jako **Siatka** kafelków (menu **Widok**).
 - Na dole widać, ile masz wpisów, ile egzemplarzy posiadasz i ile wydano, a po połączeniu z chmurą także stan
   synchronizacji.
 

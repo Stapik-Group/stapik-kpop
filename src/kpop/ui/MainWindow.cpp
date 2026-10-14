@@ -45,6 +45,9 @@ namespace kpop::ui
         constexpr int TOP_BAR_SPACING = 8;
         constexpr int TOP_BAR_MARGIN = 8;
         constexpr auto ADD_ITEM_ACTION = "win.addItem";
+        constexpr auto VIEW_MODE_LIST = "list";
+        constexpr auto VIEW_MODE_SHELF = "shelf";
+        constexpr auto VIEW_MODE_GRID = "grid";
         constexpr auto TUTORIAL_DIRECTORY = "tutorial";
         constexpr auto ARCHIVE_DIRECTORY_KEY = "archive.lastDirectory";
         constexpr auto ARCHIVE_EXTENSION = ".zip";
@@ -99,8 +102,7 @@ namespace kpop::ui
         m_topBar(Gtk::Orientation::HORIZONTAL, TOP_BAR_SPACING),
         m_rightBox(Gtk::Orientation::VERTICAL),
         m_footer(Gtk::Orientation::HORIZONTAL, FOOTER_SPACING),
-        m_paned(Gtk::Orientation::HORIZONTAL),
-        m_viewSwitch(Gtk::Orientation::HORIZONTAL)
+        m_paned(Gtk::Orientation::HORIZONTAL)
     {
         set_title(std::string{ stapik::app::build::DISPLAY_NAME });
         set_default_size(DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -184,6 +186,9 @@ namespace kpop::ui
         add_action("restoreBackup", [this] { onRestoreBackupRequested(); });
         add_action("exportArchive", [this] { onExportArchiveRequested(); });
         add_action("importArchive", [this] { onImportArchiveRequested(); });
+
+        // A radio action: the menu marks the view that is shown now.
+        m_viewModeAction = add_action_radio_string("viewMode", [this](const Glib::ustring& mode) { onViewModeRequested(mode); }, VIEW_MODE_LIST);
     }
 
     void MainWindow::initMenu()
@@ -195,6 +200,14 @@ namespace kpop::ui
             menu.append(translate("menu.file.restoreBackup"), "win.restoreBackup");
             menu.append(translate("menu.file.exportArchive"), "win.exportArchive");
             menu.append(translate("menu.file.importArchive"), "win.importArchive");
+        });
+
+        // Added first, so it stands before Collection: File, Edit, View, Collection, Settings, Help.
+        m_menu.addMenu("kpop.menu.view", [](Gio::Menu& menu)
+        {
+            menu.append(translate("kpop.view.list"), std::string("win.viewMode::") + VIEW_MODE_LIST);
+            menu.append(translate("kpop.view.shelf"), std::string("win.viewMode::") + VIEW_MODE_SHELF);
+            menu.append(translate("kpop.view.grid"), std::string("win.viewMode::") + VIEW_MODE_GRID);
         });
 
         m_menu.addMenu("kpop.menu.collection", [](Gio::Menu& menu)
@@ -209,20 +222,14 @@ namespace kpop::ui
         m_addButton.set_label(translate("kpop.button.addEntry"));
         m_filterBar.set_hexpand(true);
 
-        m_shelfViewButton.set_group(m_listViewButton);
-        m_listViewButton.set_active(true);
-        m_viewSwitch.add_css_class("linked");
-        m_viewSwitch.append(m_listViewButton);
-        m_viewSwitch.append(m_shelfViewButton);
-
         m_viewStack.set_vexpand(true);
         m_viewStack.add(m_listView);
         m_viewStack.add(m_shelfView);
+        m_viewStack.add(m_gridView);
         m_viewStack.set_visible_child(m_listView);
 
         m_topBar.set_margin(TOP_BAR_MARGIN);
         m_topBar.append(m_filterBar);
-        m_topBar.append(m_viewSwitch);
         m_topBar.append(m_addButton);
 
         m_sidebar.set_size_request(SIDEBAR_WIDTH, -1);
@@ -268,19 +275,19 @@ namespace kpop::ui
             refreshList();
         });
 
-        m_shelfViewButton.signal_toggled().connect([this] { refreshViewMode(); });
+        for (auto* signals : { &m_listView.signalAddRequested(), &m_shelfView.signalAddRequested(), &m_gridView.signalAddRequested() })
+            signals->connect([this] { onAddRequested(); });
 
-        m_listView.signalAddRequested().connect([this] { onAddRequested(); });
-        m_shelfView.signalAddRequested().connect([this] { onAddRequested(); });
-        m_listView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
-        m_listView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
-        m_shelfView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
-        m_shelfView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
+        for (auto* signals : { &m_listView.signalEditRequested(), &m_shelfView.signalEditRequested(), &m_gridView.signalEditRequested() })
+            signals->connect([this](const std::string& itemId) { onEditRequested(itemId); });
 
-        for (auto* signals : { &m_listView.signalDuplicateRequested(), &m_shelfView.signalDuplicateRequested() })
+        for (auto* signals : { &m_listView.signalDeleteRequested(), &m_shelfView.signalDeleteRequested(), &m_gridView.signalDeleteRequested() })
+            signals->connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
+
+        for (auto* signals : { &m_listView.signalDuplicateRequested(), &m_shelfView.signalDuplicateRequested(), &m_gridView.signalDuplicateRequested() })
             signals->connect([this](const std::string& itemId) { onDuplicateRequested(itemId); });
 
-        for (auto* signals : { &m_listView.signalDuplicateAndEditRequested(), &m_shelfView.signalDuplicateAndEditRequested() })
+        for (auto* signals : { &m_listView.signalDuplicateAndEditRequested(), &m_shelfView.signalDuplicateAndEditRequested(), &m_gridView.signalDuplicateAndEditRequested() })
             signals->connect([this](const std::string& itemId) { onDuplicateAndEditRequested(itemId); });
 
         m_paginationBar.signalPreviousRequested().connect([this]
@@ -337,8 +344,6 @@ namespace kpop::ui
         m_addButton.set_label(translate("kpop.button.addEntry"));
         m_sidebar.refreshLabels();
         m_filterBar.refreshLabels();
-        m_listViewButton.set_label(translate("kpop.view.list"));
-        m_shelfViewButton.set_label(translate("kpop.view.shelf"));
         m_paginationBar.refreshLabels();
     }
 
@@ -388,15 +393,24 @@ namespace kpop::ui
 
         const auto emptyKind = document.items().empty() ? EmptyListKind::NoEntries : EmptyListKind::NoMatches;
 
-        if (isShelfViewActive())
+        // Only the view that is shown is filled; the others are refilled when they are switched to.
+        switch (m_viewMode)
         {
-            m_shelfView.setEmptyKind(emptyKind);
-            m_shelfView.setRows(pageRows);
-        }
-        else
-        {
-            m_listView.setEmptyKind(emptyKind);
-            m_listView.setRows(pageRows);
+            case ViewMode::Shelf:
+                m_shelfView.setEmptyKind(emptyKind);
+                m_shelfView.setRows(pageRows);
+                break;
+
+            case ViewMode::Grid:
+                m_gridView.setEmptyKind(emptyKind);
+                m_gridView.setRows(pageRows);
+                break;
+
+            case ViewMode::List:
+            default:
+                m_listView.setEmptyKind(emptyKind);
+                m_listView.setRows(pageRows);
+                break;
         }
 
         m_paginationBar.setPage(m_currentPage, pageCount);
@@ -404,13 +418,37 @@ namespace kpop::ui
 
     void MainWindow::refreshViewMode()
     {
-        m_viewStack.set_visible_child(isShelfViewActive() ? static_cast<Widget&>(m_shelfView) : m_listView);
+        m_viewStack.set_visible_child(activeView());
         refreshList();
     }
 
-    bool MainWindow::isShelfViewActive() const
+    Gtk::Widget& MainWindow::activeView()
     {
-        return m_shelfViewButton.get_active();
+        switch (m_viewMode)
+        {
+            case ViewMode::Shelf:
+                return m_shelfView;
+            case ViewMode::Grid:
+                return m_gridView;
+            case ViewMode::List:
+            default:
+                return m_listView;
+        }
+    }
+
+    void MainWindow::onViewModeRequested(const Glib::ustring& mode)
+    {
+        if (mode == VIEW_MODE_SHELF)
+            m_viewMode = ViewMode::Shelf;
+        else if (mode == VIEW_MODE_GRID)
+            m_viewMode = ViewMode::Grid;
+        else
+            m_viewMode = ViewMode::List;
+
+        // Without this the menu would keep marking the previous view.
+        m_viewModeAction->change_state(mode);
+
+        refreshViewMode();
     }
 
     void MainWindow::refreshStatistics()

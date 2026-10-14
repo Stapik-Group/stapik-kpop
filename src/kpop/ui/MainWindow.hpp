@@ -2,6 +2,7 @@
 
 #include "kpop/app/CollectionController.hpp"
 #include "kpop/app/ImageSync.hpp"
+#include "kpop/ui/view/ItemGridView.hpp"
 #include "kpop/ui/view/ItemListView.hpp"
 #include "kpop/ui/view/ItemShelfView.hpp"
 #include "kpop/ui/view/KindSidebar.hpp"
@@ -14,13 +15,14 @@
 #include "stapik/ui/menu/StandardMenu.hpp"
 #include "stapik/ui/widget/StatusIndicator.hpp"
 
+#include <giomm/simpleaction.h>
+
 #include <gtkmm/applicationwindow.h>
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/label.h>
 #include <gtkmm/paned.h>
 #include <gtkmm/stack.h>
-#include <gtkmm/togglebutton.h>
 
 #include <sigc++/connection.h>
 
@@ -62,7 +64,15 @@ namespace kpop::ui
         void refreshStatistics();
         void resetToFirstPage();
 
-        [[nodiscard]] bool isShelfViewActive() const;
+        enum class ViewMode
+        {
+            List,
+            Shelf,
+            Grid
+        };
+
+        void onViewModeRequested(const Glib::ustring& mode);
+        [[nodiscard]] Gtk::Widget& activeView();
 
         void onAddRequested();
         void onEditRequested(const std::string& itemId);
@@ -95,17 +105,18 @@ namespace kpop::ui
         Gtk::Box m_footer;
         Gtk::Paned m_paned;
         FilterBar m_filterBar;
-        Gtk::Box m_viewSwitch;
-        Gtk::ToggleButton m_listViewButton;
-        Gtk::ToggleButton m_shelfViewButton;
         Gtk::Button m_addButton;
         KindSidebar m_sidebar;
         Gtk::Stack m_viewStack;
         ItemListView m_listView;
         ItemShelfView m_shelfView;
+        ItemGridView m_gridView;
         PaginationBar m_paginationBar;
         Gtk::Label m_statisticsLabel;
         StatusIndicator m_syncIndicator;
+
+        ViewMode m_viewMode = ViewMode::List;
+        Glib::RefPtr<Gio::SimpleAction> m_viewModeAction;
 
         std::size_t m_currentPage = 1;
         sigc::connection m_documentConnection;

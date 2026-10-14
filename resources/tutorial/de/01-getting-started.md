@@ -9,7 +9,7 @@ Stapik Cloud abgleichen (siehe [Cloud-Synchronisierung](#cloud)).
 - Links steht die Liste der Arten: **Alle**, **Alben**, **Photocards**, **Merchandise**, **Clips**, **Songtexte** und
   **Events**. Ein Klick zeigt nur diese Art.
 - Oben findest du das Suchfeld, die Filter für Status und Künstler und die Sortierung.
-- In der Mitte steht die Liste der Einträge, als **Liste** oder als **Regal** mit Covern.
+- In der Mitte steht die Liste der Einträge, als **Liste**, als **Regal** mit Covern oder als **Raster** aus Kacheln (Menü **Ansicht**).
 - Unten siehst du, wie viele Einträge und Exemplare du hast und wie viel du ausgegeben hast, und bei verbundener Cloud
   auch den Stand der Synchronisierung.
 

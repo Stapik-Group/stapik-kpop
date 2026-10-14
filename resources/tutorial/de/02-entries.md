@@ -36,6 +36,6 @@ Feld mit unverständlichem Text wird markiert, und der Eintrag lässt sich erst 
 - Doppelklicke einen Eintrag oder wähle **Bearbeiten** im Kontextmenü (Rechtsklick), um ihn zu ändern.
 - **Duplizieren** erstellt eine Kopie mit neuer Identität, **Duplizieren und bearbeiten…** öffnet die Kopie sofort.
   Das ist praktisch für mehrere Versionen eines Albums.
-- **Löschen** fragt nach. In der Regalansicht kannst du einen Eintrag auch auswählen und die Entf-Taste drücken.
+- **Löschen** fragt nach. In der Regal- und Rasteransicht kannst du einen Eintrag auch auswählen und die Entf-Taste drücken.
 - **Bearbeiten → Rückgängig** und **Wiederholen** (Strg+Z und Strg+Umschalt+Z) gelten für jede Änderung, auch für das
   Löschen.

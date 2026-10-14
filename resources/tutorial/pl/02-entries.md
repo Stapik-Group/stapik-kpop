@@ -35,5 +35,5 @@ da się zrozumieć, jest oznaczone i dopóki go nie poprawisz, wpisu nie można 
 - Kliknij dwukrotnie wpis albo wybierz **Edytuj** z jego menu kontekstowego (prawy przycisk myszy), aby go zmienić.
 - **Duplikuj** robi kopię z nową tożsamością, a **Duplikuj i zmień…** od razu otwiera tę kopię. Przydaje się przy kilku
   wersjach jednego albumu.
-- **Usuń** pyta o potwierdzenie. W widoku półki możesz też zaznaczyć wpis i nacisnąć klawisz Delete.
+- **Usuń** pyta o potwierdzenie. W widoku półki i siatki możesz też zaznaczyć wpis i nacisnąć klawisz Delete.
 - **Edycja → Cofnij** i **Ponów** (Ctrl+Z i Ctrl+Shift+Z) działają dla każdej zmiany, także dla usuwania.
