@@ -120,7 +120,6 @@ namespace kpop::ui
         add_action("manageArtists", [this] { onManageArtistsRequested(); });
         add_action("connect", [this] { onConnectRequested(); });
         add_action("sync", [this] { onSyncRequested(); });
-        add_action("quit", [this] { close(); });
     }
 
     void MainWindow::initMenu()

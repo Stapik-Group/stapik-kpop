@@ -36,6 +36,12 @@ namespace kpop::ui
         MainWindow& operator=(const MainWindow&) = delete;
         void showStartupProblems();
 
+        // The divider between the sidebar and the list, for StapikApplication to remember its position.
+        [[nodiscard]] Gtk::Paned& sidebarPaned()
+        {
+            return m_paned;
+        }
+
     private:
         static constexpr int DEFAULT_WIDTH = 1180;
         static constexpr int DEFAULT_HEIGHT = 760;
