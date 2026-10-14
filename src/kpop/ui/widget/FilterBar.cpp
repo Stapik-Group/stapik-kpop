@@ -28,7 +28,7 @@ namespace kpop::ui
         rebuildSortModel();
         refreshLabels();
 
-        m_searchEntry.signal_search_changed().connect([this] { m_signalChanged.emit(); });
+        m_searchEntry.signalQueryChanged().connect([this] { m_signalChanged.emit(); });
 
         const auto onSelectionChanged = [this]
         {
@@ -97,7 +97,7 @@ namespace kpop::ui
     domain::ItemFilter FilterBar::filter() const
     {
         domain::ItemFilter result;
-        result.text = trimmedText(m_searchEntry);
+        result.text = m_searchEntry.query();
 
         if (const auto statusPosition = static_cast<std::size_t>(m_statusDropDown.get_selected());
             statusPosition >= ALL_ENTRY_COUNT && statusPosition - ALL_ENTRY_COUNT < domain::ITEM_STATUSES.entries().size())

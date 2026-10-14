@@ -220,6 +220,8 @@ namespace kpop::ui
 
         m_shelfViewButton.signal_toggled().connect([this] { refreshViewMode(); });
 
+        m_listView.signalAddRequested().connect([this] { onAddRequested(); });
+        m_shelfView.signalAddRequested().connect([this] { onAddRequested(); });
         m_listView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
         m_listView.signalDeleteRequested().connect([this](const std::string& itemId) { onDeleteRequested(itemId); });
         m_shelfView.signalEditRequested().connect([this](const std::string& itemId) { onEditRequested(itemId); });
@@ -287,8 +289,6 @@ namespace kpop::ui
         m_filterBar.refreshLabels();
         m_listViewButton.set_label(translate("kpop.view.list"));
         m_shelfViewButton.set_label(translate("kpop.view.shelf"));
-        m_listView.refreshPlaceholder();
-        m_shelfView.refreshPlaceholder();
         m_paginationBar.refreshLabels();
     }
 
@@ -336,10 +336,18 @@ namespace kpop::ui
             pageRows.push_back(std::move(row));
         }
 
+        const auto emptyKind = document.items().empty() ? EmptyListKind::NoEntries : EmptyListKind::NoMatches;
+
         if (isShelfViewActive())
+        {
+            m_shelfView.setEmptyKind(emptyKind);
             m_shelfView.setRows(pageRows);
+        }
         else
+        {
+            m_listView.setEmptyKind(emptyKind);
             m_listView.setRows(pageRows);
+        }
 
         m_paginationBar.setPage(m_currentPage, pageCount);
     }

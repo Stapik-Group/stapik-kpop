@@ -4,9 +4,10 @@
 #include "kpop/domain/Enumerations.hpp"
 #include "kpop/domain/ItemFilter.hpp"
 
+#include "stapik/ui/widget/SearchEntry.hpp"
+
 #include <gtkmm/box.h>
 #include <gtkmm/dropdown.h>
-#include <gtkmm/searchentry.h>
 
 #include <sigc++/signal.h>
 
@@ -33,7 +34,7 @@ namespace kpop::ui
         void rebuildSortModel();
         void selectSortOrder(domain::SortOrder order);
 
-        Gtk::SearchEntry m_searchEntry;
+        SearchEntry m_searchEntry;
         Gtk::DropDown m_statusDropDown;
         Gtk::DropDown m_artistDropDown;
         Gtk::DropDown m_sortDropDown;

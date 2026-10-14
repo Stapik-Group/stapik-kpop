@@ -13,7 +13,6 @@ namespace kpop::ui
 {
     namespace
     {
-        constexpr int PLACEHOLDER_MARGIN = 24;
         constexpr int COVER_SIZE = 110;
         constexpr int COVER_MARGIN_TOP = 8;
         constexpr int COVER_MARGIN_SIDE = 8;
@@ -82,8 +81,8 @@ namespace kpop::ui
         set_child(m_content);
         add_css_class("kpop-shelf-scroller");
 
-        m_placeholderLabel.set_margin(PLACEHOLDER_MARGIN);
-        m_placeholderLabel.set_visible(false);
+        showEmptyListKind(m_emptyState, EmptyListKind::NoEntries);
+        m_emptyState.set_visible(false);
 
         m_content.add_css_class("kpop-shelf");
 
@@ -96,10 +95,8 @@ namespace kpop::ui
         m_flowBox.set_row_spacing(ROW_SPACING);
         m_flowBox.set_column_spacing(0);
 
-        m_content.append(m_placeholderLabel);
+        m_content.append(m_emptyState);
         m_content.append(m_flowBox);
-
-        refreshPlaceholder();
 
         m_flowBox.signal_child_activated().connect([this](const Gtk::FlowBoxChild* child)
         {
@@ -157,12 +154,17 @@ namespace kpop::ui
         for (const auto& row : rows)
             appendRow(row);
 
-        m_placeholderLabel.set_visible(rows.empty());
+        m_emptyState.set_visible(rows.empty());
     }
 
-    void ItemShelfView::refreshPlaceholder()
+    void ItemShelfView::setEmptyKind(const EmptyListKind kind)
     {
-        m_placeholderLabel.set_text(translate("kpop.list.empty"));
+        showEmptyListKind(m_emptyState, kind);
+    }
+
+    sigc::signal<void()>& ItemShelfView::signalAddRequested()
+    {
+        return m_emptyState.signalAction();
     }
 
     sigc::signal<void(const std::string&)>& ItemShelfView::signalEditRequested()
