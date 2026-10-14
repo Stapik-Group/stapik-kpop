@@ -56,7 +56,11 @@ namespace kpop::ui
         {
             const auto now = std::time(nullptr);
             std::tm local{};
+#ifdef _WIN32
+            localtime_s(&local, &now);
+#else
             localtime_r(&now, &local);
+#endif
 
             char date[16] = {};
             std::strftime(date, sizeof(date), "%Y-%m-%d", &local);
