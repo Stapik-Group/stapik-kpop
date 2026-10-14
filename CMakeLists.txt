@@ -56,6 +56,16 @@ stapik_add_application(
         PACKAGING_DIRECTORY packaging
         HOMEPAGE https://github.com/Stapik-Group/stapik-kpop
         MAINTAINER "Sebastian Smoliński <sebastian.smolinski6@gmail.com>"
+        LICENSE GPL-3.0-only
+        LONG_DESCRIPTION "Stapik K-Pop keeps a K-pop collection in one place: albums with tracklists, photocards, merchandise, clips, lyrics and events. Entries have an artist, status, condition, price and covers with photos, everything can be searched, undone and restored from automatic backups, and the collection can optionally be synchronised, with end-to-end encryption, with your own Stapik Cloud."
+        RELEASE_DATE 2026-10-14
+        LOCALIZED_DESCRIPTIONS
+                "pl=Retro menedżer kolekcji K-popu z opcjonalną synchronizacją z własną chmurą"
+                "de=Retro-Verwaltung einer K-Pop-Sammlung mit optionalem Abgleich mit der eigenen Cloud"
+        KEYWORDS kpop k-pop collection photocard album
+        LOCALIZED_KEYWORDS
+                "pl=kpop,k-pop,kolekcja,photocard,album,gadżety"
+                "de=kpop,k-pop,sammlung,photocard,album,merchandise"
         SOURCES
                 src/main.cpp
                 src/kpop/ui/ItemPresenter.cpp
