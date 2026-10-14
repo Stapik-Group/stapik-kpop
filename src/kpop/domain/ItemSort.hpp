@@ -4,6 +4,7 @@
 #include "CollectionItem.hpp"
 #include "Enumerations.hpp"
 
+#include <string_view>
 #include <vector>
 
 namespace kpop::domain
@@ -14,5 +15,6 @@ namespace kpop::domain
         const Artist* artist = nullptr;
     };
 
-    void sortItems(std::vector<SortableItem>& items, SortOrder order);
+    // Titles and artists are ordered by the alphabet of the language (a Polish "Ł" comes after "L", not after "Z").
+    void sortItems(std::vector<SortableItem>& items, SortOrder order, std::string_view languageCode);
 }

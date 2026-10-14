@@ -1,10 +1,11 @@
 #include "ItemSort.hpp"
 
-#include <glibmm/ustring.h>
+#include "stapik/text/Collation.hpp"
 
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <variant>
 
 namespace kpop::domain
@@ -22,25 +23,12 @@ namespace kpop::domain
             return std::nullopt;
         }
 
-        std::optional<std::string> textKey(const std::string& text)
+        std::optional<std::string> textKey(const std::string& text, const std::string_view languageCode)
         {
             if (text.empty())
                 return std::nullopt;
 
-            return Glib::ustring(text).casefold().collate_key();
-        }
-
-        std::optional<std::string> titleKeyOf(const SortableItem& sortable)
-        {
-            return textKey(sortable.item->title);
-        }
-
-        std::optional<std::string> artistKeyOf(const SortableItem& sortable)
-        {
-            if (sortable.artist == nullptr)
-                return std::nullopt;
-
-            return textKey(sortable.artist->name);
+            return stapik::text::collationKey(text, languageCode);
         }
 
         std::optional<PartialDate> releaseDateKeyOf(const SortableItem& sortable)
@@ -80,8 +68,20 @@ namespace kpop::domain
         }
     }
 
-    void sortItems(std::vector<SortableItem>& items, const SortOrder order)
+    void sortItems(std::vector<SortableItem>& items, const SortOrder order, const std::string_view languageCode)
     {
+        const auto titleKeyOf = [languageCode](const SortableItem& sortable)
+        {
+            return textKey(sortable.item->title, languageCode);
+        };
+        const auto artistKeyOf = [languageCode](const SortableItem& sortable) -> std::optional<std::string>
+        {
+            if (sortable.artist == nullptr)
+                return std::nullopt;
+
+            return textKey(sortable.artist->name, languageCode);
+        };
+
         switch (order)
         {
             using enum SortOrder;
