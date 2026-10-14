@@ -27,6 +27,7 @@ add_executable(stapikkpop_tests
         PartialDateFormatterTest.cpp
         PartialDateTest.cpp
         TracklistTest.cpp
+        TutorialResourcesTest.cpp
         support/FakeAssetStorage.hpp
         support/FakeClock.hpp
         support/ImageFixtures.hpp

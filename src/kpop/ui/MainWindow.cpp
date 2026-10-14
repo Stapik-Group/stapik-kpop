@@ -12,6 +12,7 @@
 
 #include "stapik/app/AppContext.hpp"
 #include "stapik/app/version.hpp"
+#include "stapik/storage/AppPaths.hpp"
 #include "stapik/storage/PathText.hpp"
 #include "stapik/domain/MoneyFormatter.hpp"
 #include "stapik/locale/DateFormatter.hpp"
@@ -40,6 +41,7 @@ namespace kpop::ui
         constexpr int TOP_BAR_SPACING = 8;
         constexpr int TOP_BAR_MARGIN = 8;
         constexpr auto ADD_ITEM_ACTION = "win.addItem";
+        constexpr auto TUTORIAL_DIRECTORY = "tutorial";
     }
 
     StandardMenuOptions MainWindow::menuOptions(const stapik::theme::ThemeRegistry& themes, stapik::command::UndoStack& undoStack)
@@ -47,6 +49,7 @@ namespace kpop::ui
         StandardMenuOptions options;
         options.themes = &themes;
         options.undoStack = &undoStack;
+        options.tutorialDirectory = AppPaths::resourcesDir() / TUTORIAL_DIRECTORY;
         return options;
     }
 
