@@ -7,6 +7,7 @@
 
 #include <sigc++/signal.h>
 
+#include <memory>
 #include <string>
 
 namespace kpop::ui
@@ -31,6 +32,10 @@ namespace kpop::ui
         sigc::signal<void(const std::string&)>& signalDeleteRequested();
 
     private:
+        void emitLater(sigc::signal<void(const std::string&)>& signal);
+
+        // Shared with the deferred calls, so one that outlives the menu does nothing.
+        std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);
         Gtk::PopoverMenu m_popover;
         Glib::RefPtr<Gio::SimpleActionGroup> m_actions;
         std::string m_itemId;

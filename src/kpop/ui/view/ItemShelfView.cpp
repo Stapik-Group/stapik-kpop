@@ -4,6 +4,7 @@
 #include "kpop/ui/widget/ImageTexture.hpp"
 
 #include <gdk/gdk.h>
+#include <gtkmm/box.h>
 #include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/overlay.h>
@@ -26,19 +27,35 @@ namespace kpop::ui
         {
             if (!row.imagePath.empty())
             {
+                // The texture is never larger than COVER_SIZE, so its natural size cannot grow the slot.
                 if (const Glib::RefPtr<Gdk::Texture> texture = loadTexture(row.imagePath, COVER_SIZE))
                 {
-                    auto* cover = Gtk::make_managed<Gtk::Picture>();
-                    cover->set_size_request(COVER_SIZE, COVER_SIZE);
-                    cover->set_content_fit(Gtk::ContentFit::CONTAIN);
-                    cover->set_paintable(texture);
-                    cover->add_css_class("kpop-shelf-cover");
-                    return cover;
+                    // Fixed-size slot: every cover occupies exactly COVER_SIZE x COVER_SIZE.
+                    // The picture inside is scaled (up or down) to fit it, keeping the aspect ratio.
+                    auto* slot = Gtk::make_managed<Gtk::Box>();
+                    slot->set_size_request(COVER_SIZE, COVER_SIZE);
+                    slot->set_halign(Gtk::Align::CENTER);
+                    slot->set_valign(Gtk::Align::START);
+                    slot->set_hexpand(false);
+                    slot->set_vexpand(false);
+                    slot->set_overflow(Gtk::Overflow::HIDDEN);
+                    slot->add_css_class("kpop-shelf-cover");
+
+                    auto* picture = Gtk::make_managed<Gtk::Picture>();
+                    picture->set_can_shrink(true);
+                    picture->set_content_fit(Gtk::ContentFit::CONTAIN);
+                    picture->set_hexpand(true);
+                    picture->set_vexpand(true);
+                    picture->set_paintable(texture);
+                    slot->append(*picture);
+                    return slot;
                 }
             }
 
             auto* empty = Gtk::make_managed<Gtk::Label>("♪");
             empty->set_size_request(COVER_SIZE, COVER_SIZE);
+            empty->set_halign(Gtk::Align::CENTER);
+            empty->set_valign(Gtk::Align::START);
             empty->add_css_class("kpop-shelf-cover");
             empty->add_css_class("kpop-shelf-cover-empty");
             return empty;
