@@ -2,6 +2,7 @@
 
 #include "Translate.hpp"
 
+#include "stapik/app/version.hpp"
 #include "stapik/log/Log.hpp"
 #include "stapik/storage/AppPaths.hpp"
 #include "stapik/storage/AtomicFile.hpp"
@@ -106,7 +107,7 @@ namespace kpop::ui
 
         bool dataDirectoryIsWritable()
         {
-            const auto file = AppPaths::userDataDir(STAPIK_APP_NAME) / "selftest.tmp";
+            const auto file = AppPaths::userDataDir(std::string{ stapik::app::build::NAME }) / "selftest.tmp";
             constexpr std::string_view CONTENT = "ąęł self-test\n";
 
             if (!stapik::storage::writeFileAtomically(file, CONTENT))

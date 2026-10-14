@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.2)
-project(stapikkpop VERSION 1.2.0 LANGUAGES CXX)
+project(stapikkpop VERSION 1.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(STAPIK_KPOP_BUILD_TESTS "Build the Stapik K-Pop unit tests" OFF)
 
-set(STAPIK_COMMON_GIT_TAG "v1.4.0" CACHE STRING "Tag, branch or commit of stapik-common to build against")
+set(STAPIK_COMMON_GIT_TAG "v1.5.5" CACHE STRING "Tag, branch or commit of stapik-common to build against")
 
 include(FetchContent)
 FetchContent_Declare(

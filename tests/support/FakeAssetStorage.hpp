@@ -57,7 +57,13 @@ namespace kpop::test
             return file->second.content;
         }
 
-        stapik::cloud::AssetInfo uploadAsset(const std::string& filename, const std::string& mimeType, const stapik::cloud::AssetBytes& content) const override
+        using stapik::cloud::IAssetStorage::uploadAsset;
+
+        stapik::cloud::AssetInfo uploadAsset(
+            const std::string& filename,
+            const std::string& mimeType,
+            const stapik::cloud::AssetBytes& content,
+            const stapik::cloud::AssetUploadHooks& /*hooks*/) const override
         {
             ++uploadCalls;
 

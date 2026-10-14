@@ -10,6 +10,7 @@
 #include "kpop/ui/dialog/ArtistsDialog.hpp"
 #include "kpop/ui/dialog/ItemDialog.hpp"
 
+#include "stapik/app/version.hpp"
 #include "stapik/storage/PathText.hpp"
 #include "stapik/domain/MoneyFormatter.hpp"
 #include "stapik/ui/dialog/ConfirmDialog.hpp"
@@ -17,8 +18,10 @@
 #include "stapik/ui/dialog/DialogUtils.hpp"
 
 #include <giomm/menu.h>
+#include <gtkmm/messagedialog.h>
 
 #include <algorithm>
+#include <string>
 
 namespace kpop::ui
 {
@@ -50,7 +53,7 @@ namespace kpop::ui
         m_paned(Gtk::Orientation::HORIZONTAL),
         m_viewSwitch(Gtk::Orientation::HORIZONTAL)
     {
-        set_title(STAPIK_APP_DISPLAY_NAME);
+        set_title(std::string{ stapik::app::build::DISPLAY_NAME });
         set_default_size(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
         initActions();
@@ -88,7 +91,7 @@ namespace kpop::ui
                 return;
 
             case Corrupted:
-                showMessageDialog(*this, translate("kpop.startup.corrupted.header"), translate("kpop.startup.corrupted.text", { { "path", path } }), Gtk::MessageType::WARNING);
+                showMessageDialog(*this, translate("kpop.startup.corrupted.header"), translate("kpop.startup.corrupted.text", { { "path", path } }));
                 return;
 
             case NewerVersion:
@@ -233,8 +236,7 @@ namespace kpop::ui
             showMessageDialog(
                 *this,
                 translate("kpop.error.saveFailed.header"),
-                translate("kpop.error.saveFailed.text", { { "path", stapik::storage::pathText(m_controller.documentPath()) } }),
-                Gtk::MessageType::ERROR);
+                translate("kpop.error.saveFailed.text", { { "path", stapik::storage::pathText(m_controller.documentPath()) } }));
         });
 
         signal_close_request().connect([this]
@@ -410,12 +412,12 @@ namespace kpop::ui
         {
             if (!m_controller.connectCloud(config))
             {
-                showMessageDialog(*this, translate("cloud.failed.header"), "", Gtk::MessageType::ERROR);
+                showMessageDialog(*this, translate("cloud.failed.header"), "");
                 return;
             }
 
             m_syncIndicator.set_visible(true);
-            showMessageDialog(*this, translate("cloud.connected"), translate("cloud.connected.secondary"), Gtk::MessageType::INFO);
+            showMessageDialog(*this, translate("cloud.connected"), translate("cloud.connected.secondary"));
         });
     }
 

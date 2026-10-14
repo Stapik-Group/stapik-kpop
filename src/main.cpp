@@ -5,6 +5,7 @@
 
 #include "stapik/app/AppContext.hpp"
 #include "stapik/app/SingleInstanceGuard.hpp"
+#include "stapik/app/version.hpp"
 #include "stapik/log/Log.hpp"
 #include "stapik/storage/AppPaths.hpp"
 #include "stapik/sync/CloudSessionHooks.hpp"
@@ -18,7 +19,10 @@
 
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -56,16 +60,22 @@ int main(int argumentCount, char* arguments[])
 
     stapik::app::AppContext::initialize(stapik::app::AppInfo{
         .applicationId = APPLICATION_ID,
-        .internalName = STAPIK_APP_NAME,
-        .displayName = STAPIK_APP_DISPLAY_NAME,
-        .version = STAPIK_APP_VERSION,
+        .internalName = std::string{ stapik::app::build::NAME },
+        .displayName = std::string{ stapik::app::build::DISPLAY_NAME },
+        .version = std::string{ stapik::app::build::VERSION },
         .author = AUTHOR,
         .repositoryUrl = REPOSITORY_URL });
 
     if (selfTest)
         stapik::log::setLevel(stapik::log::Level::Info);
 
-    if (const auto instanceGuard = stapik::app::SingleInstanceGuard::acquire(APPLICATION_ID, STAPIK_APP_DISPLAY_NAME); !instanceGuard)
+    // A later instance has nothing to hand over yet, so the handler does nothing (StapikApplication takes over later).
+    const auto instanceGuard = stapik::app::SingleInstanceGuard::acquire(
+        APPLICATION_ID,
+        std::string{ stapik::app::build::DISPLAY_NAME },
+        {},
+        [](const std::vector<std::filesystem::path>&) {});
+    if (!instanceGuard)
         return 0;
 
     const auto application = Gtk::Application::create(APPLICATION_ID);
@@ -93,7 +103,7 @@ int main(int argumentCount, char* arguments[])
         StandardMenu::installShortcuts(*application);
         application->set_accels_for_action("win.addItem", { "<Primary>n" });
 
-        const auto dataDirectory = AppPaths::ensureUserDataDir(STAPIK_APP_NAME);
+        const auto dataDirectory = AppPaths::ensureUserDataDir(std::string{ stapik::app::build::NAME });
         controller = std::make_unique<kpop::app::CollectionController>(
             dataDirectory / COLLECTION_FILE_NAME,
             dataDirectory / IMAGES_DIRECTORY_NAME,

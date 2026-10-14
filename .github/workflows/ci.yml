@@ -12,7 +12,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtkmm-4.0-dev libcurl4-openssl-dev ninja-build xvfb
+          sudo apt-get install -y --no-install-recommends libgtkmm-4.0-dev libcurl4-openssl-dev libsodium-dev zlib1g-dev libsecret-1-dev libx11-dev ninja-build xvfb
           pip install cmake
 
       - name: Configure

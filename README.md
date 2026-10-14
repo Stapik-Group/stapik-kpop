@@ -22,7 +22,9 @@ and optional synchronisation with your own Stapik Cloud.
 
 ## Building
 
-Requirements: a C++20 compiler, CMake 4.2+, gtkmm-4.0, libcurl, Ninja (optional).
+Requirements: a C++20 compiler, CMake 4.2+, gtkmm-4.0, libcurl, libsodium, zlib, Ninja (optional). On Linux,
+libsecret (keyring for the cloud key) and libx11 are used when present. On Ubuntu/Debian:
+`libgtkmm-4.0-dev libcurl4-openssl-dev libsodium-dev zlib1g-dev libsecret-1-dev libx11-dev`.
 
 ```sh
 cmake -S . -B build -G Ninja -DSTAPIK_KPOP_BUILD_TESTS=ON
@@ -46,8 +48,8 @@ distributed as a zip. There is no installer.
   unpacked zip with only the Windows directories in `PATH` (`stapikkpop.exe --self-test`), and uploads it as an
   artifact. Run it by hand (Actions > Package > Run workflow) to get a build of any branch for testers; a `v*` tag
   publishes the zip, together with the Ubuntu package (see below), as one GitHub release.
-* **Locally**, in an MSYS2 UCRT64 shell (packages: `gcc cmake ninja pkgconf gtkmm-4.0 curl adwaita-icon-theme
-  hicolor-icon-theme librsvg`, prefixed `mingw-w64-ucrt-x86_64-`):
+* **Locally**, in an MSYS2 UCRT64 shell (packages: `gcc cmake ninja pkgconf gtkmm-4.0 curl libsodium zlib
+  adwaita-icon-theme hicolor-icon-theme librsvg`, prefixed `mingw-w64-ucrt-x86_64-`):
 
   ```sh
   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
