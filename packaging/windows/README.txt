@@ -13,7 +13,12 @@ Where the data is
   Collection:  %APPDATA%\stapikkpop\data\collection.json
   Settings:    %APPDATA%\stapikkpop\config
   Log:         %LOCALAPPDATA%\stapikkpop\cache\stapik.log
-  (paste these into the Explorer address bar). To back up, copy collection.json.
+  (paste these into the Explorer address bar).
+
+Backup
+  File > Back up the whole application... saves the collection, the settings and all images
+  in one ZIP file; File > Restore the whole application... reads it back. The program also
+  keeps 5 automatic copies of the collection (File > Restore from backup...).
 
 Removing
   Delete the program folder and %APPDATA%\stapikkpop (this also deletes the collection).

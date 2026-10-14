@@ -18,6 +18,15 @@ undo history is cleared by a restore. With the cloud connected, the restored ver
 > Images are not part of these copies. A restored entry may point to a cover that is no longer on this computer. With
 > the cloud connected it is downloaded again.
 
+## Backing up the whole application
+
+**File → Back up the whole application…** saves one ZIP file with the collection, the settings and all covers and
+photos. Keep it in a safe place or take it to another computer. **File → Restore the whole application…** reads such a
+file and, after asking, replaces the collection and the settings with the ones from it. Images already on this
+computer stay, nothing is deleted. The collection from before the restore becomes the newest backup copy, so it can be
+taken back as described above. The address and the key of the cloud are not in the file, so passing it around does not
+reveal them.
+
 ## Where the data is
 
 On Linux the collection is in `~/.local/share/stapikkpop/collection.json`, with the pictures in the `images` and

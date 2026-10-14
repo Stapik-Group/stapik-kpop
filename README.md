@@ -5,14 +5,14 @@ Retro-styled desktop manager of a K-pop collection, written in C++20 with GTK4 (
 
 ## What can be collected
 
-| Kind | Details |
-| --- | --- |
-| Albums | type, format (CD, vinyl, cassette, digital, platform album, kit), edition, variant, release date, label, region, catalog number, inclusions, tracklist (title, writers, length, title track) |
-| Photocards | member, origin (album, pre-order, lucky draw, fansign, event), source, available for trade |
-| Merchandise | lightsticks, apparel, photobooks, season's greetings, posters, keyrings, stationery |
-| Clips | type, platform, link, release date, album, watched |
-| Lyrics | original text, romanization, translation (searchable) |
-| Events | concert, fansign, fan meeting, listening party, pop-up store, venue, city, seat |
+| Kind        | Details                                                                                                                                                                                      |
+|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Albums      | type, format (CD, vinyl, cassette, digital, platform album, kit), edition, variant, release date, label, region, catalog number, inclusions, tracklist (title, writers, length, title track) |
+| Photocards  | member, origin (album, pre-order, lucky draw, fansign, event), source, available for trade                                                                                                   |
+| Merchandise | lightsticks, apparel, photobooks, season's greetings, posters, keyrings, stationery                                                                                                          |
+| Clips       | type, platform, link, release date, album, watched                                                                                                                                           |
+| Lyrics      | original text, romanization, translation (searchable)                                                                                                                                        |
+| Events      | concert, fansign, fan meeting, listening party, pop-up store, venue, city, seat                                                                                                              |
 
 Every entry also has an artist, a status (owned, ordered, wishlist, sold), a condition, a number of copies,
 a price in any currency, an acquisition date and place, and notes. Dates may be partial (`2021`, `2021-08`, `2021-08-23`).
@@ -21,6 +21,14 @@ Features coming from stapik-common: undo/redo of every edit, themes, Polish/Engl
 from backups and optional synchronisation with your own Stapik Cloud. The program looks for a newer release on GitHub
 once a day and offers to open its download page; nothing is downloaded or installed, and the check can be switched off
 in *Settings → Settings…* (or with `update.checkEnabled` in the settings file).
+
+*File → Back up the whole application…* writes one ZIP file with the collection, the settings and all covers and photos,
+and *Restore the whole application…* reads it back (after asking, and the collection from before stays as the newest
+backup copy). The cloud connection is not in the file. *Help → Tutorial* (F1) is the manual of the program, in the three
+languages (`resources/tutorial`).
+
+Command line: `--version`, `--log-level=LEVEL`, `--data-dir=DIR`, `--portable` (data in the `portable` folder next to the
+program), `--reset-settings`, `--safe-mode` (no window state, clean-up or synchronisation on start) and `--self-test`.
 
 ## Building
 

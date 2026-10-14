@@ -19,6 +19,15 @@ Version auch dorthin gesendet.
 > Bilder gehören nicht zu diesen Kopien. Ein wiederhergestellter Eintrag kann auf ein Cover zeigen, das auf diesem
 > Computer nicht mehr vorhanden ist. Bei verbundener Cloud wird es erneut heruntergeladen.
 
+## Die gesamte Anwendung sichern
+
+**Datei → Gesamte Anwendung sichern…** speichert eine ZIP-Datei mit der Sammlung, den Einstellungen und allen Covern
+und Fotos. Bewahre sie an einem sicheren Ort auf oder nimm sie auf einen anderen Computer mit. **Datei → Gesamte
+Anwendung wiederherstellen…** liest eine solche Datei und ersetzt nach einer Rückfrage die Sammlung und die
+Einstellungen durch die aus der Datei. Bilder, die schon auf diesem Computer sind, bleiben, nichts wird gelöscht. Die
+Sammlung von vor dem Wiederherstellen wird zur neuesten Sicherungskopie und lässt sich wie oben beschrieben
+zurückholen. Adresse und Schlüssel der Cloud stehen nicht in der Datei, ein Weitergeben verrät sie also nicht.
+
 ## Wo die Daten liegen
 
 Unter Linux liegt die Sammlung in `~/.local/share/stapikkpop/collection.json`, die Bilder in den Ordnern `images`

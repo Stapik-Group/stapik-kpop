@@ -18,6 +18,15 @@ czyści historię cofania. Przy połączonej chmurze przywrócona wersja jest ta
 > Obrazy nie wchodzą w skład tych kopii. Przywrócony wpis może wskazywać okładkę, której nie ma już na tym komputerze.
 > Przy połączonej chmurze zostanie pobrana ponownie.
 
+## Kopia całej aplikacji
+
+**Plik → Zrób kopię całej aplikacji…** zapisuje jeden plik ZIP z kolekcją, ustawieniami oraz wszystkimi okładkami i
+zdjęciami. Trzymaj go w bezpiecznym miejscu albo przenieś na inny komputer. **Plik → Przywróć całą aplikację z kopii…**
+wczytuje taki plik i, po zapytaniu, zastępuje kolekcję i ustawienia tymi z pliku. Obrazy, które już są na tym
+komputerze, zostają, nic nie jest usuwane. Kolekcja sprzed przywrócenia staje się najnowszą kopią zapasową, więc
+można ją cofnąć w sposób opisany wyżej. Adresu i klucza chmury nie ma w pliku, więc przekazanie go dalej ich nie
+ujawni.
+
 ## Gdzie są dane
 
 W Linuksie kolekcja jest w `~/.local/share/stapikkpop/collection.json`, a obrazy w folderach `images` i `photos` obok
