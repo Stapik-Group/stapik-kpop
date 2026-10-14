@@ -16,6 +16,7 @@ add_executable(stapikkpop_tests
         CollectionDocumentTest.cpp
         CollectionStatisticsTest.cpp
         EnumCatalogTest.cpp
+        ImageArchiveStorageTest.cpp
         ImageEncoderTest.cpp
         ImageIdTest.cpp
         ImageLibraryTest.cpp

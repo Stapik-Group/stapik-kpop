@@ -38,6 +38,7 @@ add_library(kpopcore STATIC
         src/kpop/domain/PartialDateFormatter.cpp
         src/kpop/domain/TrackLength.cpp
         src/kpop/domain/Tracklist.cpp
+        src/kpop/image/ImageArchiveStorage.cpp
         src/kpop/image/ImageEncoder.cpp
         src/kpop/image/ImageLibrary.cpp
         src/kpop/image/ImageStore.cpp
