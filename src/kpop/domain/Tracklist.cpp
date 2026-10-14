@@ -16,6 +16,9 @@ namespace kpop::domain
                 if (disc && track.disc != *disc)
                     continue;
 
+                if (isPlaceholder(track))
+                    continue;
+
                 if (!track.length)
                     return std::nullopt;
 
@@ -25,6 +28,11 @@ namespace kpop::domain
 
             return anyTrack ? TrackLength::fromSeconds(totalSeconds) : std::nullopt;
         }
+    }
+
+    bool isPlaceholder(const Track& track)
+    {
+        return track.title.empty() && track.writers.empty() && !track.length && !track.titleTrack && !track.bonus;
     }
 
     void normalizeDiscs(Tracklist& tracklist)

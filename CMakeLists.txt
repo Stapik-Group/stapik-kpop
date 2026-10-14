@@ -75,6 +75,7 @@ stapik_add_application(
                 src/kpop/ui/dialog/ArtistEditDialog.cpp
                 src/kpop/ui/dialog/ArtistsDialog.cpp
                 src/kpop/ui/dialog/ItemDialog.cpp
+                src/kpop/ui/dialog/TracklistDialog.cpp
                 src/kpop/ui/form/DetailsForms.cpp
                 src/kpop/ui/form/FormGrid.cpp
                 src/kpop/ui/view/ItemGridView.cpp

@@ -20,8 +20,10 @@ that cannot be understood is marked, and the entry cannot be confirmed until you
 ## Kinds of entries
 
 - **Albums**: album type (single, mini, full, repackage…), format (CD, vinyl, cassette, digital, kit…), edition,
-  variant, release date, label, region, catalog number, inclusions and the **tracklist** with titles, writers, length
-  and the title track.
+  variant, release date, label, region, catalog number, inclusions and the **tracklist** with titles, writers, length,
+  the title track and a bonus track mark. The tracklist opens in a window of its own with the **Add tracklist…** button
+  (**Edit tracklist…** when there is one already). Empty positions stay where they are until you fill them in, so the
+  numbering does not shift.
 - **Photocards**: member, origin (album inclusion, pre-order benefit, lucky draw, fansign, event), source and whether it
   is available for trade.
 - **Merchandise**: kind of item (lightstick, apparel, photobook, season's greetings…), size, version and whether it is

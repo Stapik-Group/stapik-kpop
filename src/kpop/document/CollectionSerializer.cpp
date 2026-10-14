@@ -97,6 +97,10 @@ namespace kpop::document::serializer
             if (track.disc > 1)
                 result["disc"] = track.disc;
 
+            // Written only when set, so files without bonus tracks stay as they were.
+            if (track.bonus)
+                result["bonus"] = true;
+
             return result;
         }
 
@@ -114,6 +118,7 @@ namespace kpop::document::serializer
             track.writers = stringOrEmpty(source, "writers");
             track.titleTrack = source.value("titleTrack", false);
             track.disc = source.value("disc", 1);
+            track.bonus = source.value("bonus", false);
 
             if (source.contains("length") && !source.at("length").is_null())
             {
