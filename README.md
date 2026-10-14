@@ -44,21 +44,21 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_STAPIKCOMMON=../stapik-common
 ## Windows
 
 The Windows build is a folder with the program and everything it needs (GTK, its data, the application resources),
-distributed as a zip. There is no installer.
+distributed as an Inno Setup installer and as a portable zip.
 
-* **From CI:** the *Package* workflow builds the zip on every push and pull request, runs the program once on the
-  unpacked zip with only the Windows directories in `PATH` (`stapikkpop.exe --self-test`), and uploads it as an
-  artifact. Run it by hand (Actions > Package > Run workflow) to get a build of any branch for testers; a `v*` tag
-  publishes the zip, together with the Ubuntu package (see below), as one GitHub release.
+* **From CI:** a pull request from `develop` to `main`/`master` builds and tests the program on Linux and Windows using
+  the reusable workflows of stapik-common (`.github/workflows/pull-request.yml`). Publishing a GitHub release runs
+  `release.yml`, which attaches the installer, the portable zip and a `.deb` for every supported image to that release
+  (the Windows files are signed when the repository has the `WINDOWS_SIGN_PFX_*` secrets).
 * **Locally**, in an MSYS2 UCRT64 shell (packages: `gcc cmake ninja pkgconf gtkmm-4.0 curl libsodium zlib
   adwaita-icon-theme hicolor-icon-theme librsvg`, prefixed `mingw-w64-ucrt-x86_64-`):
 
   ```sh
   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-  cmake --build build --target stapikkpop_windows_bundle
+  cmake --build build --target stapikkpop_windows_portable
   ```
 
-  The folder is `build/stapikkpop-windows/`. Add `-DSTAPIK_WINDOWS_CONSOLE=ON` to keep a console window.
+  The folder is `build/stapikkpop-windows/` and the zip is next to it. Add `-DSTAPIK_WINDOWS_CONSOLE=ON` to keep a console window.
 
 Data lives in `%APPDATA%\stapikkpop\data\collection.json`, settings in `%APPDATA%\stapikkpop\config` and the log
 (stderr of the GUI program) in `%LOCALAPPDATA%\stapikkpop\cache\stapik.log`. The program draws with the Cairo
@@ -72,12 +72,10 @@ To change the stapik-common version: `-DSTAPIK_COMMON_GIT_TAG=<tag, branch or co
 
 ## Linux package
 
-The *Package* workflow also builds `stapikkpop_<version>_amd64.deb` (CPack, installed under `/opt/stapikkpop` with a
-launcher in `/usr/bin`, a `.desktop` entry and the icon) and, before uploading it, unpacks it and starts the program from
-it (`--self-test` under Xvfb, with a timeout). It needs Ubuntu 24.04 or newer (or Debian 13): the dependencies are
-those of the build machine (`libgtkmm-4.0-0`, `libstdc++6 >= 13`, `t64` library names).
-Install with `sudo apt install ./stapikkpop_<version>_amd64.deb`. Locally: `cmake --build build` and then
-`cd build && cpack -G DEB -D CPACK_DEBIAN_FILE_NAME=DEB-DEFAULT`.
+The release workflow builds `stapikkpop-<version>-Linux-<image>.deb` for `ubuntu:24.04` and `debian:13` (CPack,
+installed under `/opt/stapikkpop` with a launcher in `/usr/bin`, a `.desktop` entry, the AppStream metainfo and the icon).
+It needs Ubuntu 24.04 or newer (or Debian 13). Install with `sudo apt install ./<file>.deb`. Locally:
+`cmake --build build` and then `cd build && cpack -G DEB -D CPACK_DEBIAN_FILE_NAME=DEB-DEFAULT`.
 
 ## Layout
 
