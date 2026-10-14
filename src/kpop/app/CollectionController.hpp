@@ -3,9 +3,11 @@
 #include "kpop/document/CollectionDocument.hpp"
 #include "kpop/image/ImageLibrary.hpp"
 
+#include "stapik/archive/AppArchive.hpp"
 #include "stapik/cloud/ApiKeyExpiry.hpp"
 #include "stapik/command/UndoStack.hpp"
 #include "stapik/document/DocumentFile.hpp"
+#include "stapik/settings/SettingsStore.hpp"
 #include "stapik/sync/CloudSession.hpp"
 #include "stapik/time/Clock.hpp"
 
@@ -13,6 +15,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -26,6 +29,17 @@ namespace kpop::app
         InUse,
         NotFound
     };
+
+    // What the archive of the whole application needs to know about the program. The archive of another program is
+    // refused, and the settings are archived and restored together with the collection (none when null).
+    struct ArchiveOptions
+    {
+        std::string appName;
+        std::string appVersion;
+        stapik::settings::SettingsStore* settings = nullptr;
+    };
+
+    using ArchiveExportTask = std::function<stapik::archive::ArchiveResult<stapik::archive::ArchiveInfo>()>;
 
     class CollectionController
     {
@@ -73,6 +87,18 @@ namespace kpop::app
         // restore becomes the newest backup. The undo history is dropped. Anything but Loaded means the backup could
         // not be used and nothing was changed.
         [[nodiscard]] stapik::document::LoadStatus restoreBackup(const stapik::document::BackupInfo& backup);
+
+        // Captures the collection as it is now and returns the work of writing it, with the settings and all covers and
+        // photos on this computer, to the ZIP file. Run the returned function on a background thread: copying the
+        // images takes as long as the disk needs. The controller has to outlive it.
+        [[nodiscard]] ArchiveExportTask prepareArchiveExport(std::filesystem::path target, ArchiveOptions options);
+
+        // Replaces the collection, the images and the settings with the ones of the archive. The archive is checked as
+        // a whole first, and nothing changes when it is damaged, of another program or newer than this one. Images
+        // that are already here are kept and nothing is deleted. The collection from before the restore becomes the
+        // newest backup. The undo history is dropped. The settings in memory of the program are not refreshed:
+        // call reload() on the ones that are shown.
+        [[nodiscard]] stapik::archive::ArchiveResult<stapik::archive::RestoreSummary> importArchive(const std::filesystem::path& source, const ArchiveOptions& options);
 
         [[nodiscard]] bool isCloudConnected() const;
         [[nodiscard]] const std::optional<CloudStorageConfig>& cloudConfig() const;

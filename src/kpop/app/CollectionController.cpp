@@ -2,8 +2,10 @@
 
 #include "kpop/command/CollectionCommands.hpp"
 #include "kpop/document/CollectionSchema.hpp"
+#include "kpop/image/ImageArchiveStorage.hpp"
 
 #include "stapik/domain/IdGenerator.hpp"
+#include "stapik/storage/PathText.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -248,6 +250,71 @@ namespace kpop::app
         m_cloudSession.pushChange(m_document);
         m_signalDocumentChanged.emit();
         return LoadStatus::Loaded;
+    }
+
+    ArchiveExportTask CollectionController::prepareArchiveExport(std::filesystem::path target, ArchiveOptions options)
+    {
+        // The collection is written from memory, so changes that are not saved yet are included. The text is made here,
+        // on the thread of the window, because the task runs while the collection may still be edited.
+        return [this, text = m_file.serialize(m_document), target = std::move(target), options = std::move(options)]
+        {
+            image::ImageArchiveStorage images(m_imageLibrary.store(), m_photoLibrary.store());
+
+            const stapik::archive::AppArchiveContext context{
+                .appName = options.appName,
+                .appVersion = options.appVersion,
+                .settings = options.settings,
+                .assets = &images };
+
+            return stapik::archive::writeAppArchive(target, context, text, m_clock);
+        };
+    }
+
+    stapik::archive::ArchiveResult<stapik::archive::RestoreSummary> CollectionController::importArchive(const std::filesystem::path& source, const ArchiveOptions& options)
+    {
+        using namespace stapik::archive;
+        using stapik::document::LoadStatus;
+
+        auto archive = AppArchive::open(source, options.appName);
+        if (!archive)
+            return stapik::Failure(std::move(archive).error());
+
+        auto loaded = m_file.deserialize(archive->documentText(), "the archive " + stapik::storage::pathText(source));
+        if (loaded.status == LoadStatus::NewerVersion)
+            return archiveFailure(ArchiveErrorKind::Unsupported, "The archive was made by a newer version of the application");
+
+        if (loaded.status != LoadStatus::Loaded || !loaded.document)
+            return archiveFailure(ArchiveErrorKind::Corrupted, "The collection in the archive cannot be read");
+
+        image::ImageArchiveStorage images(m_imageLibrary.store(), m_photoLibrary.store());
+        auto restored = archive->restoreAssets(images);
+        if (!restored)
+            return stapik::Failure(std::move(restored).error());
+
+        // The cloud keeps whichever version changed last, so the restored collection has to count as changed now.
+        // It is saved before it replaces the one in memory, so a failure leaves the collection as it was.
+        auto replacement = std::move(*loaded.document);
+        replacement.touch(m_clock.now());
+        if (const auto saved = m_file.save(replacement); !saved)
+            return archiveFailure(ArchiveErrorKind::Io, saved.error().message());
+
+        m_ignoreHistoryChanges = true;
+        m_undoStack.clear();
+        m_ignoreHistoryChanges = false;
+
+        m_document = std::move(replacement);
+        m_cloudSession.pushChange(m_document);
+        m_signalDocumentChanged.emit();
+
+        RestoreSummary summary = *restored;
+        if (options.settings != nullptr)
+        {
+            // The collection is already restored here, so a failure is reported in the summary and not as an error.
+            const auto settings = archive->restoreSettings(*options.settings);
+            summary.settingsRestored = settings && *settings;
+        }
+
+        return summary;
     }
 
     sigc::signal<void(std::chrono::system_clock::time_point)>& CollectionController::signalApiKeyExpiring()

@@ -3,6 +3,7 @@
 
 #include "kpop/app/CollectionController.hpp"
 #include "kpop/document/CollectionSchema.hpp"
+#include "kpop/image/ImageStore.hpp"
 
 #include <gtest/gtest.h>
 
@@ -468,5 +469,150 @@ namespace
 
         EXPECT_EQ(root.at("schemaVersion"), kpop::document::COLLECTION_SCHEMA_VERSION);
         EXPECT_TRUE(root.at("document").contains("items"));
+    }
+
+    class ArchiveTest : public testing::Test
+    {
+    protected:
+        static CollectionController makeController(const TemporaryDirectory& directory)
+        {
+            return CollectionController(directory.path() / "collection.json", directory.path() / "images", directory.path() / "photos", stapik::sync::CloudSessionHooks{});
+        }
+
+        static kpop::app::ArchiveOptions options(const std::string& appName = "stapikkpop")
+        {
+            return kpop::app::ArchiveOptions{ .appName = appName, .appVersion = "1.3.0", .settings = nullptr };
+        }
+
+        static kpop::image::ImageBytes bytesOf(const std::string& text)
+        {
+            return kpop::image::ImageBytes(text.begin(), text.end());
+        }
+
+        TemporaryDirectory source;
+        TemporaryDirectory target;
+        TemporaryDirectory archives;
+    };
+
+    TEST_F(ArchiveTest, ExportedArchiveRestoresCollectionAndImagesOnAnotherComputer)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            controller.addArtist(sampleArtist());
+            controller.addItem(sampleAlbum("a", "First"));
+            controller.addItem(sampleAlbum("b", "Second"));
+            static_cast<void>(controller.imageLibrary().store().add(bytesOf("cover")));
+            static_cast<void>(controller.photoLibrary().store().add(bytesOf("photo")));
+
+            const auto info = controller.prepareArchiveExport(archive, options())();
+            ASSERT_TRUE(info) << info.error().message();
+            EXPECT_EQ(info->assetCount, 2U);
+        }
+
+        auto restored = makeController(target);
+        const auto summary = restored.importArchive(archive, options());
+
+        ASSERT_TRUE(summary) << summary.error().message();
+        EXPECT_EQ(summary->assetsUploaded, 2U);
+        EXPECT_EQ(restored.document().items().size(), 2U);
+        EXPECT_EQ(restored.imageLibrary().store().ids().size(), 1U);
+        EXPECT_EQ(restored.photoLibrary().store().ids().size(), 1U);
+
+        const auto reopened = makeController(target);
+        EXPECT_EQ(reopened.document().items().size(), 2U);
+    }
+
+    TEST_F(ArchiveTest, ArchiveContainsUnsavedStateOfTheMomentOfTheExport)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        auto controller = makeController(source);
+        controller.addItem(sampleAlbum("a", "First"));
+
+        const auto task = controller.prepareArchiveExport(archive, options());
+        controller.addItem(sampleAlbum("b", "Second"));
+        ASSERT_TRUE(task());
+
+        auto restored = makeController(target);
+        ASSERT_TRUE(restored.importArchive(archive, options()));
+        EXPECT_EQ(restored.document().items().size(), 1U);
+    }
+
+    TEST_F(ArchiveTest, ArchiveOfAnotherProgramIsRefusedAndNothingChanges)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            controller.addItem(sampleAlbum("a", "First"));
+            ASSERT_TRUE(controller.prepareArchiveExport(archive, options("other"))());
+        }
+
+        auto controller = makeController(target);
+        controller.addItem(sampleAlbum("b", "Mine"));
+
+        const auto summary = controller.importArchive(archive, options());
+
+        ASSERT_FALSE(summary);
+        EXPECT_EQ(summary.error().kind, stapik::archive::ArchiveErrorKind::WrongApplication);
+        ASSERT_EQ(controller.document().items().size(), 1U);
+        EXPECT_EQ(controller.document().items().front().title, "Mine");
+    }
+
+    TEST_F(ArchiveTest, FileThatIsNotAnArchiveIsRefused)
+    {
+        const auto file = archives.path() / "notes.zip";
+        std::ofstream(file) << "just text";
+
+        auto controller = makeController(target);
+        controller.addItem(sampleAlbum("b", "Mine"));
+
+        EXPECT_FALSE(controller.importArchive(file, options()));
+        EXPECT_EQ(controller.document().items().size(), 1U);
+    }
+
+    TEST_F(ArchiveTest, RestoreReplacesTheCollectionDropsUndoAndCanBeTakenBack)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            controller.addItem(sampleAlbum("a", "Archived"));
+            ASSERT_TRUE(controller.prepareArchiveExport(archive, options())());
+        }
+
+        auto controller = makeController(target);
+        controller.addItem(sampleAlbum("b", "Mine"));
+        controller.addItem(sampleAlbum("c", "Also mine"));
+
+        int notifications = 0;
+        controller.signalDocumentChanged().connect([&notifications] { ++notifications; });
+
+        ASSERT_TRUE(controller.importArchive(archive, options()));
+
+        EXPECT_EQ(notifications, 1);
+        ASSERT_EQ(controller.document().items().size(), 1U);
+        EXPECT_EQ(controller.document().items().front().title, "Archived");
+        EXPECT_FALSE(controller.undoStack().canUndo());
+
+        // The collection from before the restore is the newest backup.
+        ASSERT_EQ(controller.restoreBackup(controller.listBackups().front()), LoadStatus::Loaded);
+        EXPECT_EQ(controller.document().items().size(), 2U);
+    }
+
+    TEST_F(ArchiveTest, RestoreKeepsImagesAlreadyHere)
+    {
+        const auto archive = archives.path() / "backup.zip";
+        {
+            auto controller = makeController(source);
+            static_cast<void>(controller.imageLibrary().store().add(bytesOf("archived")));
+            ASSERT_TRUE(controller.prepareArchiveExport(archive, options())());
+        }
+
+        auto controller = makeController(target);
+        static_cast<void>(controller.imageLibrary().store().add(bytesOf("mine")));
+
+        const auto summary = controller.importArchive(archive, options());
+
+        ASSERT_TRUE(summary);
+        EXPECT_EQ(controller.imageLibrary().store().ids().size(), 2U);
     }
 }
