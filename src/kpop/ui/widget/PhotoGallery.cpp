@@ -5,6 +5,8 @@
 
 #include "kpop/ui/Translate.hpp"
 
+#include "stapik/ui/dialog/FileDrop.hpp"
+
 #include <gtkmm/frame.h>
 #include <gtkmm/overlay.h>
 #include <gtkmm/picture.h>
@@ -41,6 +43,11 @@ namespace kpop::ui
         m_addButton.set_halign(Gtk::Align::START);
         m_addButton.signal_clicked().connect([this] { onAddClicked(); });
 
+        stapik::ui::acceptFileDrop(
+            *this,
+            [this](const std::vector<std::filesystem::path>& files) { onFilesChosen(files); },
+            { .extensions = imageFileExtensions(), .allowMultiple = true });
+
         append(m_scroller);
         append(m_statusLabel);
         append(m_addButton);
@@ -73,30 +80,45 @@ namespace kpop::ui
         chooseImageFile(
             *window,
             translate("kpop.photos.dialogTitle"),
-            [this](const std::filesystem::path& file) { onFileChosen(file); },
+            [this](const std::filesystem::path& file) { onFilesChosen({ file }); },
             [this](const std::string& reason) { showImportError(reason); });
     }
 
-    void PhotoGallery::onFileChosen(const std::filesystem::path& file)
+    void PhotoGallery::onFilesChosen(const std::vector<std::filesystem::path>& files)
     {
-        std::optional<domain::ImageId> id;
+        bool imported = false;
+        std::string failure;
 
-        try
+        for (const auto& file : files)
         {
-            id = m_library.importFile(file);
+            std::optional<domain::ImageId> id;
+
+            try
+            {
+                id = m_library.importFile(file);
+            }
+            catch (const std::runtime_error& error)
+            {
+                failure = error.what();
+                continue;
+            }
+
+            imported = true;
+
+            // The same picture is the same image, so it is not added a second time.
+            if (std::ranges::find(m_photos, *id) == m_photos.end())
+                m_photos.push_back(*id);
         }
-        catch (const std::runtime_error& error)
+
+        if (imported)
         {
-            showImportError(error.what());
-            return;
+            rebuild();
+            m_signalChanged.emit();
         }
 
-        // The same picture is the same image, so it is not added a second time.
-        if (std::ranges::find(m_photos, *id) == m_photos.end())
-            m_photos.push_back(*id);
-
-        rebuild();
-        m_signalChanged.emit();
+        // After the rebuild, which clears the status line.
+        if (!failure.empty())
+            showImportError(failure);
     }
 
     void PhotoGallery::onRemoveRequested(const std::size_t index)
