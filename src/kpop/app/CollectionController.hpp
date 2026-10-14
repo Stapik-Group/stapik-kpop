@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace kpop::app
 {
@@ -64,6 +65,14 @@ namespace kpop::app
         std::string addArtist(domain::Artist artist);
         void updateArtist(const domain::Artist& artist);
         [[nodiscard]] ArtistRemoval removeArtist(const std::string& artistId);
+
+        // The copies the file keeps of the collection from before the last saves, the newest first.
+        [[nodiscard]] std::vector<stapik::document::BackupInfo> listBackups() const;
+
+        // Replaces the collection with the one of the backup and saves it, so the collection from before the
+        // restore becomes the newest backup. The undo history is dropped. Anything but Loaded means the backup could
+        // not be used and nothing was changed.
+        [[nodiscard]] stapik::document::LoadStatus restoreBackup(const stapik::document::BackupInfo& backup);
 
         [[nodiscard]] bool isCloudConnected() const;
         [[nodiscard]] const std::optional<CloudStorageConfig>& cloudConfig() const;

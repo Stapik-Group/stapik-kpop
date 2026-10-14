@@ -272,6 +272,97 @@ namespace
         EXPECT_EQ(openController()->apiKeyExpiryMonitor(), nullptr);
     }
 
+    TEST_F(CollectionControllerTest, KeepsSeveralBackupsNewestFirst)
+    {
+        const auto controller = openController();
+        EXPECT_TRUE(controller->listBackups().empty());
+
+        controller->addItem(sampleAlbum("a", "First"));
+        EXPECT_TRUE(controller->listBackups().empty());
+
+        controller->addItem(sampleAlbum("b", "Second"));
+        controller->addItem(sampleAlbum("c", "Third"));
+
+        const auto backups = controller->listBackups();
+        ASSERT_EQ(backups.size(), 2U);
+        EXPECT_EQ(backups[0].index, 1);
+        EXPECT_EQ(backups[1].index, 2);
+    }
+
+    TEST_F(CollectionControllerTest, RestoringABackupBringsBackTheOlderCollection)
+    {
+        const auto controller = openController();
+        controller->addItem(sampleAlbum("a", "First"));
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        // The newest backup is the file from before the last save: only the first entry.
+        const auto backups = controller->listBackups();
+        ASSERT_FALSE(backups.empty());
+
+        int notifications = 0;
+        controller->signalDocumentChanged().connect([&notifications] { ++notifications; });
+
+        EXPECT_EQ(controller->restoreBackup(backups.front()), LoadStatus::Loaded);
+
+        EXPECT_EQ(notifications, 1);
+        ASSERT_EQ(controller->document().items().size(), 1U);
+        EXPECT_EQ(controller->document().items().front().title, "First");
+        EXPECT_FALSE(controller->undoStack().canUndo());
+        EXPECT_FALSE(controller->undoStack().canRedo());
+
+        const auto reopened = openController();
+        ASSERT_EQ(reopened->document().items().size(), 1U);
+        EXPECT_EQ(reopened->document().items().front().title, "First");
+    }
+
+    TEST_F(CollectionControllerTest, RestoringCanBeTakenBackThroughTheNewestBackup)
+    {
+        const auto controller = openController();
+        controller->addItem(sampleAlbum("a", "First"));
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        ASSERT_EQ(controller->restoreBackup(controller->listBackups().front()), LoadStatus::Loaded);
+        ASSERT_EQ(controller->document().items().size(), 1U);
+
+        // The collection from before the restore is now the newest backup.
+        ASSERT_EQ(controller->restoreBackup(controller->listBackups().front()), LoadStatus::Loaded);
+        EXPECT_EQ(controller->document().items().size(), 2U);
+    }
+
+    TEST_F(CollectionControllerTest, RestoredCollectionCountsAsChangedNow)
+    {
+        const auto start = std::chrono::sys_days{ std::chrono::year{ 2026 } / std::chrono::October / 3 } + std::chrono::hours{ 12 };
+        FakeClock clock(start);
+        const auto controller = openController(clock);
+        controller->addItem(sampleAlbum("a", "First"));
+        clock.advance(std::chrono::hours{ 1 });
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        clock.advance(std::chrono::hours{ 2 });
+        ASSERT_EQ(controller->restoreBackup(controller->listBackups().front()), LoadStatus::Loaded);
+
+        EXPECT_EQ(controller->document().lastUpdate(), start + std::chrono::hours{ 3 });
+    }
+
+    TEST_F(CollectionControllerTest, DamagedBackupIsRefusedAndChangesNothing)
+    {
+        const auto controller = openController();
+        controller->addItem(sampleAlbum("a", "First"));
+        controller->addItem(sampleAlbum("b", "Second"));
+
+        const auto backup = controller->listBackups().front();
+        std::ofstream(backup.path, std::ios::trunc) << "{ not json";
+
+        int notifications = 0;
+        controller->signalDocumentChanged().connect([&notifications] { ++notifications; });
+
+        EXPECT_EQ(controller->restoreBackup(backup), LoadStatus::Corrupted);
+
+        EXPECT_EQ(notifications, 0);
+        EXPECT_EQ(controller->document().items().size(), 2U);
+        EXPECT_TRUE(controller->undoStack().canUndo());
+    }
+
     TEST_F(CollectionControllerTest, FailedSaveReportsTheReason)
     {
         const auto controller = openUnwritableController();

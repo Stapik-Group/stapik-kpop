@@ -196,5 +196,7 @@
   "kpop.startup.corrupted.text": "Die beschädigte Datei wurde neben {path} verschoben (der Name endet auf .corrupt-…). Die Anwendung startet mit einer leeren Sammlung.",
   "kpop.error.saveFailed.header": "Die Sammlung konnte nicht gespeichert werden",
   "kpop.error.saveFailed.text": "Prüfe den freien Speicherplatz und die Berechtigungen für {path}. Grund: {reason}",
-  "kpop.cloud.apiKeyExpiring.header": "Ihr Cloud-Schlüssel läuft bald ab"
+  "kpop.cloud.apiKeyExpiring.header": "Ihr Cloud-Schlüssel läuft bald ab",
+  "kpop.restore.failed.header": "Die Sicherung konnte nicht wiederhergestellt werden",
+  "kpop.restore.failed.text": "Die Datei {path} ist beschädigt, stammt von einer neueren Version der Anwendung oder hat ein altes Format, das nicht umgewandelt werden konnte. Die Sammlung wurde nicht geändert."
 }

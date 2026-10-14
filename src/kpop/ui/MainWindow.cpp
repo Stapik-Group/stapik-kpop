@@ -17,6 +17,7 @@
 #include "stapik/ui/dialog/ConfirmDialog.hpp"
 #include "stapik/ui/dialog/ConnectDialog.hpp"
 #include "stapik/ui/dialog/DialogUtils.hpp"
+#include "stapik/ui/dialog/RestoreBackupDialog.hpp"
 
 #include <giomm/asyncresult.h>
 #include <giomm/menu.h>
@@ -136,10 +137,16 @@ namespace kpop::ui
         add_action("manageArtists", [this] { onManageArtistsRequested(); });
         add_action("connect", [this] { onConnectRequested(); });
         add_action("sync", [this] { onSyncRequested(); });
+        add_action("restoreBackup", [this] { onRestoreBackupRequested(); });
     }
 
     void MainWindow::initMenu()
     {
+        m_menu.addToMenu(StandardMenu::Target::File, [](Gio::Menu& menu)
+        {
+            menu.append(translate("menu.file.restoreBackup"), "win.restoreBackup");
+        });
+
         m_menu.addMenu("kpop.menu.collection", [](Gio::Menu& menu)
         {
             menu.append(translate("kpop.menu.addItem"), ADD_ITEM_ACTION);
@@ -450,6 +457,20 @@ namespace kpop::ui
         }
 
         m_controller.syncNow();
+    }
+
+    void MainWindow::onRestoreBackupRequested()
+    {
+        showRestoreBackupDialog(*this, m_controller.listBackups(), [this](const stapik::document::BackupInfo& backup)
+        {
+            if (m_controller.restoreBackup(backup) == stapik::document::LoadStatus::Loaded)
+                return;
+
+            showMessageDialog(
+                *this,
+                translate("kpop.restore.failed.header"),
+                translate("kpop.restore.failed.text", { { "path", stapik::storage::pathText(backup.path) } }));
+        });
     }
 
     void MainWindow::onManageArtistsRequested()

@@ -13,6 +13,9 @@ namespace kpop::app
 {
     namespace
     {
+        // One copy is hardly worth restoring from: it is the file as it was before the very last edit.
+        constexpr int BACKUP_COUNT = 5;
+
         std::size_t removeUnreferenced(image::ImageStore& store, const std::vector<domain::ImageId>& used)
         {
             std::size_t removed = 0;
@@ -39,6 +42,7 @@ namespace kpop::app
         m_apiKeyExpiryMonitor(cloudHooks.expiryMonitor),
         m_cloudSession(std::move(cloudHooks))
     {
+        m_file.setBackupCount(BACKUP_COUNT);
         loadFromDisk();
         connectSignals();
     }
@@ -213,6 +217,37 @@ namespace kpop::app
     sigc::signal<void(const std::string&)>& CollectionController::signalSaveFailed()
     {
         return m_signalSaveFailed;
+    }
+
+    std::vector<stapik::document::BackupInfo> CollectionController::listBackups() const
+    {
+        return m_file.listBackups();
+    }
+
+    stapik::document::LoadStatus CollectionController::restoreBackup(const stapik::document::BackupInfo& backup)
+    {
+        using stapik::document::LoadStatus;
+
+        auto loaded = m_file.loadBackup(backup);
+        if (loaded.status != LoadStatus::Loaded)
+            return loaded.status;
+
+        if (!loaded.document)
+            return LoadStatus::Corrupted;
+
+        // The undo history refers to entries of the document that is being thrown away.
+        m_ignoreHistoryChanges = true;
+        m_undoStack.clear();
+        m_ignoreHistoryChanges = false;
+
+        m_document = std::move(*loaded.document);
+
+        // The cloud keeps whichever version changed last, so the restored one has to count as changed now.
+        m_document.touch(m_clock.now());
+        persist();
+        m_cloudSession.pushChange(m_document);
+        m_signalDocumentChanged.emit();
+        return LoadStatus::Loaded;
     }
 
     sigc::signal<void(std::chrono::system_clock::time_point)>& CollectionController::signalApiKeyExpiring()

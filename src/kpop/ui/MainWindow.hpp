@@ -69,6 +69,7 @@ namespace kpop::ui
         void onConnectRequested();
         void onSyncRequested();
         void onManageArtistsRequested();
+        void onRestoreBackupRequested();
 
         static std::string statisticsText(const domain::CollectionStatistics &statistics);
         [[nodiscard]] static StandardMenuOptions menuOptions(const stapik::theme::ThemeRegistry& themes, stapik::command::UndoStack& undoStack);
