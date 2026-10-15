@@ -30,7 +30,10 @@ namespace kpop::ui
         void refreshLabels();
 
         [[nodiscard]] domain::ItemFilter filter() const;
+
+        // The main order, and all the orders from the main one to the least important one.
         [[nodiscard]] domain::SortOrder sortOrder() const;
+        [[nodiscard]] std::vector<domain::SortOrder> sortOrders() const;
 
         sigc::signal<void()>& signalChanged();
 
@@ -38,6 +41,7 @@ namespace kpop::ui
         void rebuildStatusModel();
         void rebuildArtistModel();
         void rebuildSortModel();
+        [[nodiscard]] domain::SortOrder selectedSortOrder() const;
         void selectSortOrder(domain::SortOrder order);
         void updateFilterButton();
         void scheduleFilterPopoverRegrab();
@@ -56,6 +60,10 @@ namespace kpop::ui
         Gtk::DropDown m_artistDropDown;
         Gtk::DropDown m_sortDropDown;
         std::vector<domain::Artist> m_artists;
+
+        // Every order that was chosen stays behind the next one, so choosing the release date and then the artist
+        // groups the items by artist and keeps each artist's items in chronological order.
+        std::vector<domain::SortOrder> m_sortLevels{ domain::SortOrder::AddedNewest };
         bool m_updatingModels = false;
         bool m_regrabPending = false;
         std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);

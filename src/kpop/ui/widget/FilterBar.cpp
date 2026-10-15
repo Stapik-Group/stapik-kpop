@@ -1,5 +1,7 @@
 #include "FilterBar.hpp"
 
+#include "kpop/domain/ItemSort.hpp"
+
 #include "kpop/ui/Translate.hpp"
 
 #include <glibmm/main.h>
@@ -76,7 +78,13 @@ namespace kpop::ui
         };
         m_statusDropDown.property_selected().signal_changed().connect(onSelectionChanged);
         m_artistDropDown.property_selected().signal_changed().connect(onSelectionChanged);
-        m_sortDropDown.property_selected().signal_changed().connect(onSelectionChanged);
+        m_sortDropDown.property_selected().signal_changed().connect([this, onSelectionChanged]
+        {
+            if (!m_updatingModels)
+                m_sortLevels = domain::withSortLevel(m_sortLevels, selectedSortOrder());
+
+            onSelectionChanged();
+        });
 
         // Also when a list is closed without choosing anything.
         for (auto* dropDown : { &m_statusDropDown, &m_artistDropDown, &m_sortDropDown })
@@ -173,6 +181,16 @@ namespace kpop::ui
 
     domain::SortOrder FilterBar::sortOrder() const
     {
+        return m_sortLevels.front();
+    }
+
+    std::vector<domain::SortOrder> FilterBar::sortOrders() const
+    {
+        return m_sortLevels;
+    }
+
+    domain::SortOrder FilterBar::selectedSortOrder() const
+    {
         const auto entries = domain::SORT_ORDERS.entries();
         const auto position = static_cast<std::size_t>(m_sortDropDown.get_selected());
 
@@ -189,7 +207,23 @@ namespace kpop::ui
     {
         const auto current = filter();
 
-        const int activeCount = (current.status ? 1 : 0) + (current.artistId ? 1 : 0) + (sortOrder() != domain::SortOrder::AddedNewest ? 1 : 0);
+        const bool defaultSort = m_sortLevels.size() == 1 && m_sortLevels.front() == domain::SortOrder::AddedNewest;
+        const int activeCount = (current.status ? 1 : 0) + (current.artistId ? 1 : 0) + (defaultSort ? 0 : 1);
+
+        // The list shows only the main order, so the whole chain is spelled out in the tooltips.
+        std::string sortChain;
+        if (m_sortLevels.size() > 1)
+        {
+            for (const auto order : m_sortLevels)
+            {
+                if (!sortChain.empty())
+                    sortChain += " → ";
+
+                sortChain += translate(domain::SORT_ORDERS.nameKey(order));
+            }
+        }
+        m_sortDropDown.set_tooltip_text(sortChain);
+        m_filterButton.set_tooltip_text(sortChain);
 
         m_filterButton.set_label(activeCount > 0
             ? translate("kpop.filter.buttonActive", { { "count", std::to_string(activeCount) } })

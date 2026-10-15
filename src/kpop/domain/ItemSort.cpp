@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -66,6 +67,52 @@ namespace kpop::domain
 
             std::ranges::transform(entries, items.begin(), [](const Entry& entry) { return entry.item; });
         }
+    }
+
+    SortField sortFieldOf(const SortOrder order)
+    {
+        switch (order)
+        {
+            using enum SortOrder;
+            case AddedNewest:
+            case AddedOldest:
+                return SortField::Added;
+            case TitleAscending:
+            case TitleDescending:
+                return SortField::Title;
+            case ArtistAscending:
+            case ArtistDescending:
+                return SortField::Artist;
+            case ReleaseDateNewest:
+            case ReleaseDateOldest:
+                return SortField::ReleaseDate;
+        }
+
+        return SortField::Added;
+    }
+
+    void sortItems(std::vector<SortableItem>& items, const std::span<const SortOrder> orders, const std::string_view languageCode)
+    {
+        // Every sort keeps equal items in their order, so sorting by the least important order first and by the
+        // main one last gives the combined order.
+        for (auto order = orders.rbegin(); order != orders.rend(); ++order)
+            sortItems(items, *order, languageCode);
+    }
+
+    std::vector<SortOrder> withSortLevel(const std::vector<SortOrder>& levels, const SortOrder chosen)
+    {
+        const auto chosenField = sortFieldOf(chosen);
+        if (chosenField == SortField::Added)
+            return { chosen };
+
+        std::vector<SortOrder> result{ chosen };
+        for (const auto level : levels)
+        {
+            if (const auto field = sortFieldOf(level); field != chosenField && field != SortField::Added)
+                result.push_back(level);
+        }
+
+        return result;
     }
 
     void sortItems(std::vector<SortableItem>& items, const SortOrder order, const std::string_view languageCode)

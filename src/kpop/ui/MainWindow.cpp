@@ -381,7 +381,7 @@ namespace kpop::ui
                 matchingItems.push_back({ .item = &*item, .artist = artist });
         }
 
-        domain::sortItems(matchingItems, m_filterBar.sortOrder(), LocaleManager::instance().languageCode());
+        domain::sortItems(matchingItems, m_filterBar.sortOrders(), LocaleManager::instance().languageCode());
 
         const auto pageCount = std::max<std::size_t>(1, (matchingItems.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         m_currentPage = std::clamp<std::size_t>(m_currentPage, 1, pageCount);

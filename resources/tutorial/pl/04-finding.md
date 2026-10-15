@@ -21,6 +21,11 @@ listach utworów, autorach, tekstach piosenek (oryginał, romanizacja i tłumacz
 Ostatnia lista w okienku **Filtry i sortowanie** ustala kolejność: ostatnio lub najdawniej dodane, tytuł, artysta albo data wydania. Tytuły i
 artyści są ustawiani w kolejności alfabetu języka programu, więc po polsku *Ł* jest po *L*.
 
+Sortowania się nakładają. Gdy wybierzesz najpierw *Data wydania: od najstarszych*, a potem *Artysta A–Z*, wpisy będą
+pogrupowane według artystów, a u każdego artysty ułożone chronologicznie. Ostatni wybór jest główny, wcześniejsze
+porządkują wpisy, które on uznaje za równe. Cały porządek widać w podpowiedzi przycisku **Filtry i sortowanie**.
+Wybór *Ostatnio dodane* albo *Najdawniej dodane* zaczyna od nowa.
+
 ## Lista, półka czy siatka
 
 Widok wybierasz w menu **Widok**: **Lista**, **Półka** albo **Siatka**. Półka i siatka pokazują okładki, co lepiej

@@ -23,6 +23,12 @@ Die letzte Liste im Fenster **Filter und Sortierung** legt die Reihenfolge fest:
 Veröffentlichungsdatum. Titel und Künstler werden nach dem Alphabet der Programmsprache sortiert, auf Polnisch steht
 also *Ł* nach *L*.
 
+Die Sortierungen bauen aufeinander auf. Wählst du zuerst *Veröffentlichung: älteste zuerst* und dann *Künstler A–Z*,
+sind die Einträge nach Künstlern gruppiert und bei jedem Künstler chronologisch geordnet. Die letzte Wahl ist die
+Hauptsortierung, die früheren ordnen die Einträge, die sie als gleich ansieht. Die ganze Reihenfolge steht im Tooltip
+der Schaltfläche **Filter und Sortierung**. Wählst du *Zuletzt hinzugefügt* oder *Zuerst hinzugefügt*, beginnt es von
+vorn.
+
 ## Liste, Regal oder Raster
 
 Die Ansicht wählst du im Menü **Ansicht**: **Liste**, **Regal** oder **Raster**. Regal und Raster zeigen Cover, was bei
