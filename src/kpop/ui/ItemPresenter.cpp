@@ -104,6 +104,15 @@ namespace kpop::ui
         row.statusText = translate(ITEM_STATUSES.nameKey(item.status));
         row.artistName = artist != nullptr ? artist->name : std::string();
 
+        if (const auto* album = std::get_if<AlbumDetails>(&item.details))
+        {
+            if (const auto region = regionOf(*album); region != Region::Unspecified)
+            {
+                row.regionFlag = std::string(regionFlag(region));
+                row.regionName = region == Region::Other ? album->region : translate(REGIONS.nameKey(region));
+            }
+        }
+
         if (item.quantity > 1)
             row.quantityText = "×" + std::to_string(item.quantity);
 

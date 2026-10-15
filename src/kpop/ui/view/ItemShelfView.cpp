@@ -79,7 +79,7 @@ namespace kpop::ui
         {
             std::string text = row.title;
 
-            for (const auto* part : { &row.subtitle, &row.statusText })
+            for (const auto* part : { &row.subtitle, &row.regionName, &row.statusText })
             {
                 if (!part->empty())
                     text += "\n" + *part;

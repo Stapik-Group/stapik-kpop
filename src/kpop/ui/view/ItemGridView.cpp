@@ -84,7 +84,7 @@ namespace kpop::ui
         {
             std::string text = row.title;
 
-            for (const auto* part : { &row.subtitle, &row.statusText })
+            for (const auto* part : { &row.subtitle, &row.regionName, &row.statusText })
             {
                 if (!part->empty())
                     text += "\n" + *part;
@@ -264,7 +264,7 @@ namespace kpop::ui
         tile->append(*title);
 
         auto* subtitle = makeLine();
-        subtitle->set_text(row.subtitle);
+        subtitle->set_text(row.regionFlag.empty() ? row.subtitle : row.regionFlag + " " + row.subtitle);
         subtitle->add_css_class("kpop-grid-subtitle");
         subtitle->add_css_class("dim-label");
         tile->append(*subtitle);

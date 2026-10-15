@@ -40,6 +40,7 @@ namespace kpop::ui
     private:
         void rebuildStatusModel();
         void rebuildArtistModel();
+        void rebuildRegionModel();
         void rebuildSortModel();
         [[nodiscard]] domain::SortOrder selectedSortOrder() const;
         void selectSortOrder(domain::SortOrder order);
@@ -55,9 +56,11 @@ namespace kpop::ui
         Gtk::Grid m_filterGrid;
         Gtk::Label m_statusLabel;
         Gtk::Label m_artistLabel;
+        Gtk::Label m_regionLabel;
         Gtk::Label m_sortLabel;
         Gtk::DropDown m_statusDropDown;
         Gtk::DropDown m_artistDropDown;
+        Gtk::DropDown m_regionDropDown;
         Gtk::DropDown m_sortDropDown;
         std::vector<domain::Artist> m_artists;
 

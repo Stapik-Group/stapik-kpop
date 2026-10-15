@@ -23,6 +23,10 @@ namespace kpop::ui
         std::string quantityText;
         std::string priceText;
 
+        // The flag and the name of the region of an album; both are empty for other kinds and for albums without a region.
+        std::string regionFlag;
+        std::string regionName;
+
         std::string artistName;
         std::optional<stapik::domain::CategoryColor> artistColor;
 

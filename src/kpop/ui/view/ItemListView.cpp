@@ -228,6 +228,14 @@ namespace kpop::ui
 
         box->append(*texts);
 
+        if (!row.regionFlag.empty())
+        {
+            auto* flag = makeLabel(row.regionFlag, "kpop-row-flag");
+            flag->set_valign(Gtk::Align::CENTER);
+            flag->set_tooltip_text(row.regionName);
+            box->append(*flag);
+        }
+
         for (const auto* extraText : { &row.quantityText, &row.priceText })
         {
             if (!extraText->empty())

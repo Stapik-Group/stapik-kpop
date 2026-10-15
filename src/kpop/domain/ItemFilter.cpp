@@ -85,6 +85,13 @@ namespace kpop::domain
         if (filter.artistId && item.artistId != *filter.artistId)
             return false;
 
+        if (filter.region)
+        {
+            const auto* album = std::get_if<AlbumDetails>(&item.details);
+            if (album == nullptr || regionOf(*album) != *filter.region)
+                return false;
+        }
+
         std::istringstream terms(stapik::text::foldForSearch(filter.text));
         std::string term;
         std::string haystack;

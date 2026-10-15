@@ -3,8 +3,10 @@
 ## Kinds, statuses and artists
 
 Click a kind on the left to narrow the list. The **Filters and sorting** button at the top opens a small window where
-you narrow it further to a **status** (for example only *Wishlist*) and to one **artist**. The filters work together.
+you narrow it further to a **status** (for example only *Wishlist*), to one **artist** and to the **region** of an album's release (for example only *Japan*; only albums are shown then). The filters work together.
 When any of the settings differs from the default, the button shows how many, for example **Filters and sorting (2)**.
+
+You pick the region in the album form from a list (Korea, Japan, China, Taiwan, USA, Europe) or as *Other…* with your own text. Older entries such as `Japan` or `JP` are recognised on their own. A flag of the region is shown next to an album in the list, before the subtitle in the grid and in the tooltip on the shelf.
 
 ## Search
 

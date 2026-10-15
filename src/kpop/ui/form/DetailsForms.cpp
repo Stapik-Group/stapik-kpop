@@ -81,6 +81,8 @@ namespace kpop::ui
             AlbumForm() :
                 m_typeDropDown(ALBUM_TYPES),
                 m_formatDropDown(ALBUM_FORMATS),
+                m_regionDropDown(REGIONS),
+                m_regionBox(Gtk::Orientation::VERTICAL, TRACKLIST_BOX_SPACING),
                 m_tracklistBox(Gtk::Orientation::VERTICAL, TRACKLIST_BOX_SPACING),
                 m_tracklistRow(Gtk::Orientation::HORIZONTAL, TRACKLIST_ROW_SPACING)
             {
@@ -90,7 +92,11 @@ namespace kpop::ui
                 addRow("kpop.field.variant", m_variantEntry);
                 addRow("kpop.field.releaseDate", m_releaseDateEntry);
                 addRow("kpop.field.label", m_labelEntry);
-                addRow("kpop.field.region", m_regionEntry);
+                // A region from the list, or any text when "other" is chosen.
+                m_regionOtherEntry.set_visible(false);
+                m_regionBox.append(m_regionDropDown);
+                m_regionBox.append(m_regionOtherEntry);
+                addRow("kpop.field.region", m_regionBox);
                 addRow("kpop.field.catalogNumber", m_catalogNumberEntry);
                 addRow("kpop.field.inclusions", m_inclusionsEntry);
 
@@ -119,7 +125,12 @@ namespace kpop::ui
                 const auto onChanged = [this] { notifyChanged(); };
                 m_typeDropDown.property_selected().signal_changed().connect(onChanged);
                 m_formatDropDown.property_selected().signal_changed().connect(onChanged);
-                connectChanged({ &m_editionEntry, &m_variantEntry, &m_releaseDateEntry, &m_labelEntry, &m_regionEntry, &m_catalogNumberEntry, &m_inclusionsEntry }, onChanged);
+                m_regionDropDown.property_selected().signal_changed().connect([this]
+                {
+                    m_regionOtherEntry.set_visible(m_regionDropDown.value() == Region::Other);
+                    notifyChanged();
+                });
+                connectChanged({ &m_editionEntry, &m_variantEntry, &m_releaseDateEntry, &m_labelEntry, &m_regionOtherEntry, &m_catalogNumberEntry, &m_inclusionsEntry }, onChanged);
             }
 
             void setDetails(const ItemDetails& details) override
@@ -131,7 +142,10 @@ namespace kpop::ui
                 m_variantEntry.set_text(variant);
                 m_releaseDateEntry.setValue(releaseDate);
                 m_labelEntry.set_text(label);
-                m_regionEntry.set_text(region);
+                const auto knownRegion = regionOf(region);
+                m_regionDropDown.setValue(knownRegion);
+                m_regionOtherEntry.set_text(knownRegion == Region::Other ? region : std::string());
+                m_regionOtherEntry.set_visible(knownRegion == Region::Other);
                 m_catalogNumberEntry.set_text(catalogNumber);
                 m_inclusionsEntry.set_text(inclusions);
                 m_tracklist = tracklist;
@@ -147,7 +161,7 @@ namespace kpop::ui
                     .variant = trimmedText(m_variantEntry),
                     .releaseDate = m_releaseDateEntry.value(),
                     .label = trimmedText(m_labelEntry),
-                    .region = trimmedText(m_regionEntry),
+                    .region = regionText(m_regionDropDown.value(), trimmedText(m_regionOtherEntry)),
                     .catalogNumber = trimmedText(m_catalogNumberEntry),
                     .inclusions = trimmedText(m_inclusionsEntry),
                     .tracklist = m_tracklist };
@@ -255,7 +269,9 @@ namespace kpop::ui
             Gtk::Entry m_variantEntry;
             PartialDateEntry m_releaseDateEntry;
             Gtk::Entry m_labelEntry;
-            Gtk::Entry m_regionEntry;
+            EnumDropDown<Region> m_regionDropDown;
+            Gtk::Box m_regionBox;
+            Gtk::Entry m_regionOtherEntry;
             Gtk::Entry m_catalogNumberEntry;
             Gtk::Entry m_inclusionsEntry;
             Tracklist m_tracklist;

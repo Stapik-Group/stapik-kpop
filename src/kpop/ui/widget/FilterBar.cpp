@@ -1,5 +1,6 @@
 #include "FilterBar.hpp"
 
+#include "kpop/domain/ItemDetails.hpp"
 #include "kpop/domain/ItemSort.hpp"
 
 #include "kpop/ui/Translate.hpp"
@@ -52,7 +53,8 @@ namespace kpop::ui
         m_filterGrid.set_column_spacing(POPOVER_SPACING);
         addFilterRow(m_filterGrid, 0, m_statusLabel, m_statusDropDown);
         addFilterRow(m_filterGrid, 1, m_artistLabel, m_artistDropDown);
-        addFilterRow(m_filterGrid, 2, m_sortLabel, m_sortDropDown);
+        addFilterRow(m_filterGrid, 2, m_regionLabel, m_regionDropDown);
+        addFilterRow(m_filterGrid, 3, m_sortLabel, m_sortDropDown);
         m_filterPopover.set_child(m_filterGrid);
         m_filterButton.set_popover(m_filterPopover);
 
@@ -61,6 +63,7 @@ namespace kpop::ui
 
         rebuildStatusModel();
         rebuildArtistModel();
+        rebuildRegionModel();
         rebuildSortModel();
         refreshLabels();
 
@@ -78,6 +81,7 @@ namespace kpop::ui
         };
         m_statusDropDown.property_selected().signal_changed().connect(onSelectionChanged);
         m_artistDropDown.property_selected().signal_changed().connect(onSelectionChanged);
+        m_regionDropDown.property_selected().signal_changed().connect(onSelectionChanged);
         m_sortDropDown.property_selected().signal_changed().connect([this, onSelectionChanged]
         {
             if (!m_updatingModels)
@@ -87,7 +91,7 @@ namespace kpop::ui
         });
 
         // Also when a list is closed without choosing anything.
-        for (auto* dropDown : { &m_statusDropDown, &m_artistDropDown, &m_sortDropDown })
+        for (auto* dropDown : { &m_statusDropDown, &m_artistDropDown, &m_regionDropDown, &m_sortDropDown })
         {
             if (auto* popup = findPopup(*dropDown))
                 popup->signal_closed().connect([this] { scheduleFilterPopoverRegrab(); });
@@ -128,10 +132,12 @@ namespace kpop::ui
         m_searchEntry.set_placeholder_text(translate("kpop.filter.search"));
         m_statusLabel.set_text(translate("kpop.filter.status"));
         m_artistLabel.set_text(translate("kpop.filter.artist"));
+        m_regionLabel.set_text(translate("kpop.filter.region"));
         m_sortLabel.set_text(translate("kpop.filter.sort"));
 
         rebuildStatusModel();
         rebuildArtistModel();
+        rebuildRegionModel();
         rebuildSortModel();
 
         m_updatingModels = true;
@@ -151,6 +157,12 @@ namespace kpop::ui
                 if (m_artists[index].id == *previous.artistId)
                     m_artistDropDown.set_selected(static_cast<guint>(index + ALL_ENTRY_COUNT));
             }
+        }
+
+        if (previous.region)
+        {
+            // The first region of the catalog is "unspecified", which is not offered, so the positions line up.
+            m_regionDropDown.set_selected(static_cast<guint>(*previous.region));
         }
 
         selectSortOrder(previousSortOrder);
@@ -174,6 +186,12 @@ namespace kpop::ui
             artistPosition >= ALL_ENTRY_COUNT && artistPosition - ALL_ENTRY_COUNT < m_artists.size())
         {
             result.artistId = m_artists[artistPosition - ALL_ENTRY_COUNT].id;
+        }
+
+        if (const auto regionPosition = static_cast<std::size_t>(m_regionDropDown.get_selected());
+            regionPosition >= ALL_ENTRY_COUNT && regionPosition < domain::REGIONS.entries().size())
+        {
+            result.region = domain::REGIONS.entries()[regionPosition].value;
         }
 
         return result;
@@ -208,7 +226,7 @@ namespace kpop::ui
         const auto current = filter();
 
         const bool defaultSort = m_sortLevels.size() == 1 && m_sortLevels.front() == domain::SortOrder::AddedNewest;
-        const int activeCount = (current.status ? 1 : 0) + (current.artistId ? 1 : 0) + (defaultSort ? 0 : 1);
+        const int activeCount = (current.status ? 1 : 0) + (current.artistId ? 1 : 0) + (current.region ? 1 : 0) + (defaultSort ? 0 : 1);
 
         // The list shows only the main order, so the whole chain is spelled out in the tooltips.
         std::string sortChain;
@@ -263,6 +281,21 @@ namespace kpop::ui
 
         m_updatingModels = true;
         m_statusDropDown.set_model(Gtk::StringList::create(labels));
+        m_updatingModels = false;
+    }
+
+    // "All regions", then every region but "unspecified", so a position equals the index of the region in the catalog.
+    void FilterBar::rebuildRegionModel()
+    {
+        std::vector<Glib::ustring> labels{ translate("kpop.filter.allRegions") };
+        for (const auto&[value, id] : domain::REGIONS.entries())
+        {
+            if (value != domain::Region::Unspecified)
+                labels.emplace_back(std::string(domain::regionFlag(value)) + " " + translate(domain::REGIONS.nameKey(value)));
+        }
+
+        m_updatingModels = true;
+        m_regionDropDown.set_model(Gtk::StringList::create(labels));
         m_updatingModels = false;
     }
 

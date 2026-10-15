@@ -28,6 +28,15 @@ namespace kpop::domain
         bool operator==(const AlbumDetails&) const = default;
     };
 
+    // The region of an album is stored as text: the id of a known region ("japan"), or whatever was typed in.
+    // Older entries hold names such as "Japan", "JP" or "Japonia", which are recognised as well.
+    [[nodiscard]] Region regionOf(std::string_view text);
+    [[nodiscard]] Region regionOf(const AlbumDetails& album);
+    [[nodiscard]] std::string regionText(Region region, std::string_view otherText);
+
+    // The flag shown next to an entry; empty when no region is given.
+    [[nodiscard]] std::string_view regionFlag(Region region);
+
     struct PhotocardDetails
     {
         std::string member;

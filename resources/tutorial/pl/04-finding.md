@@ -3,8 +3,10 @@
 ## Rodzaje, statusy i artyści
 
 Kliknij rodzaj po lewej, aby zawęzić listę. Przycisk **Filtry i sortowanie** u góry otwiera okienko, w którym zawężasz
-ją dalej do **statusu** (na przykład tylko *Lista życzeń*) i do jednego **artysty**. Filtry działają razem. Gdy któryś
+ją dalej do **statusu** (na przykład tylko *Lista życzeń*) do jednego **artysty** i do **regionu** wydania albumu (na przykład tylko *Japonia*; wtedy widać same albumy). Filtry działają razem. Gdy któryś
 z ustawień różni się od domyślnego, na przycisku widać ich liczbę, na przykład **Filtry i sortowanie (2)**.
+
+Region wybierasz w formularzu albumu z listy (Korea, Japonia, Chiny, Tajwan, USA, Europa) albo jako *Inny…* z własnym tekstem. Starsze wpisy, np. `Japan` czy `JP`, są rozpoznawane same. Obok albumu na liście widać flagę regionu, w siatce przed podtytułem, a na półce w podpowiedzi.
 
 ## Wyszukiwanie
 

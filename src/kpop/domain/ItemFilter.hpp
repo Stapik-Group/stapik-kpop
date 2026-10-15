@@ -15,6 +15,9 @@ namespace kpop::domain
         std::optional<ItemStatus> status = std::nullopt;
         std::optional<std::string> artistId = std::nullopt;
 
+        // Only albums have a region, so every other kind is left out when this is set.
+        std::optional<Region> region = std::nullopt;
+
         bool operator==(const ItemFilter&) const = default;
     };
 

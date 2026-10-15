@@ -3,9 +3,11 @@
 ## Arten, Status und Künstler
 
 Klicke links auf eine Art, um die Liste einzuengen. Die Schaltfläche **Filter und Sortierung** oben öffnet ein kleines
-Fenster, in dem du sie weiter auf einen **Status** (zum Beispiel nur *Wunschliste*) und auf einen **Künstler**
+Fenster, in dem du sie weiter auf einen **Status** (zum Beispiel nur *Wunschliste*) und auf einen **Künstler** und auf die **Region** der Veröffentlichung eines Albums (zum Beispiel nur *Japan*; dann siehst du nur Alben)
 einengst. Die Filter wirken zusammen. Weicht eine der Einstellungen vom Standard ab, zeigt die Schaltfläche ihre
 Anzahl, zum Beispiel **Filter und Sortierung (2)**.
+
+Die Region wählst du im Album-Formular aus einer Liste (Korea, Japan, China, Taiwan, USA, Europa) oder als *Andere…* mit eigenem Text. Ältere Einträge wie `Japan` oder `JP` werden von selbst erkannt. Neben einem Album steht in der Liste die Flagge der Region, im Raster vor dem Untertitel und im Regal im Tooltip.
 
 ## Suche
 

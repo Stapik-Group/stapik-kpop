@@ -119,6 +119,19 @@ namespace kpop::domain
         ReleaseDateOldest
     };
 
+    // Where an album was released. Unspecified is an empty region, Other is any text that is not one of the known regions.
+    enum class Region
+    {
+        Unspecified,
+        Korea,
+        Japan,
+        China,
+        Taiwan,
+        Usa,
+        Europe,
+        Other
+    };
+
     enum class EventType
     {
         Concert,
@@ -242,6 +255,17 @@ namespace kpop::domain
         entry(SortOrder::ArtistDescending, "artistDescending"),
         entry(SortOrder::ReleaseDateNewest, "releaseDateNewest"),
         entry(SortOrder::ReleaseDateOldest, "releaseDateOldest"));
+
+    inline constexpr auto REGIONS = makeEnumCatalog(
+        "kpop.region",
+        entry(Region::Unspecified, "unspecified"),
+        entry(Region::Korea, "korea"),
+        entry(Region::Japan, "japan"),
+        entry(Region::China, "china"),
+        entry(Region::Taiwan, "taiwan"),
+        entry(Region::Usa, "usa"),
+        entry(Region::Europe, "europe"),
+        entry(Region::Other, "other"));
 
     [[nodiscard]] constexpr stapik::domain::CategoryColor colorOf(const ItemKind kind)
     {
