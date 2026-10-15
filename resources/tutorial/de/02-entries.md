@@ -23,8 +23,9 @@ Feld mit unverständlichem Text wird markiert, und der Eintrag lässt sich erst 
 - **Alben**: Albumtyp (Single, Mini, Full, Repackage…), Format (CD, Vinyl, Kassette, digital, Kit…), Edition,
   Variante, Veröffentlichungsdatum, Label, Region, Katalognummer, Beigaben und die **Trackliste** mit Titeln, Autoren,
   Länge, Titeltrack und der Markierung als Bonustitel. Die Trackliste öffnet sich in einem eigenen Fenster über die
-  Schaltfläche **Titelliste hinzufügen…** (**Titelliste bearbeiten…**, wenn schon eine da ist). Leere Positionen bleiben
-  an ihrem Platz, bis du sie ausfüllst, die Nummerierung verschiebt sich also nicht.
+  Schaltfläche **Titelliste hinzufügen…** (**Titelliste bearbeiten…**, wenn schon eine da ist). Im Formular siehst du nur eine
+  kurze Vorschau (Nummer, Titel und Länge), alle Details änderst du in diesem Fenster. Leere Positionen bleiben an
+  ihrem Platz, bis du sie ausfüllst, die Nummerierung verschiebt sich also nicht.
 - **Photocards**: Mitglied, Herkunft (Albumbeigabe, Vorbestellerbonus, Lucky Draw, Fansign, Event), Quelle und ob sie
   zum Tausch bereitsteht.
 - **Merchandise**: Art des Artikels (Lightstick, Kleidung, Photobook, Season's Greetings…), Größe, Version und ob er

@@ -11,7 +11,9 @@
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/entry.h>
+#include <gtkmm/grid.h>
 #include <gtkmm/label.h>
+#include <gtkmm/scrolledwindow.h>
 #include <gtkmm/window.h>
 
 #include <algorithm>
@@ -48,7 +50,14 @@ namespace kpop::ui
         }
 
         constexpr int TRACKLIST_ROW_SPACING = 8;
+        constexpr int TRACKLIST_BOX_SPACING = 6;
+        constexpr int PREVIEW_MAX_HEIGHT = 320;
+        constexpr int PREVIEW_MARGIN = 10;
+        constexpr int PREVIEW_COLUMN_SPACING = 14;
+        constexpr int PREVIEW_ROW_SPACING = 5;
+        constexpr int PREVIEW_COLUMNS = 5;
         constexpr auto SUMMARY_SEPARATOR = "  ·  ";
+        constexpr auto EMPTY_TITLE_TEXT = "—";
 
         std::string tracklistSummary(const Tracklist& tracklist)
         {
@@ -72,6 +81,7 @@ namespace kpop::ui
             AlbumForm() :
                 m_typeDropDown(ALBUM_TYPES),
                 m_formatDropDown(ALBUM_FORMATS),
+                m_tracklistBox(Gtk::Orientation::VERTICAL, TRACKLIST_BOX_SPACING),
                 m_tracklistRow(Gtk::Orientation::HORIZONTAL, TRACKLIST_ROW_SPACING)
             {
                 addRow("kpop.field.albumType", m_typeDropDown);
@@ -84,14 +94,27 @@ namespace kpop::ui
                 addRow("kpop.field.catalogNumber", m_catalogNumberEntry);
                 addRow("kpop.field.inclusions", m_inclusionsEntry);
 
-                // The tracklist is edited in a window of its own; here only its summary and the button are shown.
+                // The tracklist is edited in a window of its own; here only its summary, a short read-only preview
+                // and the button are shown.
                 m_tracklistSummary.set_hexpand(true);
                 m_tracklistSummary.set_xalign(0.0F);
                 m_tracklistRow.append(m_tracklistSummary);
                 m_tracklistRow.append(m_tracklistButton);
-                addRow("kpop.field.tracklist", m_tracklistRow);
+                m_tracklistBox.append(m_tracklistRow);
+
+                m_tracklistPreviewGrid.set_margin(PREVIEW_MARGIN);
+                m_tracklistPreviewGrid.set_column_spacing(PREVIEW_COLUMN_SPACING);
+                m_tracklistPreviewGrid.set_row_spacing(PREVIEW_ROW_SPACING);
+                m_tracklistPreview.set_policy(Gtk::PolicyType::NEVER, Gtk::PolicyType::AUTOMATIC);
+                m_tracklistPreview.set_propagate_natural_height(true);
+                m_tracklistPreview.set_max_content_height(PREVIEW_MAX_HEIGHT);
+                m_tracklistPreview.add_css_class("frame");
+                m_tracklistPreview.set_child(m_tracklistPreviewGrid);
+                m_tracklistBox.append(m_tracklistPreview);
+
+                addRow("kpop.field.tracklist", m_tracklistBox);
                 m_tracklistButton.signal_clicked().connect([this] { onTracklistClicked(); });
-                refreshTracklistSummary();
+                refreshTracklist();
 
                 const auto onChanged = [this] { notifyChanged(); };
                 m_typeDropDown.property_selected().signal_changed().connect(onChanged);
@@ -112,7 +135,7 @@ namespace kpop::ui
                 m_catalogNumberEntry.set_text(catalogNumber);
                 m_inclusionsEntry.set_text(inclusions);
                 m_tracklist = tracklist;
-                refreshTracklistSummary();
+                refreshTracklist();
             }
 
             [[nodiscard]] ItemDetails details() const override
@@ -137,10 +160,79 @@ namespace kpop::ui
             }
 
         private:
+            void refreshTracklist()
+            {
+                refreshTracklistSummary();
+                refreshTracklistPreview();
+            }
+
             void refreshTracklistSummary()
             {
                 m_tracklistSummary.set_text(tracklistSummary(m_tracklist));
                 m_tracklistButton.set_label(translate(m_tracklist.empty() ? "kpop.tracklist.button.add" : "kpop.tracklist.button.edit"));
+            }
+
+            // Number, title and length only, numbered per disc like in the tracklist window. Everything else is edited there.
+            void refreshTracklistPreview()
+            {
+                while (auto* child = m_tracklistPreviewGrid.get_first_child())
+                    m_tracklistPreviewGrid.remove(*child);
+
+                m_tracklistPreview.set_visible(!m_tracklist.empty());
+
+                const bool showDiscHeaders = discCount(m_tracklist) > 1;
+                int gridRow = 0;
+                int currentDisc = 0;
+                int numberOnDisc = 0;
+
+                for (const auto& track : m_tracklist)
+                {
+                    if (track.disc != currentDisc)
+                    {
+                        currentDisc = track.disc;
+                        numberOnDisc = 0;
+
+                        if (showDiscHeaders)
+                        {
+                            auto* header = Gtk::make_managed<Gtk::Label>(translate("kpop.tracklist.disc", { { "number", std::to_string(currentDisc) } }));
+                            header->set_xalign(0.0F);
+                            header->add_css_class("dim-label");
+                            m_tracklistPreviewGrid.attach(*header, 0, gridRow++, PREVIEW_COLUMNS, 1);
+                        }
+                    }
+
+                    ++numberOnDisc;
+
+                    auto* number = Gtk::make_managed<Gtk::Label>(std::to_string(numberOnDisc));
+                    number->set_xalign(1.0F);
+                    number->add_css_class("dim-label");
+
+                    auto* title = Gtk::make_managed<Gtk::Label>(track.title.empty() ? EMPTY_TITLE_TEXT : track.title);
+                    title->set_hexpand(true);
+                    title->set_xalign(0.0F);
+                    title->set_ellipsize(Pango::EllipsizeMode::END);
+                    if (track.title.empty())
+                        title->add_css_class("dim-label");
+
+                    auto* length = Gtk::make_managed<Gtk::Label>(track.length ? track.length->toText() : std::string());
+                    length->set_xalign(1.0F);
+                    length->add_css_class("dim-label");
+
+                    m_tracklistPreviewGrid.attach(*number, 0, gridRow);
+                    m_tracklistPreviewGrid.attach(*title, 1, gridRow);
+                    m_tracklistPreviewGrid.attach(*length, 2, gridRow);
+                    ++gridRow;
+                }
+
+                // The preview is as tall as its rows, up to the maximum, and scrolls beyond that. The height is set
+                // from the measured content, because the natural height of a scrolled window inside the form's own
+                // scroller is not passed on reliably and the last rows ended up hidden.
+                int minimum = 0;
+                int natural = 0;
+                int minimumBaseline = 0;
+                int naturalBaseline = 0;
+                m_tracklistPreviewGrid.measure(Gtk::Orientation::VERTICAL, -1, minimum, natural, minimumBaseline, naturalBaseline);
+                m_tracklistPreview.set_min_content_height(std::min(natural, PREVIEW_MAX_HEIGHT));
             }
 
             void onTracklistClicked()
@@ -152,7 +244,7 @@ namespace kpop::ui
                 showTracklistDialog(*window, m_tracklist, [this](Tracklist tracklist)
                 {
                     m_tracklist = std::move(tracklist);
-                    refreshTracklistSummary();
+                    refreshTracklist();
                     notifyChanged();
                 });
             }
@@ -167,9 +259,12 @@ namespace kpop::ui
             Gtk::Entry m_catalogNumberEntry;
             Gtk::Entry m_inclusionsEntry;
             Tracklist m_tracklist;
+            Gtk::Box m_tracklistBox;
             Gtk::Box m_tracklistRow;
             Gtk::Label m_tracklistSummary;
             Gtk::Button m_tracklistButton;
+            Gtk::ScrolledWindow m_tracklistPreview;
+            Gtk::Grid m_tracklistPreviewGrid;
         };
 
         class PhotocardForm final : public DetailsForm
