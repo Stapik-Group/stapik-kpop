@@ -8,4 +8,4 @@ Every entry belongs to an artist. Open the list with **Collection → Artists…
 - **Delete** removes an artist, but only one that has no entries. Otherwise you are told how many entries still use it.
   Delete or reassign them first.
 
-Each artist gets its own colour, which marks the entries in the list.
+Each artist gets its own colour. In the list and in the grid the name of the artist is shown as a small tag with a dot in that colour.

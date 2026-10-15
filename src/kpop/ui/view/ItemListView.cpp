@@ -1,9 +1,8 @@
 #include "ItemListView.hpp"
 
 #include "kpop/ui/Translate.hpp"
+#include "kpop/ui/widget/ArtistTag.hpp"
 #include "kpop/ui/widget/ImageTexture.hpp"
-
-#include "stapik/domain/Category.hpp"
 
 #include <gtkmm/box.h>
 #include <gdk/gdk.h>
@@ -21,8 +20,6 @@ namespace kpop::ui
     {
         constexpr int ROW_SPACING = 10;
         constexpr int ROW_MARGIN = 6;
-        constexpr int SWATCH_WIDTH = 6;
-        constexpr int SWATCHES_SPACING = 2;
         constexpr int THUMBNAIL_SIZE = 48;
         constexpr int THUMBNAIL_DECODE_SIZE = THUMBNAIL_SIZE * 2;
 
@@ -184,26 +181,6 @@ namespace kpop::ui
         box->add_css_class("kpop-row");
         box->set_margin(ROW_MARGIN);
 
-        auto* swatches = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, SWATCHES_SPACING);
-
-        auto* swatch = Gtk::make_managed<Gtk::Label>();
-        swatch->set_size_request(SWATCH_WIDTH, -1);
-        swatch->add_css_class("kpop-kind-swatch");
-        swatch->add_css_class(stapik::domain::categoryColorCssClass(domain::colorOf(row.kind)));
-        swatches->append(*swatch);
-
-        auto* artistSwatch = Gtk::make_managed<Gtk::Label>();
-        artistSwatch->set_size_request(SWATCH_WIDTH, -1);
-        artistSwatch->add_css_class("kpop-artist-swatch");
-        if (row.artistColor)
-        {
-            artistSwatch->add_css_class(stapik::domain::categoryColorCssClass(*row.artistColor));
-            artistSwatch->set_tooltip_text(row.artistName);
-        }
-        swatches->append(*artistSwatch);
-
-        box->append(*swatches);
-
         if (showThumbnail)
             box->append(*makeThumbnail(row.imagePath));
 
@@ -217,13 +194,23 @@ namespace kpop::ui
         title->set_ellipsize(Pango::EllipsizeMode::END);
         texts->append(*title);
 
-        if (!row.subtitle.empty())
+        if (!row.artistName.empty() || !row.detailsText.empty())
         {
-            auto* subtitle = makeLabel(row.subtitle, "kpop-row-subtitle");
-            subtitle->set_halign(Gtk::Align::START);
-            subtitle->set_xalign(0.0F);
-            subtitle->set_ellipsize(Pango::EllipsizeMode::END);
-            texts->append(*subtitle);
+            auto* line = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, ROW_SPACING);
+            line->set_halign(Gtk::Align::START);
+
+            if (!row.artistName.empty())
+                line->append(*makeArtistTag(row.artistName, row.artistColor, false));
+
+            if (!row.detailsText.empty())
+            {
+                auto* details = makeLabel(row.detailsText, "kpop-row-subtitle");
+                details->set_xalign(0.0F);
+                details->set_ellipsize(Pango::EllipsizeMode::END);
+                line->append(*details);
+            }
+
+            texts->append(*line);
         }
 
         box->append(*texts);

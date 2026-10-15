@@ -156,6 +156,19 @@ dialog {
 .kpop-status-wishlist { background-color: #9b3fc4; }
 .kpop-status-sold { background-color: #636366; }
 
+/* --- Artist tag --- */
+.kpop-artist-tag {
+    padding: 1px 8px 1px 6px;
+    font-size: 12px;
+    background-color: alpha(currentColor, 0.12);
+    border-radius: 10px;
+}
+
+.kpop-artist-tag .kpop-artist-dot {
+    padding: 0;
+    border-radius: 4px;
+}
+
 /* --- Forms --- */
 entry.kpop-invalid {
     border-color: #ff453a;

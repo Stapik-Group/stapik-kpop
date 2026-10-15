@@ -1,6 +1,7 @@
 #include "ItemGridView.hpp"
 
 #include "kpop/ui/Translate.hpp"
+#include "kpop/ui/widget/ArtistTag.hpp"
 #include "kpop/ui/widget/ImageTexture.hpp"
 
 #include <gdk/gdk.h>
@@ -263,8 +264,16 @@ namespace kpop::ui
         title->add_css_class("kpop-grid-title");
         tile->append(*title);
 
+        if (!row.artistName.empty())
+        {
+            auto* artistTag = makeArtistTag(row.artistName, row.artistColor, true);
+            artistTag->set_margin_start(TEXT_MARGIN);
+            artistTag->set_margin_end(TEXT_MARGIN);
+            tile->append(*artistTag);
+        }
+
         auto* subtitle = makeLine();
-        subtitle->set_text(row.regionFlag.empty() ? row.subtitle : row.regionFlag + " " + row.subtitle);
+        subtitle->set_text(row.regionFlag.empty() ? row.detailsText : row.regionFlag + " " + row.detailsText);
         subtitle->add_css_class("kpop-grid-subtitle");
         subtitle->add_css_class("dim-label");
         tile->append(*subtitle);

@@ -136,6 +136,19 @@
 .kpop-status-wishlist { background-color: #8e24aa; }
 .kpop-status-sold { background-color: #757575; }
 
+/* --- Artist tag --- */
+.kpop-artist-tag {
+    padding: 1px 8px 1px 6px;
+    font-size: 12px;
+    background-color: alpha(currentColor, 0.12);
+    border-radius: 3px;
+}
+
+.kpop-artist-tag .kpop-artist-dot {
+    padding: 0;
+    border-radius: 2px;
+}
+
 /* --- Forms --- */
 entry.kpop-invalid {
     border-color: #d32f2f;
