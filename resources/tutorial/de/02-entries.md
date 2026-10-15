@@ -21,7 +21,7 @@ Feld mit unverständlichem Text wird markiert, und der Eintrag lässt sich erst 
 ## Arten von Einträgen
 
 - **Alben**: Albumtyp (Single, Mini, Full, Repackage…), Format (CD, Vinyl, Kassette, digital, Kit…), Edition,
-  Variante, Veröffentlichungsdatum, Label, Region, Katalognummer, Beigaben und die **Trackliste** mit Titeln, Gastkünstlern (feat.),
+  Variante, Veröffentlichungsdatum, Label, Region, Katalognummer und die **Trackliste** mit Titeln, Gastkünstlern (feat.),
   Länge, Titeltrack und der Markierung als Bonustitel. Die Trackliste öffnet sich in einem eigenen Fenster über die
   Schaltfläche **Titelliste hinzufügen…** (**Titelliste bearbeiten…**, wenn schon eine da ist). Im Formular siehst du nur eine
   kurze Vorschau (Nummer, Titel und Länge), alle Details änderst du in diesem Fenster. Leere Positionen bleiben an

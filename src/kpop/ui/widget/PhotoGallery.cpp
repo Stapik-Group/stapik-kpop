@@ -4,64 +4,90 @@
 #include "ImageTexture.hpp"
 
 #include "kpop/ui/Translate.hpp"
+#include "kpop/ui/dialog/PhotoGalleryDialog.hpp"
 
 #include "stapik/ui/dialog/FileDrop.hpp"
 
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/frame.h>
-#include <gtkmm/overlay.h>
+#include <gtkmm/gestureclick.h>
 #include <gtkmm/picture.h>
 #include <gtkmm/window.h>
 
-#include <algorithm>
-#include <optional>
-#include <stdexcept>
+#include <gdk/gdk.h>
+
+#include <utility>
 
 namespace kpop::ui
 {
     namespace
     {
         constexpr int GALLERY_SPACING = 6;
+        constexpr int SUMMARY_SPACING = 8;
         constexpr int STRIP_SPACING = 8;
-        constexpr int THUMBNAIL_SIZE = 120;
-        constexpr int REMOVE_BUTTON_MARGIN = 4;
-        constexpr int STRIP_HEIGHT = THUMBNAIL_SIZE + 24;
+        constexpr int THUMBNAIL_WIDTH = 128;
+        constexpr int THUMBNAIL_HEIGHT = 96;
+        constexpr int STRIP_HEIGHT = THUMBNAIL_HEIGHT + 24;
     }
 
     PhotoGallery::PhotoGallery(image::ImageLibrary& library) :
         Gtk::Box(Gtk::Orientation::VERTICAL, GALLERY_SPACING),
         m_library(library),
-        m_strip(Gtk::Orientation::HORIZONTAL, STRIP_SPACING),
-        m_addButton(translate("kpop.photos.add"))
+        m_summaryRow(Gtk::Orientation::HORIZONTAL, SUMMARY_SPACING),
+        m_strip(Gtk::Orientation::HORIZONTAL, STRIP_SPACING)
     {
+        m_summaryLabel.set_hexpand(true);
+        m_summaryLabel.set_xalign(0.0F);
+        m_summaryLabel.set_wrap(true);
+        m_summaryRow.append(m_summaryLabel);
+        m_summaryRow.append(m_openButton);
+
         m_scroller.set_policy(Gtk::PolicyType::AUTOMATIC, Gtk::PolicyType::NEVER);
         m_scroller.set_min_content_height(STRIP_HEIGHT);
         m_scroller.set_child(m_strip);
 
-        m_statusLabel.set_xalign(0.0F);
-        m_statusLabel.set_wrap(true);
+        // The hint only appears while the pointer is over the strip and never takes the clicks itself.
+        m_openHint.set_text(translate("kpop.photos.open"));
+        m_openHint.add_css_class("osd");
+        m_openHint.set_halign(Gtk::Align::CENTER);
+        m_openHint.set_valign(Gtk::Align::CENTER);
+        m_openHint.set_can_target(false);
+        m_openHint.set_visible(false);
 
-        m_addButton.set_halign(Gtk::Align::START);
-        m_addButton.signal_clicked().connect([this] { onAddClicked(); });
+        m_stripOverlay.set_child(m_scroller);
+        m_stripOverlay.add_overlay(m_openHint);
+        m_stripOverlay.set_cursor("pointer");
+
+        const auto motion = Gtk::EventControllerMotion::create();
+        motion->signal_enter().connect([this](const double, const double) { m_openHint.set_visible(true); });
+        motion->signal_leave().connect([this] { m_openHint.set_visible(false); });
+        m_stripOverlay.add_controller(motion);
+
+        const auto click = Gtk::GestureClick::create();
+        click->set_button(GDK_BUTTON_PRIMARY);
+        click->signal_released().connect([this](const int, const double, const double) { openGallery(); });
+        m_stripOverlay.add_controller(click);
+
+        m_openButton.signal_clicked().connect([this] { openGallery(); });
 
         stapik::ui::acceptFileDrop(
             *this,
-            [this](const std::vector<std::filesystem::path>& files) { onFilesChosen(files); },
+            [this](const std::vector<std::filesystem::path>& files) { onFilesDropped(files); },
             { .extensions = imageFileExtensions(), .allowMultiple = true });
 
-        append(m_scroller);
-        append(m_statusLabel);
-        append(m_addButton);
+        append(m_summaryRow);
+        append(m_stripOverlay);
 
         rebuild();
     }
 
-    void PhotoGallery::setPhotos(const std::vector<domain::ImageId>& photos)
+    void PhotoGallery::setPhotos(const std::vector<domain::ItemPhoto>& photos)
     {
         m_photos = photos;
         rebuild();
     }
 
-    const std::vector<domain::ImageId>& PhotoGallery::photos() const
+    const std::vector<domain::ItemPhoto>& PhotoGallery::photos() const
     {
         return m_photos;
     }
@@ -71,46 +97,24 @@ namespace kpop::ui
         return m_signalChanged;
     }
 
-    void PhotoGallery::onAddClicked()
+    void PhotoGallery::openGallery()
     {
         auto* window = dynamic_cast<Gtk::Window*>(get_root());
         if (window == nullptr)
             return;
 
-        chooseImageFile(
-            *window,
-            translate("kpop.photos.dialogTitle"),
-            [this](const std::filesystem::path& file) { onFilesChosen({ file }); },
-            [this](const std::string& reason) { showImportError(reason); });
+        showPhotoGalleryDialog(*window, m_library, m_photos, [this](std::vector<domain::ItemPhoto> photos)
+        {
+            m_photos = std::move(photos);
+            rebuild();
+            m_signalChanged.emit();
+        });
     }
 
-    void PhotoGallery::onFilesChosen(const std::vector<std::filesystem::path>& files)
+    void PhotoGallery::onFilesDropped(const std::vector<std::filesystem::path>& files)
     {
-        bool imported = false;
         std::string failure;
-
-        for (const auto& file : files)
-        {
-            std::optional<domain::ImageId> id;
-
-            try
-            {
-                id = m_library.importFile(file);
-            }
-            catch (const std::runtime_error& error)
-            {
-                failure = error.what();
-                continue;
-            }
-
-            imported = true;
-
-            // The same picture is the same image, so it is not added a second time.
-            if (std::ranges::find(m_photos, *id) == m_photos.end())
-                m_photos.push_back(*id);
-        }
-
-        if (imported)
+        if (importPhotos(m_library, files, m_photos, failure))
         {
             rebuild();
             m_signalChanged.emit();
@@ -121,16 +125,6 @@ namespace kpop::ui
             showImportError(failure);
     }
 
-    void PhotoGallery::onRemoveRequested(const std::size_t index)
-    {
-        if (index >= m_photos.size())
-            return;
-
-        m_photos.erase(m_photos.begin() + static_cast<std::ptrdiff_t>(index));
-        rebuild();
-        m_signalChanged.emit();
-    }
-
     void PhotoGallery::rebuild()
     {
         while (auto* child = m_strip.get_first_child())
@@ -139,58 +133,54 @@ namespace kpop::ui
         for (std::size_t index = 0; index < m_photos.size(); ++index)
             m_strip.append(*createThumbnail(index));
 
-        m_scroller.set_visible(!m_photos.empty());
+        m_stripOverlay.set_visible(!m_photos.empty());
 
-        m_statusLabel.remove_css_class("error");
-        m_statusLabel.set_text(m_photos.empty() ? translate("kpop.photos.none") : std::string());
-        m_statusLabel.set_visible(m_photos.empty());
+        m_summaryLabel.remove_css_class("error");
+        m_summaryLabel.set_text(m_photos.empty()
+            ? translate("kpop.photos.none")
+            : translate("kpop.photos.summary", { { "count", std::to_string(m_photos.size()) } }));
+        m_openButton.set_label(translate(m_photos.empty() ? "kpop.photos.button.add" : "kpop.photos.button.edit"));
     }
 
     void PhotoGallery::showImportError(const std::string& reason)
     {
-        m_statusLabel.add_css_class("error");
-        m_statusLabel.set_text(translate("kpop.image.importFailed", { { "reason", reason } }));
-        m_statusLabel.set_visible(true);
+        m_summaryLabel.add_css_class("error");
+        m_summaryLabel.set_text(translate("kpop.image.importFailed", { { "reason", reason } }));
     }
 
     Gtk::Widget* PhotoGallery::createThumbnail(const std::size_t index)
     {
-        const auto path = m_library.pathOf(m_photos[index]);
+        const auto path = m_library.pathOf(m_photos[index].image);
 
-        // Decoded at the displayed size, which is also the natural size of the picture.
-        const Glib::RefPtr<Gdk::Paintable> texture = path ? loadTexture(*path, THUMBNAIL_SIZE) : Glib::RefPtr<Gdk::Texture>();
+        // Decoded to fit the slot and shown pixel for pixel, so the thumbnail is sharp whatever its proportions.
+        const auto texture = path ? loadTexture(*path, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT) : Glib::RefPtr<Gdk::Texture>();
 
         auto* frame = Gtk::make_managed<Gtk::Frame>();
-        frame->set_valign(Gtk::Align::START);
+        frame->set_halign(Gtk::Align::CENTER);
+        frame->set_valign(Gtk::Align::CENTER);
 
         if (texture)
         {
-            auto* picture = Gtk::make_managed<Gtk::Picture>();
-            picture->set_size_request(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-            picture->set_content_fit(Gtk::ContentFit::CONTAIN);
-            picture->set_paintable(texture);
-            frame->set_child(*picture);
+            frame->set_child(*makeExactPicture(texture));
         }
         else
         {
             auto* missing = Gtk::make_managed<Gtk::Label>("?");
-            missing->set_size_request(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            missing->set_size_request(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
             missing->set_tooltip_text(translate("kpop.image.missing"));
             frame->set_child(*missing);
         }
 
-        auto* removeButton = Gtk::make_managed<Gtk::Button>("✕");
-        removeButton->add_css_class("osd");
-        removeButton->add_css_class("circular");
-        removeButton->set_halign(Gtk::Align::END);
-        removeButton->set_valign(Gtk::Align::START);
-        removeButton->set_margin(REMOVE_BUTTON_MARGIN);
-        removeButton->set_tooltip_text(translate("kpop.photos.removeTooltip"));
-        removeButton->signal_clicked().connect([this, index] { onRemoveRequested(index); });
+        // The caption is what tells the photos apart, so it is shown when the pointer rests on a thumbnail.
+        if (!m_photos[index].caption.empty())
+            frame->set_tooltip_text(m_photos[index].caption);
 
-        auto* overlay = Gtk::make_managed<Gtk::Overlay>();
-        overlay->set_child(*frame);
-        overlay->add_overlay(*removeButton);
-        return overlay;
+        auto* slot = Gtk::make_managed<Gtk::Box>();
+        slot->set_size_request(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+        slot->set_valign(Gtk::Align::START);
+        frame->set_hexpand(true);
+        frame->set_vexpand(true);
+        slot->append(*frame);
+        return slot;
     }
 }

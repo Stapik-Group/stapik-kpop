@@ -336,8 +336,14 @@ namespace kpop::document::serializer
         if (!item.photos.empty())
         {
             auto photos = json::array();
+            // A photo without a caption stays a plain id, as in files written before captions existed.
             for (const auto& photo : item.photos)
-                photos.push_back(photo.hash());
+            {
+                if (photo.caption.empty())
+                    photos.push_back(photo.image.hash());
+                else
+                    photos.push_back({ { "image", photo.image.hash() }, { "caption", photo.caption } });
+            }
 
             result["photos"] = std::move(photos);
         }
@@ -389,11 +395,13 @@ namespace kpop::document::serializer
 
             for (const auto& photo : json.at("photos"))
             {
-                const auto id = domain::ImageId::parse(photo.get<std::string>());
+                // Either a plain id or an object with the id and a caption.
+                const auto& idJson = photo.is_object() ? photo.at("image") : photo;
+                const auto id = domain::ImageId::parse(idJson.get<std::string>());
                 if (!id)
                     throw std::invalid_argument("Invalid photo id");
 
-                item.photos.push_back(*id);
+                item.photos.push_back({ .image = *id, .caption = photo.is_object() ? stringOrEmpty(photo, "caption") : std::string() });
             }
         }
 

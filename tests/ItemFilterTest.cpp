@@ -45,6 +45,11 @@ namespace
         EXPECT_TRUE(matchesFilter(ItemFilter{}, korean, nullptr));
     }
 
+    TEST(ItemFilterTest, TextSearchCoversPhotoCaptions)
+    {
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "photobook" }, sampleAlbum(), nullptr));
+    }
+
     TEST(ItemFilterTest, EmptyFilterMatchesEverything)
     {
         EXPECT_TRUE(matchesFilter(ItemFilter{}, sampleAlbum(), nullptr));

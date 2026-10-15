@@ -98,7 +98,6 @@ namespace kpop::ui
                 m_regionBox.append(m_regionOtherEntry);
                 addRow("kpop.field.region", m_regionBox);
                 addRow("kpop.field.catalogNumber", m_catalogNumberEntry);
-                addRow("kpop.field.inclusions", m_inclusionsEntry);
 
                 // The tracklist is edited in a window of its own; here only its summary, a short read-only preview
                 // and the button are shown.
@@ -130,7 +129,7 @@ namespace kpop::ui
                     m_regionOtherEntry.set_visible(m_regionDropDown.value() == Region::Other);
                     notifyChanged();
                 });
-                connectChanged({ &m_editionEntry, &m_variantEntry, &m_releaseDateEntry, &m_labelEntry, &m_regionOtherEntry, &m_catalogNumberEntry, &m_inclusionsEntry }, onChanged);
+                connectChanged({ &m_editionEntry, &m_variantEntry, &m_releaseDateEntry, &m_labelEntry, &m_regionOtherEntry, &m_catalogNumberEntry }, onChanged);
             }
 
             void setDetails(const ItemDetails& details) override
@@ -147,7 +146,8 @@ namespace kpop::ui
                 m_regionOtherEntry.set_text(knownRegion == Region::Other ? region : std::string());
                 m_regionOtherEntry.set_visible(knownRegion == Region::Other);
                 m_catalogNumberEntry.set_text(catalogNumber);
-                m_inclusionsEntry.set_text(inclusions);
+                // The field is not edited any more (the photo captions took its place), but what older entries hold is kept.
+                m_inclusions = inclusions;
                 m_tracklist = tracklist;
                 refreshTracklist();
             }
@@ -163,7 +163,7 @@ namespace kpop::ui
                     .label = trimmedText(m_labelEntry),
                     .region = regionText(m_regionDropDown.value(), trimmedText(m_regionOtherEntry)),
                     .catalogNumber = trimmedText(m_catalogNumberEntry),
-                    .inclusions = trimmedText(m_inclusionsEntry),
+                    .inclusions = m_inclusions,
                     .tracklist = m_tracklist };
             }
 
@@ -273,7 +273,7 @@ namespace kpop::ui
             Gtk::Box m_regionBox;
             Gtk::Entry m_regionOtherEntry;
             Gtk::Entry m_catalogNumberEntry;
-            Gtk::Entry m_inclusionsEntry;
+            std::string m_inclusions;
             Tracklist m_tracklist;
             Gtk::Box m_tracklistBox;
             Gtk::Box m_tracklistRow;

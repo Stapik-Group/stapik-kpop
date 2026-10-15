@@ -34,6 +34,9 @@ namespace kpop::domain
             std::string text;
             appendFields(text, { item.title, item.acquiredFrom, item.notes });
 
+            for (const auto& photo : item.photos)
+                appendFields(text, { photo.caption });
+
             if (artist != nullptr)
             {
                 appendFields(text, { artist->name });

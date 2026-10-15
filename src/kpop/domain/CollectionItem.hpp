@@ -11,6 +11,15 @@
 
 namespace kpop::domain
 {
+    // An additional photo of an entry with an optional caption, for example "Photobook".
+    struct ItemPhoto
+    {
+        ImageId image;
+        std::string caption;
+
+        bool operator==(const ItemPhoto&) const = default;
+    };
+
     struct CollectionItem
     {
         std::string id;
@@ -24,7 +33,7 @@ namespace kpop::domain
         std::string acquiredFrom;
         std::string notes;
         std::optional<ImageId> image;
-        std::vector<ImageId> photos;
+        std::vector<ItemPhoto> photos;
         ItemDetails details = AlbumDetails{};
 
         bool operator==(const CollectionItem&) const = default;

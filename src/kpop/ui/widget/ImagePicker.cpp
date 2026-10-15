@@ -17,7 +17,7 @@ namespace kpop::ui
 {
     namespace
     {
-        constexpr int PREVIEW_SIZE = 160;
+        constexpr int PREVIEW_SIZE = 200;
         constexpr int SPACING = 12;
         constexpr int BUTTONS_SPACING = 6;
     }
@@ -29,6 +29,7 @@ namespace kpop::ui
         m_removeButton(translate("kpop.image.remove"))
     {
         m_preview.set_size_request(PREVIEW_SIZE, PREVIEW_SIZE);
+        m_preview.set_can_shrink(false);
         m_preview.set_content_fit(Gtk::ContentFit::CONTAIN);
         m_previewFrame.set_child(m_preview);
         m_previewFrame.set_valign(Gtk::Align::START);
@@ -115,9 +116,14 @@ namespace kpop::ui
     void ImagePicker::refresh()
     {
         const auto path = m_image ? m_library.pathOf(*m_image) : std::nullopt;
-        const Glib::RefPtr<Gdk::Paintable> texture = path ? loadTexture(*path, PREVIEW_SIZE) : Glib::RefPtr<Gdk::Texture>();
+        const auto texture = path ? loadTexture(*path, PREVIEW_SIZE) : Glib::RefPtr<Gdk::Texture>();
 
+        // Shown pixel for pixel: a picture with only a minimum size would be stretched to the proportions of the image.
         m_preview.set_paintable(texture);
+        if (texture)
+            m_preview.set_size_request(texture->get_width(), texture->get_height());
+        else
+            m_preview.set_size_request(PREVIEW_SIZE, PREVIEW_SIZE);
         m_removeButton.set_sensitive(m_image.has_value());
 
         m_statusLabel.remove_css_class("error");
