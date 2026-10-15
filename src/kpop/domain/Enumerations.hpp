@@ -31,6 +31,7 @@ namespace kpop::domain
         Unspecified,
         Sealed,
         Mint,
+        VeryGood,
         Good,
         Fair,
         Poor
@@ -153,6 +154,7 @@ namespace kpop::domain
         entry(ItemCondition::Unspecified, "unspecified"),
         entry(ItemCondition::Sealed, "sealed"),
         entry(ItemCondition::Mint, "mint"),
+        entry(ItemCondition::VeryGood, "veryGood"),
         entry(ItemCondition::Good, "good"),
         entry(ItemCondition::Fair, "fair"),
         entry(ItemCondition::Poor, "poor"));

@@ -7,7 +7,7 @@ Wpis to jedna rzecz w Twojej kolekcji. Jest sześć rodzajów wpisów i każdy m
 - **Tytuł** i **Artysta**.
 - **Okładka / zdjęcie** oraz **Dodatkowe zdjęcia**, zobacz [Okładki i zdjęcia](#images).
 - **Status**: *Posiadane*, *Zamówione*, *Lista życzeń* albo *Sprzedane*.
-- **Stan**: *Nie określono*, *Zapieczętowane*, *Idealny*, *Dobry*, *Średni* albo *Słaby*.
+- **Stan**: *Nie określono*, *Zafoliowane*, *Idealny*, *Bardzo dobry*, *Dobry*, *Średni* albo *Słaby*.
 - **Liczba egzemplarzy**.
 - **Cena zakupu** z walutą, **Data nabycia** i **Miejsce nabycia**.
 - **Notatki**.

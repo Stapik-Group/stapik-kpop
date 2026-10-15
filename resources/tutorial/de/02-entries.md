@@ -7,7 +7,7 @@ Ein Eintrag ist ein Stück deiner Sammlung. Es gibt sechs Arten, und jede hat ne
 - **Titel** und **Künstler**.
 - **Cover / Foto** und **Weitere Fotos**, siehe [Cover und Fotos](#images).
 - **Status**: *Im Besitz*, *Bestellt*, *Wunschliste* oder *Verkauft*.
-- **Zustand**: *Nicht angegeben*, *Versiegelt*, *Neuwertig*, *Gut*, *Akzeptabel* oder *Schlecht*.
+- **Zustand**: *Nicht angegeben*, *Versiegelt*, *Neuwertig*, *Sehr gut*, *Gut*, *Akzeptabel* oder *Schlecht*.
 - **Anzahl** der Exemplare.
 - **Kaufpreis** mit Währung, **Erworben am** und **Erworben bei**.
 - **Notizen**.

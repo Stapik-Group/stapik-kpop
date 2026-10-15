@@ -7,7 +7,7 @@ An entry is one thing in your collection. There are six kinds, and each has its 
 - **Title** and **Artist**.
 - **Cover / photo** and **Additional photos**, see [Covers and photos](#images).
 - **Status**: *Owned*, *Ordered*, *Wishlist* or *Sold*.
-- **Condition**: *Not specified*, *Sealed*, *Mint*, *Good*, *Fair* or *Poor*.
+- **Condition**: *Not specified*, *Sealed*, *Mint*, *Very good*, *Good*, *Fair* or *Poor*.
 - **Copies**: how many of it you have.
 - **Purchase price** and its currency, **Acquired on** and **Acquired from**.
 - **Notes**.
