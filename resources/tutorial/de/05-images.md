@@ -11,8 +11,8 @@ Jeder Eintrag kann ein **Cover** und beliebig viele **weitere Fotos** haben.
 zuletzt ein Bild gewählt hast, und öffnet den Dialog dort. Ein Bild, das sich nicht lesen lässt, wird gemeldet, und
 der Eintrag bleibt unverändert.
 
-Bilder werden in den Ordner des Programms kopiert, die Originale kannst du also verschieben oder löschen. Sie werden
-auf eine sinnvolle Größe verkleinert. Bei verbundener Cloud werden Cover und Fotos ebenfalls hochgeladen und erscheinen
+Bilder werden in den Ordner des Programms kopiert, die Originale kannst du also verschieben oder löschen. Sie werden nur
+verkleinert, wenn sie sehr groß sind (Cover bis 1600 px, Fotos bis 2400 px an der längeren Seite), und als hochwertiges JPEG gespeichert. Bei verbundener Cloud werden Cover und Fotos ebenfalls hochgeladen und erscheinen
 auf deinen anderen Computern.
 
 > Ein mit der Cloud abgeglichenes Bild ist nicht verschlüsselt, auch wenn du eine Passphrase festgelegt hast. Siehe
