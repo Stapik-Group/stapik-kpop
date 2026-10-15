@@ -24,7 +24,7 @@ are put in alphabetical order of the language of the program, so in Polish *Ł* 
 ## List, shelf or grid
 
 Choose **List**, **Shelf** or **Grid** in the **View** menu. The shelf and the grid show covers, which is nicer for
-albums and photocards; the grid also shows the title and the subtitle under each cover. Long lists are split into
+albums and photocards; the grid also shows the title and the subtitle under each cover. In the grid, the slider in the footer changes the size of the covers. Long lists are split into
 pages of 50 entries, with buttons below.
 
 When nothing matches, the window says so. Change the search text or the filters.

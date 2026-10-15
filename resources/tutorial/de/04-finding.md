@@ -26,7 +26,7 @@ also *Ł* nach *L*.
 ## Liste, Regal oder Raster
 
 Die Ansicht wählst du im Menü **Ansicht**: **Liste**, **Regal** oder **Raster**. Regal und Raster zeigen Cover, was bei
-Alben und Photocards schöner aussieht; das Raster zeigt unter jedem Cover auch Titel und Untertitel. Lange Listen werden
+Alben und Photocards schöner aussieht; das Raster zeigt unter jedem Cover auch Titel und Untertitel. Im Raster ändert der Schieberegler in der Fußzeile die Covergröße. Lange Listen werden
 in Seiten zu 50 Einträgen geteilt, mit Schaltflächen darunter.
 
 Wenn nichts passt, sagt das Fenster es. Ändere dann den Suchtext oder die Filter.

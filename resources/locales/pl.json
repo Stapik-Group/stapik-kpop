@@ -201,6 +201,7 @@
   "kpop.view.list": "Lista",
   "kpop.view.shelf": "Półka",
   "kpop.view.grid": "Siatka",
+  "kpop.view.gridSize": "Rozmiar okładek",
   "kpop.page.label": "Strona {page} z {pages}",
   "kpop.page.previous": "‹ Poprzednia",
   "kpop.page.next": "Następna ›",

@@ -9,6 +9,7 @@
 #include <gtkmm/flowbox.h>
 #include <gtkmm/scrolledwindow.h>
 
+#include <sigc++/connection.h>
 #include <sigc++/signal.h>
 
 #include <string>
@@ -20,9 +21,17 @@ namespace kpop::ui
     class ItemGridView : public Gtk::ScrolledWindow
     {
     public:
+        static constexpr int MIN_COVER_SIZE = 80;
+        static constexpr int DEFAULT_COVER_SIZE = 140;
+        static constexpr int MAX_COVER_SIZE = 280;
+
         ItemGridView();
+        ~ItemGridView() override;
 
         void setRows(const std::vector<ItemRow>& rows);
+
+        // The side of the square cover in pixels. The tiles are rebuilt shortly after the last change.
+        void setCoverSize(int size);
         void setEmptyKind(EmptyListKind kind);
 
         sigc::signal<void()>& signalAddRequested();
@@ -33,6 +42,7 @@ namespace kpop::ui
         sigc::signal<void(const std::string&)>& signalDuplicateAndEditRequested();
 
     private:
+        void populate();
         void clear();
         void appendRow(const ItemRow& row);
 
@@ -40,6 +50,9 @@ namespace kpop::ui
         ::EmptyState m_emptyState;
         Gtk::FlowBox m_flowBox;
         std::vector<std::string> m_rowIds;
+        std::vector<ItemRow> m_rows;
+        int m_coverSize = DEFAULT_COVER_SIZE;
+        sigc::connection m_rebuildConnection;
         sigc::signal<void(const std::string&)> m_signalEditRequested;
         sigc::signal<void(const std::string&)> m_signalDeleteRequested;
         sigc::signal<void(const std::string&)> m_signalDuplicateRequested;

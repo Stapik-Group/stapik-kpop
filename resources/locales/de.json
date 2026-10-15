@@ -201,6 +201,7 @@
   "kpop.view.list": "Liste",
   "kpop.view.shelf": "Regal",
   "kpop.view.grid": "Raster",
+  "kpop.view.gridSize": "Covergröße",
   "kpop.page.label": "Seite {page} von {pages}",
   "kpop.page.previous": "‹ Zurück",
   "kpop.page.next": "Weiter ›",

@@ -4,6 +4,7 @@
 #include "kpop/ui/widget/ImageTexture.hpp"
 
 #include <gdk/gdk.h>
+#include <glibmm/main.h>
 #include <glibmm/markup.h>
 #include <gtkmm/box.h>
 #include <gtkmm/eventcontrollerkey.h>
@@ -11,13 +12,14 @@
 #include <gtkmm/label.h>
 #include <gtkmm/picture.h>
 
+#include <algorithm>
+
 namespace kpop::ui
 {
     namespace
     {
-        constexpr int COVER_SIZE = 140;
         constexpr int TILE_MARGIN = 8;
-        constexpr int TILE_WIDTH = COVER_SIZE + 2 * TILE_MARGIN;
+        constexpr int REBUILD_DELAY_MS = 150;
         constexpr int TILE_SPACING = 2;
         constexpr int TEXT_MARGIN = 2;
         constexpr int ROW_SPACING = 4;
@@ -25,17 +27,17 @@ namespace kpop::ui
         constexpr int VIEW_MARGIN = 8;
         constexpr int MAX_TILES_PER_LINE = 60;
 
-        // Every cover occupies exactly COVER_SIZE x COVER_SIZE; the picture inside is scaled to fit it
+        // Every cover occupies exactly coverSize x coverSize; the picture inside is scaled to fit it
         // and keeps its aspect ratio, so odd shapes are never stretched.
-        Gtk::Widget* makeCover(const ItemRow& row)
+        Gtk::Widget* makeCover(const ItemRow& row, const int coverSize)
         {
             if (!row.imagePath.empty())
             {
-                // The texture is never larger than COVER_SIZE, so its natural size cannot grow the slot.
-                if (const Glib::RefPtr<Gdk::Texture> texture = loadTexture(row.imagePath, COVER_SIZE))
+                // The texture is never larger than coverSize, so its natural size cannot grow the slot.
+                if (const Glib::RefPtr<Gdk::Texture> texture = loadTexture(row.imagePath, coverSize))
                 {
                     auto* slot = Gtk::make_managed<Gtk::Box>();
-                    slot->set_size_request(COVER_SIZE, COVER_SIZE);
+                    slot->set_size_request(coverSize, coverSize);
                     slot->set_halign(Gtk::Align::CENTER);
                     slot->set_valign(Gtk::Align::START);
                     slot->set_hexpand(false);
@@ -55,7 +57,7 @@ namespace kpop::ui
             }
 
             auto* empty = Gtk::make_managed<Gtk::Label>("♪");
-            empty->set_size_request(COVER_SIZE, COVER_SIZE);
+            empty->set_size_request(coverSize, coverSize);
             empty->set_halign(Gtk::Align::CENTER);
             empty->set_valign(Gtk::Align::START);
             empty->add_css_class("kpop-shelf-cover");
@@ -168,14 +170,42 @@ namespace kpop::ui
         m_flowBox.add_controller(rightClick);
     }
 
+    ItemGridView::~ItemGridView()
+    {
+        m_rebuildConnection.disconnect();
+    }
+
     void ItemGridView::setRows(const std::vector<ItemRow>& rows)
+    {
+        m_rows = rows;
+        populate();
+    }
+
+    void ItemGridView::setCoverSize(const int size)
+    {
+        const int clamped = std::clamp(size, MIN_COVER_SIZE, MAX_COVER_SIZE);
+        if (clamped == m_coverSize)
+            return;
+
+        m_coverSize = clamped;
+
+        // While the slider is dragged the tiles are rebuilt only when it pauses, because every rebuild reads the covers again.
+        m_rebuildConnection.disconnect();
+        m_rebuildConnection = Glib::signal_timeout().connect([this]
+        {
+            populate();
+            return false;
+        }, REBUILD_DELAY_MS);
+    }
+
+    void ItemGridView::populate()
     {
         clear();
 
-        for (const auto& row : rows)
+        for (const auto& row : m_rows)
             appendRow(row);
 
-        m_emptyState.set_visible(rows.empty());
+        m_emptyState.set_visible(m_rows.empty());
     }
 
     void ItemGridView::setEmptyKind(const EmptyListKind kind)
@@ -219,11 +249,11 @@ namespace kpop::ui
     void ItemGridView::appendRow(const ItemRow& row)
     {
         auto* tile = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, TILE_SPACING);
-        tile->set_size_request(TILE_WIDTH, -1);
+        tile->set_size_request(m_coverSize + 2 * TILE_MARGIN, -1);
         tile->set_margin(TILE_MARGIN);
         tile->set_tooltip_text(tooltipOf(row));
 
-        auto* cover = makeCover(row);
+        auto* cover = makeCover(row, m_coverSize);
         if (row.status != domain::ItemStatus::Owned)
             cover->add_css_class("kpop-shelf-unowned");
         tile->append(*cover);
