@@ -2,8 +2,11 @@
 
 ## Kinds, statuses and artists
 
-Click a kind on the left to narrow the list. The two lists at the top narrow it further to a **status** (for example
-only *Wishlist*) and to one **artist**. The filters work together.
+Click a kind on the left to narrow the list. The **Filters and sorting** button at the top opens a small window where
+you narrow it further to a **status** (for example only *Wishlist*), to one **artist** and to the **region** of an album's release (for example only *Japan*; only albums are shown then). The filters work together.
+When any of the settings differs from the default, the button shows how many, for example **Filters and sorting (2)**.
+
+You pick the region in the album form from a list (Korea, Japan, China, Taiwan, USA, Europe) or as *Other…* with your own text. Older entries such as `Japan` or `JP` are recognised on their own. A flag of the region is shown next to an album in the list, before the subtitle in the grid and in the tooltip on the shelf.
 
 ## Search
 
@@ -17,13 +20,18 @@ at, tracklists, writers, lyrics (original, romanization and translation), clip a
 
 ## Sorting
 
-The last list at the top sets the order: recently or oldest added, title, artist or release date. Titles and artists
+The last list in the **Filters and sorting** window sets the order: recently or oldest added, title, artist or release date. Titles and artists
 are put in alphabetical order of the language of the program, so in Polish *Ł* comes after *L*.
+
+Sort orders stack up. If you choose *Release date: oldest first* and then *Artist A–Z*, the entries are grouped by
+artist and each artist's entries are in chronological order. The last choice is the main one, the earlier ones order
+the entries it considers equal. The whole order is shown in the tooltip of the **Filters and sorting** button. Choosing
+*Recently added* or *Oldest added* starts over.
 
 ## List, shelf or grid
 
 Choose **List**, **Shelf** or **Grid** in the **View** menu. The shelf and the grid show covers, which is nicer for
-albums and photocards; the grid also shows the title and the subtitle under each cover. Long lists are split into
+albums and photocards; the grid also shows the title and the subtitle under each cover. In the grid, the slider in the footer changes the size of the covers. Long lists are split into
 pages of 50 entries, with buttons below.
 
 When nothing matches, the window says so. Change the search text or the filters.

@@ -20,7 +20,7 @@ namespace
     };
 
     // The entries are given newest first, like the list of the application receives them.
-    std::vector<std::string> sortedTitles(const std::vector<Entry>& entries, const SortOrder order, const std::string_view languageCode = "en")
+    std::vector<std::string> sortedTitlesBy(const std::vector<Entry>& entries, const std::vector<SortOrder>& orders, const std::string_view languageCode = "en")
     {
         std::vector<CollectionItem> items;
         std::vector<Artist> artists;
@@ -47,13 +47,18 @@ namespace
         for (std::size_t index = 0; index < entries.size(); ++index)
             sortable.push_back({ &items[index], entries[index].artistName ? &artists[index] : nullptr });
 
-        sortItems(sortable, order, languageCode);
+        sortItems(sortable, orders, languageCode);
 
         std::vector<std::string> titles;
         for (const auto& entry : sortable)
             titles.push_back(entry.item->title);
 
         return titles;
+    }
+
+    std::vector<std::string> sortedTitles(const std::vector<Entry>& entries, const SortOrder order, const std::string_view languageCode = "en")
+    {
+        return sortedTitlesBy(entries, { order }, languageCode);
     }
 
     using Titles = std::vector<std::string>;
@@ -130,6 +135,61 @@ namespace
         EXPECT_EQ(sortedTitles(entries, SortOrder::ArtistAscending), (Titles{ "newer", "older" }));
         EXPECT_EQ(sortedTitles(entries, SortOrder::ArtistDescending), (Titles{ "newer", "older" }));
         EXPECT_EQ(sortedTitles(entries, SortOrder::ReleaseDateNewest), (Titles{ "newer", "older" }));
+    }
+
+    TEST(ItemSortTest, SeveralOrdersGroupByTheMainOneAndKeepTheOthersInside)
+    {
+        const std::vector<Entry> entries = {
+            { "Twice 2021", "Twice", PartialDate::tryCreate(2021) },
+            { "aespa 2019", "aespa", PartialDate::tryCreate(2019) },
+            { "Twice 2019", "Twice", PartialDate::tryCreate(2019) },
+            { "aespa 2022", "aespa", PartialDate::tryCreate(2022) } };
+
+        EXPECT_EQ(sortedTitlesBy(entries, { SortOrder::ArtistAscending, SortOrder::ReleaseDateOldest }),
+            (Titles{ "aespa 2019", "aespa 2022", "Twice 2019", "Twice 2021" }));
+        EXPECT_EQ(sortedTitlesBy(entries, { SortOrder::ArtistDescending, SortOrder::ReleaseDateNewest }),
+            (Titles{ "Twice 2021", "Twice 2019", "aespa 2022", "aespa 2019" }));
+        EXPECT_EQ(sortedTitlesBy(entries, { SortOrder::ReleaseDateOldest, SortOrder::ArtistAscending }),
+            (Titles{ "aespa 2019", "Twice 2019", "Twice 2021", "aespa 2022" }));
+    }
+
+    TEST(ItemSortTest, ItemsThatAllOrdersConsiderEqualKeepTheIncomingOrder)
+    {
+        const std::vector<Entry> entries = {
+            { "newer", "Twice", PartialDate::tryCreate(2021) },
+            { "older", "Twice", PartialDate::tryCreate(2021) } };
+
+        EXPECT_EQ(sortedTitlesBy(entries, { SortOrder::ArtistAscending, SortOrder::ReleaseDateOldest }), (Titles{ "newer", "older" }));
+    }
+
+    TEST(ItemSortTest, ChoosingAnOrderMakesItTheMainOneAndKeepsTheEarlierOnesBehindIt)
+    {
+        auto levels = std::vector<SortOrder>{ SortOrder::AddedNewest };
+
+        levels = withSortLevel(levels, SortOrder::ReleaseDateOldest);
+        EXPECT_EQ(levels, (std::vector<SortOrder>{ SortOrder::ReleaseDateOldest }));
+
+        levels = withSortLevel(levels, SortOrder::ArtistAscending);
+        EXPECT_EQ(levels, (std::vector<SortOrder>{ SortOrder::ArtistAscending, SortOrder::ReleaseDateOldest }));
+
+        levels = withSortLevel(levels, SortOrder::TitleAscending);
+        EXPECT_EQ(levels, (std::vector<SortOrder>{ SortOrder::TitleAscending, SortOrder::ArtistAscending, SortOrder::ReleaseDateOldest }));
+    }
+
+    TEST(ItemSortTest, ChoosingAnotherDirectionOfAFieldReplacesItsEarlierOrder)
+    {
+        const std::vector<SortOrder> levels = { SortOrder::ArtistAscending, SortOrder::ReleaseDateOldest };
+
+        EXPECT_EQ(withSortLevel(levels, SortOrder::ArtistDescending), (std::vector<SortOrder>{ SortOrder::ArtistDescending, SortOrder::ReleaseDateOldest }));
+        EXPECT_EQ(withSortLevel(levels, SortOrder::ReleaseDateNewest), (std::vector<SortOrder>{ SortOrder::ReleaseDateNewest, SortOrder::ArtistAscending }));
+    }
+
+    TEST(ItemSortTest, ChoosingAnAddedOrderStartsOver)
+    {
+        const std::vector<SortOrder> levels = { SortOrder::ArtistAscending, SortOrder::ReleaseDateOldest };
+
+        EXPECT_EQ(withSortLevel(levels, SortOrder::AddedNewest), (std::vector<SortOrder>{ SortOrder::AddedNewest }));
+        EXPECT_EQ(withSortLevel(levels, SortOrder::AddedOldest), (std::vector<SortOrder>{ SortOrder::AddedOldest }));
     }
 
     TEST(ItemSortTest, OnlyAlbumsAndClipsHaveAReleaseDate)

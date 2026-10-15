@@ -1,15 +1,16 @@
 #include "ItemListView.hpp"
 
 #include "kpop/ui/Translate.hpp"
+#include "kpop/ui/widget/ArtistTag.hpp"
 #include "kpop/ui/widget/ImageTexture.hpp"
-
-#include "stapik/domain/Category.hpp"
 
 #include <gtkmm/box.h>
 #include <gdk/gdk.h>
 #include <gtkmm/button.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/picture.h>
+
+#include <glibmm/main.h>
 
 #include <algorithm>
 
@@ -19,8 +20,6 @@ namespace kpop::ui
     {
         constexpr int ROW_SPACING = 10;
         constexpr int ROW_MARGIN = 6;
-        constexpr int SWATCH_WIDTH = 6;
-        constexpr int SWATCHES_SPACING = 2;
         constexpr int THUMBNAIL_SIZE = 48;
         constexpr int THUMBNAIL_DECODE_SIZE = THUMBNAIL_SIZE * 2;
 
@@ -57,6 +56,7 @@ namespace kpop::ui
 
         m_listBox.add_css_class("kpop-list");
         m_listBox.set_selection_mode(Gtk::SelectionMode::SINGLE);
+        m_listBox.set_activate_on_single_click(false);
 
         showEmptyListKind(m_emptyState, EmptyListKind::NoEntries);
         m_listBox.set_placeholder(m_emptyState);
@@ -91,6 +91,39 @@ namespace kpop::ui
             m_contextMenu.popup(m_rowIds[index], x, y);
         });
         m_listBox.add_controller(rightClick);
+
+        // Clicking the highlighted row again removes the highlight. Without this it could only be cleared with Ctrl+click.
+        const auto leftClick = Gtk::GestureClick::create();
+        leftClick->set_button(GDK_BUTTON_PRIMARY);
+        leftClick->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        leftClick->signal_pressed().connect([this](const int pressCount, const double, const double y)
+        {
+            // Only a single click toggles; the second click of a double click opens the entry and keeps the highlight.
+            const auto* row = m_listBox.get_row_at_y(static_cast<int>(y));
+            const bool toggleOff = pressCount == 1 && row != nullptr && row->is_selected();
+            m_toggleOffRowIndex = toggleOff ? row->get_index() : -1;
+        });
+        leftClick->signal_released().connect([this](const int, const double, const double y)
+        {
+            const auto* row = m_listBox.get_row_at_y(static_cast<int>(y));
+            if (row == nullptr || m_toggleOffRowIndex < 0 || row->get_index() != m_toggleOffRowIndex)
+                return;
+
+            m_toggleOffRowIndex = -1;
+
+            // The list box selects the clicked row itself, after this handler, so the highlight is removed once it is done.
+            Glib::signal_idle().connect_once([this, alive = m_alive]
+            {
+                if (*alive)
+                    m_listBox.unselect_all();
+            });
+        });
+        m_listBox.add_controller(leftClick);
+    }
+
+    ItemListView::~ItemListView()
+    {
+        *m_alive = false;
     }
 
     void ItemListView::setRows(const std::vector<ItemRow>& rows)
@@ -148,26 +181,6 @@ namespace kpop::ui
         box->add_css_class("kpop-row");
         box->set_margin(ROW_MARGIN);
 
-        auto* swatches = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, SWATCHES_SPACING);
-
-        auto* swatch = Gtk::make_managed<Gtk::Label>();
-        swatch->set_size_request(SWATCH_WIDTH, -1);
-        swatch->add_css_class("kpop-kind-swatch");
-        swatch->add_css_class(stapik::domain::categoryColorCssClass(domain::colorOf(row.kind)));
-        swatches->append(*swatch);
-
-        auto* artistSwatch = Gtk::make_managed<Gtk::Label>();
-        artistSwatch->set_size_request(SWATCH_WIDTH, -1);
-        artistSwatch->add_css_class("kpop-artist-swatch");
-        if (row.artistColor)
-        {
-            artistSwatch->add_css_class(stapik::domain::categoryColorCssClass(*row.artistColor));
-            artistSwatch->set_tooltip_text(row.artistName);
-        }
-        swatches->append(*artistSwatch);
-
-        box->append(*swatches);
-
         if (showThumbnail)
             box->append(*makeThumbnail(row.imagePath));
 
@@ -181,16 +194,34 @@ namespace kpop::ui
         title->set_ellipsize(Pango::EllipsizeMode::END);
         texts->append(*title);
 
-        if (!row.subtitle.empty())
+        if (!row.artistName.empty() || !row.detailsText.empty())
         {
-            auto* subtitle = makeLabel(row.subtitle, "kpop-row-subtitle");
-            subtitle->set_halign(Gtk::Align::START);
-            subtitle->set_xalign(0.0F);
-            subtitle->set_ellipsize(Pango::EllipsizeMode::END);
-            texts->append(*subtitle);
+            auto* line = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, ROW_SPACING);
+            line->set_halign(Gtk::Align::START);
+
+            if (!row.artistName.empty())
+                line->append(*makeArtistTag(row.artistName, row.artistColor, false));
+
+            if (!row.detailsText.empty())
+            {
+                auto* details = makeLabel(row.detailsText, "kpop-row-subtitle");
+                details->set_xalign(0.0F);
+                details->set_ellipsize(Pango::EllipsizeMode::END);
+                line->append(*details);
+            }
+
+            texts->append(*line);
         }
 
         box->append(*texts);
+
+        if (!row.regionFlag.empty())
+        {
+            auto* flag = makeLabel(row.regionFlag, "kpop-row-flag");
+            flag->set_valign(Gtk::Align::CENTER);
+            flag->set_tooltip_text(row.regionName);
+            box->append(*flag);
+        }
 
         for (const auto* extraText : { &row.quantityText, &row.priceText })
         {

@@ -31,6 +31,7 @@ namespace kpop::domain
         Unspecified,
         Sealed,
         Mint,
+        VeryGood,
         Good,
         Fair,
         Poor
@@ -57,10 +58,16 @@ namespace kpop::domain
     enum class AlbumFormat
     {
         Cd,
+        Cd2,
         Dvd,
+        Dvd2,
+        Dvd3,
         Nfc,
         Cd_Dvd,
+        Cd2_Dvd,
+        Cd3_Dvd,
         Cd_2Dvd,
+        Cd2_3Dvd,
         Vinyl,
         Cassette,
         Digital,
@@ -112,6 +119,19 @@ namespace kpop::domain
         ReleaseDateOldest
     };
 
+    // Where an album was released. Unspecified is an empty region, Other is any text that is not one of the known regions.
+    enum class Region
+    {
+        Unspecified,
+        Korea,
+        Japan,
+        China,
+        Taiwan,
+        Usa,
+        Europe,
+        Other
+    };
+
     enum class EventType
     {
         Concert,
@@ -147,6 +167,7 @@ namespace kpop::domain
         entry(ItemCondition::Unspecified, "unspecified"),
         entry(ItemCondition::Sealed, "sealed"),
         entry(ItemCondition::Mint, "mint"),
+        entry(ItemCondition::VeryGood, "veryGood"),
         entry(ItemCondition::Good, "good"),
         entry(ItemCondition::Fair, "fair"),
         entry(ItemCondition::Poor, "poor"));
@@ -170,10 +191,16 @@ namespace kpop::domain
     inline constexpr auto ALBUM_FORMATS = makeEnumCatalog(
         "kpop.albumFormat",
         entry(AlbumFormat::Cd, "cd"),
+        entry(AlbumFormat::Cd2, "cd2"),
         entry(AlbumFormat::Dvd, "dvd"),
+        entry(AlbumFormat::Dvd2, "dvd2"),
+        entry(AlbumFormat::Dvd3, "dvd3"),
         entry(AlbumFormat::Nfc, "nfc"),
         entry(AlbumFormat::Cd_Dvd, "cd_dvd"),
+        entry(AlbumFormat::Cd2_Dvd, "cd2_dvd"),
+        entry(AlbumFormat::Cd3_Dvd, "cd3_dvd"),
         entry(AlbumFormat::Cd_2Dvd, "cd_2dvd"),
+        entry(AlbumFormat::Cd2_3Dvd, "cd2_3dvd"),
         entry(AlbumFormat::Vinyl, "vinyl"),
         entry(AlbumFormat::Cassette, "cassette"),
         entry(AlbumFormat::Digital, "digital"),
@@ -228,6 +255,17 @@ namespace kpop::domain
         entry(SortOrder::ArtistDescending, "artistDescending"),
         entry(SortOrder::ReleaseDateNewest, "releaseDateNewest"),
         entry(SortOrder::ReleaseDateOldest, "releaseDateOldest"));
+
+    inline constexpr auto REGIONS = makeEnumCatalog(
+        "kpop.region",
+        entry(Region::Unspecified, "unspecified"),
+        entry(Region::Korea, "korea"),
+        entry(Region::Japan, "japan"),
+        entry(Region::China, "china"),
+        entry(Region::Taiwan, "taiwan"),
+        entry(Region::Usa, "usa"),
+        entry(Region::Europe, "europe"),
+        entry(Region::Other, "other"));
 
     [[nodiscard]] constexpr stapik::domain::CategoryColor colorOf(const ItemKind kind)
     {

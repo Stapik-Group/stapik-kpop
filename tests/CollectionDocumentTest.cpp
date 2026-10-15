@@ -164,6 +164,32 @@ namespace
         EXPECT_EQ(roundTrip(document).items().front().photos, item.photos);
     }
 
+    TEST(CollectionDocumentTest, PhotoCaptionsAreKeptAndPhotosWithoutOneStayPlainIds)
+    {
+        CollectionDocument document;
+        const auto item = sampleAlbum();
+        ASSERT_EQ(item.photos.size(), 2U);
+        document.insertItem(0, item);
+
+        const auto json = document.toJson();
+        EXPECT_TRUE(json["items"][0]["photos"][0].is_object());
+        EXPECT_EQ(json["items"][0]["photos"][0]["caption"], "Photobook");
+        EXPECT_TRUE(json["items"][0]["photos"][1].is_string());
+
+        EXPECT_EQ(roundTrip(document).items().front().photos[0].caption, "Photobook");
+        EXPECT_TRUE(roundTrip(document).items().front().photos[1].caption.empty());
+    }
+
+    TEST(CollectionDocumentTest, ReadsPhotosWrittenAsPlainIds)
+    {
+        auto json = sampleDocument().toJson();
+        json["items"][0]["photos"] = nlohmann::json::array({ "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" });
+
+        const auto restored = CollectionDocument::fromJson(json);
+        ASSERT_EQ(restored.items().front().photos.size(), 1U);
+        EXPECT_TRUE(restored.items().front().photos.front().caption.empty());
+    }
+
     TEST(CollectionDocumentTest, RejectsInvalidPhotoId)
     {
         auto json = sampleDocument().toJson();

@@ -2,8 +2,11 @@
 
 ## Rodzaje, statusy i artyści
 
-Kliknij rodzaj po lewej, aby zawęzić listę. Dwie listy u góry zawężają ją dalej do **statusu** (na przykład tylko
-*Lista życzeń*) i do jednego **artysty**. Filtry działają razem.
+Kliknij rodzaj po lewej, aby zawęzić listę. Przycisk **Filtry i sortowanie** u góry otwiera okienko, w którym zawężasz
+ją dalej do **statusu** (na przykład tylko *Lista życzeń*) do jednego **artysty** i do **regionu** wydania albumu (na przykład tylko *Japonia*; wtedy widać same albumy). Filtry działają razem. Gdy któryś
+z ustawień różni się od domyślnego, na przycisku widać ich liczbę, na przykład **Filtry i sortowanie (2)**.
+
+Region wybierasz w formularzu albumu z listy (Korea, Japonia, Chiny, Tajwan, USA, Europa) albo jako *Inny…* z własnym tekstem. Starsze wpisy, np. `Japan` czy `JP`, są rozpoznawane same. Obok albumu na liście widać flagę regionu, w siatce przed podtytułem, a na półce w podpowiedzi.
 
 ## Wyszukiwanie
 
@@ -17,13 +20,18 @@ listach utworów, autorach, tekstach piosenek (oryginał, romanizacja i tłumacz
 
 ## Sortowanie
 
-Ostatnia lista u góry ustala kolejność: ostatnio lub najdawniej dodane, tytuł, artysta albo data wydania. Tytuły i
+Ostatnia lista w okienku **Filtry i sortowanie** ustala kolejność: ostatnio lub najdawniej dodane, tytuł, artysta albo data wydania. Tytuły i
 artyści są ustawiani w kolejności alfabetu języka programu, więc po polsku *Ł* jest po *L*.
+
+Sortowania się nakładają. Gdy wybierzesz najpierw *Data wydania: od najstarszych*, a potem *Artysta A–Z*, wpisy będą
+pogrupowane według artystów, a u każdego artysty ułożone chronologicznie. Ostatni wybór jest główny, wcześniejsze
+porządkują wpisy, które on uznaje za równe. Cały porządek widać w podpowiedzi przycisku **Filtry i sortowanie**.
+Wybór *Ostatnio dodane* albo *Najdawniej dodane* zaczyna od nowa.
 
 ## Lista, półka czy siatka
 
 Widok wybierasz w menu **Widok**: **Lista**, **Półka** albo **Siatka**. Półka i siatka pokazują okładki, co lepiej
-wygląda przy albumach i photocardach; siatka pokazuje też tytuł i podtytuł pod każdą okładką. Długie listy są dzielone
+wygląda przy albumach i photocardach; siatka pokazuje też tytuł i podtytuł pod każdą okładką. W siatce suwak w stopce zmienia rozmiar okładek. Długie listy są dzielone
 na strony po 50 wpisów, z przyciskami poniżej.
 
 Gdy nic nie pasuje, okno to mówi. Zmień wtedy szukany tekst albo filtry.

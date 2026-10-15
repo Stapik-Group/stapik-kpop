@@ -88,7 +88,10 @@ namespace kpop::document
     {
         std::vector<domain::ImageId> photos;
         for (const auto& item : m_items)
-            photos.insert(photos.end(), item.photos.begin(), item.photos.end());
+        {
+            for (const auto& photo : item.photos)
+                photos.push_back(photo.image);
+        }
 
         return sortedWithoutRepeats(std::move(photos));
     }

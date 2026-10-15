@@ -42,6 +42,8 @@ namespace kpop::ui
         constexpr int SIDEBAR_WIDTH = 210;
         constexpr int FOOTER_SPACING = 16;
         constexpr int FOOTER_MARGIN = 6;
+        constexpr int GRID_SIZE_STEP = 10;
+        constexpr int GRID_SIZE_SCALE_WIDTH = 160;
         constexpr int TOP_BAR_SPACING = 8;
         constexpr int TOP_BAR_MARGIN = 8;
         constexpr auto ADD_ITEM_ACTION = "win.addItem";
@@ -253,7 +255,18 @@ namespace kpop::ui
         m_statisticsLabel.set_halign(Gtk::Align::START);
         m_footer.set_margin(FOOTER_MARGIN);
         m_footer.add_css_class("kpop-footer");
+        // The size of the covers; shown only in the grid view.
+        m_gridSizeScale.set_range(ItemGridView::MIN_COVER_SIZE, ItemGridView::MAX_COVER_SIZE);
+        m_gridSizeScale.set_increments(GRID_SIZE_STEP, GRID_SIZE_STEP);
+        m_gridSizeScale.set_value(ItemGridView::DEFAULT_COVER_SIZE);
+        m_gridSizeScale.set_draw_value(false);
+        m_gridSizeScale.set_size_request(GRID_SIZE_SCALE_WIDTH, -1);
+        m_gridSizeScale.set_valign(Gtk::Align::CENTER);
+        m_gridSizeScale.set_tooltip_text(translate("kpop.view.gridSize"));
+        m_gridSizeScale.set_visible(false);
+
         m_footer.append(m_statisticsLabel);
+        m_footer.append(m_gridSizeScale);
         m_footer.append(m_syncIndicator);
 
         m_rootBox.append(m_menu.menuBar());
@@ -266,6 +279,8 @@ namespace kpop::ui
     void MainWindow::initSignals(app::ImageSync& imageSync)
     {
         m_addButton.signal_clicked().connect([this] { onAddRequested(); });
+
+        m_gridSizeScale.signal_value_changed().connect([this] { m_gridView.setCoverSize(static_cast<int>(m_gridSizeScale.get_value())); });
 
         m_sidebar.signalKindSelected().connect([this](std::optional<domain::ItemKind>)
         {
@@ -346,6 +361,7 @@ namespace kpop::ui
     void MainWindow::refreshLanguage()
     {
         m_addButton.set_label(translate("kpop.button.addEntry"));
+        m_gridSizeScale.set_tooltip_text(translate("kpop.view.gridSize"));
         m_sidebar.refreshLabels();
         m_filterBar.refreshLabels();
         m_paginationBar.refreshLabels();
@@ -365,7 +381,7 @@ namespace kpop::ui
                 matchingItems.push_back({ .item = &*item, .artist = artist });
         }
 
-        domain::sortItems(matchingItems, m_filterBar.sortOrder(), LocaleManager::instance().languageCode());
+        domain::sortItems(matchingItems, m_filterBar.sortOrders(), LocaleManager::instance().languageCode());
 
         const auto pageCount = std::max<std::size_t>(1, (matchingItems.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         m_currentPage = std::clamp<std::size_t>(m_currentPage, 1, pageCount);
@@ -423,6 +439,7 @@ namespace kpop::ui
     void MainWindow::refreshViewMode()
     {
         m_viewStack.set_visible_child(activeView());
+        m_gridSizeScale.set_visible(m_viewMode == ViewMode::Grid);
         refreshList();
     }
 

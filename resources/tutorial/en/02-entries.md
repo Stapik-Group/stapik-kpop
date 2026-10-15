@@ -7,7 +7,7 @@ An entry is one thing in your collection. There are six kinds, and each has its 
 - **Title** and **Artist**.
 - **Cover / photo** and **Additional photos**, see [Covers and photos](#images).
 - **Status**: *Owned*, *Ordered*, *Wishlist* or *Sold*.
-- **Condition**: *Not specified*, *Sealed*, *Mint*, *Good*, *Fair* or *Poor*.
+- **Condition**: *Not specified*, *Sealed*, *Mint*, *Very good*, *Good*, *Fair* or *Poor*.
 - **Copies**: how many of it you have.
 - **Purchase price** and its currency, **Acquired on** and **Acquired from**.
 - **Notes**.
@@ -20,9 +20,10 @@ that cannot be understood is marked, and the entry cannot be confirmed until you
 ## Kinds of entries
 
 - **Albums**: album type (single, mini, full, repackage…), format (CD, vinyl, cassette, digital, kit…), edition,
-  variant, release date, label, region, catalog number, inclusions and the **tracklist** with titles, writers, length,
+  variant, release date, label, region, catalog number and the **tracklist** with titles, featured artists, length,
   the title track and a bonus track mark. The tracklist opens in a window of its own with the **Add tracklist…** button
-  (**Edit tracklist…** when there is one already). Empty positions stay where they are until you fill them in, so the
+  (**Edit tracklist…** when there is one already). The form only shows a short preview (number, title and length);
+  you change all the details in that window. Empty positions stay where they are until you fill them in, so the
   numbering does not shift.
 - **Photocards**: member, origin (album inclusion, pre-order benefit, lucky draw, fansign, event), source and whether it
   is available for trade.

@@ -34,6 +34,9 @@ namespace kpop::domain
             std::string text;
             appendFields(text, { item.title, item.acquiredFrom, item.notes });
 
+            for (const auto& photo : item.photos)
+                appendFields(text, { photo.caption });
+
             if (artist != nullptr)
             {
                 appendFields(text, { artist->name });
@@ -84,6 +87,13 @@ namespace kpop::domain
 
         if (filter.artistId && item.artistId != *filter.artistId)
             return false;
+
+        if (filter.region)
+        {
+            const auto* album = std::get_if<AlbumDetails>(&item.details);
+            if (album == nullptr || regionOf(*album) != *filter.region)
+                return false;
+        }
 
         std::istringstream terms(stapik::text::foldForSearch(filter.text));
         std::string term;

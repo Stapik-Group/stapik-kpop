@@ -14,7 +14,7 @@ namespace kpop::image
 {
     namespace
     {
-        constexpr auto JPEG_QUALITY = "85";
+        constexpr auto JPEG_QUALITY = "95";
         constexpr guint32 WHITE = 0xFFFFFFFF;
         constexpr int ALPHA_OPAQUE = 255;
 

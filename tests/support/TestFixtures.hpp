@@ -42,8 +42,8 @@ namespace kpop::test
         item.notes = "Limited ver.";
         item.image = domain::ImageId::parse("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
         item.photos = {
-            *domain::ImageId::parse("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
-            *domain::ImageId::parse("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824") };
+            { .image = *domain::ImageId::parse("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"), .caption = "Photobook" },
+            { .image = *domain::ImageId::parse("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"), .caption = {} } };
         item.details = domain::AlbumDetails{
             .type = domain::AlbumType::Full,
             .format = domain::AlbumFormat::Cd,

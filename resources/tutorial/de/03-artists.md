@@ -8,4 +8,4 @@ Jeder Eintrag gehört zu einem Künstler. Die Liste öffnest du mit **Sammlung �
 - **Löschen** entfernt einen Künstler, aber nur einen ohne Einträge. Sonst erfährst du, wie viele Einträge ihn noch
   verwenden. Lösche sie zuerst oder weise sie jemand anderem zu.
 
-Jeder Künstler bekommt eine eigene Farbe, mit der seine Einträge in der Liste markiert sind.
+Jeder Künstler bekommt eine eigene Farbe. In Liste und Raster steht sein Name als kleines Tag mit einem Punkt in dieser Farbe.

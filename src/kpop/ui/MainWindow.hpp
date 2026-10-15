@@ -22,6 +22,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/label.h>
 #include <gtkmm/paned.h>
+#include <gtkmm/scale.h>
 #include <gtkmm/stack.h>
 
 #include <sigc++/connection.h>
@@ -114,6 +115,7 @@ namespace kpop::ui
         PaginationBar m_paginationBar;
         Gtk::Label m_statisticsLabel;
         StatusIndicator m_syncIndicator;
+        Gtk::Scale m_gridSizeScale;
 
         ViewMode m_viewMode = ViewMode::List;
         Glib::RefPtr<Gio::SimpleAction> m_viewModeAction;

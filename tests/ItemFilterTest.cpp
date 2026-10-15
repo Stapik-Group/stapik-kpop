@@ -9,6 +9,47 @@ namespace
     using namespace kpop::domain;
     using namespace kpop::test;
 
+    TEST(ItemFilterTest, RegionIsRecognisedFromOldFreeTextEntries)
+    {
+        EXPECT_EQ(regionOf(""), Region::Unspecified);
+        EXPECT_EQ(regionOf("   "), Region::Unspecified);
+        EXPECT_EQ(regionOf("japan"), Region::Japan);
+        EXPECT_EQ(regionOf("Japan"), Region::Japan);
+        EXPECT_EQ(regionOf(" JP "), Region::Japan);
+        EXPECT_EQ(regionOf("Japonia"), Region::Japan);
+        EXPECT_EQ(regionOf("South Korea"), Region::Korea);
+        EXPECT_EQ(regionOf("Tajwan"), Region::Taiwan);
+        EXPECT_EQ(regionOf("Narnia"), Region::Other);
+    }
+
+    TEST(ItemFilterTest, RegionTextRoundTrips)
+    {
+        for (const auto region : { Region::Korea, Region::Japan, Region::China, Region::Taiwan, Region::Usa, Region::Europe })
+            EXPECT_EQ(regionOf(regionText(region, "ignored")), region);
+
+        EXPECT_EQ(regionText(Region::Unspecified, "ignored"), "");
+        EXPECT_EQ(regionText(Region::Other, "Narnia"), "Narnia");
+    }
+
+    TEST(ItemFilterTest, RegionFilterKeepsOnlyAlbumsOfThatRegion)
+    {
+        auto japanese = sampleAlbum();
+        std::get<AlbumDetails>(japanese.details).region = "Japan";
+
+        auto korean = sampleAlbum();
+        std::get<AlbumDetails>(korean.details).region = "korea";
+
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .region = Region::Japan }, japanese, nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .region = Region::Japan }, korean, nullptr));
+        EXPECT_FALSE(matchesFilter(ItemFilter{ .region = Region::Japan }, sampleAlbum(), nullptr));
+        EXPECT_TRUE(matchesFilter(ItemFilter{}, korean, nullptr));
+    }
+
+    TEST(ItemFilterTest, TextSearchCoversPhotoCaptions)
+    {
+        EXPECT_TRUE(matchesFilter(ItemFilter{ .text = "photobook" }, sampleAlbum(), nullptr));
+    }
+
     TEST(ItemFilterTest, EmptyFilterMatchesEverything)
     {
         EXPECT_TRUE(matchesFilter(ItemFilter{}, sampleAlbum(), nullptr));
