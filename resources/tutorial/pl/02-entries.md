@@ -21,7 +21,7 @@ da się zrozumieć, jest oznaczone i dopóki go nie poprawisz, wpisu nie można 
 
 - **Albumy**: typ albumu (singiel, mini, pełny, repackage…), format (CD, winyl, kaseta, cyfrowy, kit…), edycja,
   wariant, data wydania, wytwórnia, region, numer katalogowy, dodatki w zestawie oraz **lista utworów** z tytułami,
-  autorami, długością, utworem tytułowym i oznaczeniem utworu bonusowego. Listę otwierasz przyciskiem **Dodaj listę
+  gośćmi (feat.), długością, utworem tytułowym i oznaczeniem utworu bonusowego. Listę otwierasz przyciskiem **Dodaj listę
   utworów…** (gdy już jest, **Edytuj listę utworów…**) w osobnym oknie. W formularzu widać tylko skrócony podgląd (numer, tytuł i czas), a
   wszystkie szczegóły zmieniasz w tym oknie. Puste pozycje zostają na swoim miejscu, dopóki ich nie wypełnisz, więc
   numeracja się nie przesuwa.

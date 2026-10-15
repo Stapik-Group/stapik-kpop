@@ -20,7 +20,7 @@ that cannot be understood is marked, and the entry cannot be confirmed until you
 ## Kinds of entries
 
 - **Albums**: album type (single, mini, full, repackage…), format (CD, vinyl, cassette, digital, kit…), edition,
-  variant, release date, label, region, catalog number, inclusions and the **tracklist** with titles, writers, length,
+  variant, release date, label, region, catalog number, inclusions and the **tracklist** with titles, featured artists, length,
   the title track and a bonus track mark. The tracklist opens in a window of its own with the **Add tracklist…** button
   (**Edit tracklist…** when there is one already). The form only shows a short preview (number, title and length);
   you change all the details in that window. Empty positions stay where they are until you fill them in, so the
