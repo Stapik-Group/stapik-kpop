@@ -412,7 +412,7 @@ namespace
         const auto unused = store.add({ 'u', 'n', 'u', 's', 'e', 'd' });
 
         auto item = sampleAlbum();
-        item.photos = { used };
+        item.photos = { { .image = used, .caption = {} } };
         controller->addItem(item);
 
         EXPECT_EQ(controller->removeUnusedImages(), 1U);
@@ -427,7 +427,7 @@ namespace
         const auto cover = covers.add({ 'c', 'o', 'v', 'e', 'r' });
 
         auto item = sampleAlbum();
-        item.photos = { cover };
+        item.photos = { { .image = cover, .caption = {} } };
         controller->addItem(item);
 
         EXPECT_EQ(controller->removeUnusedImages(), 1U);
