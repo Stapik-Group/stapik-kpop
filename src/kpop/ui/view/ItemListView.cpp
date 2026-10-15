@@ -11,6 +11,8 @@
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/picture.h>
 
+#include <glibmm/main.h>
+
 #include <algorithm>
 
 namespace kpop::ui
@@ -57,6 +59,7 @@ namespace kpop::ui
 
         m_listBox.add_css_class("kpop-list");
         m_listBox.set_selection_mode(Gtk::SelectionMode::SINGLE);
+        m_listBox.set_activate_on_single_click(false);
 
         showEmptyListKind(m_emptyState, EmptyListKind::NoEntries);
         m_listBox.set_placeholder(m_emptyState);
@@ -91,6 +94,39 @@ namespace kpop::ui
             m_contextMenu.popup(m_rowIds[index], x, y);
         });
         m_listBox.add_controller(rightClick);
+
+        // Clicking the highlighted row again removes the highlight. Without this it could only be cleared with Ctrl+click.
+        const auto leftClick = Gtk::GestureClick::create();
+        leftClick->set_button(GDK_BUTTON_PRIMARY);
+        leftClick->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        leftClick->signal_pressed().connect([this](const int pressCount, const double, const double y)
+        {
+            // Only a single click toggles; the second click of a double click opens the entry and keeps the highlight.
+            const auto* row = m_listBox.get_row_at_y(static_cast<int>(y));
+            const bool toggleOff = pressCount == 1 && row != nullptr && row->is_selected();
+            m_toggleOffRowIndex = toggleOff ? row->get_index() : -1;
+        });
+        leftClick->signal_released().connect([this](const int, const double, const double y)
+        {
+            const auto* row = m_listBox.get_row_at_y(static_cast<int>(y));
+            if (row == nullptr || m_toggleOffRowIndex < 0 || row->get_index() != m_toggleOffRowIndex)
+                return;
+
+            m_toggleOffRowIndex = -1;
+
+            // The list box selects the clicked row itself, after this handler, so the highlight is removed once it is done.
+            Glib::signal_idle().connect_once([this, alive = m_alive]
+            {
+                if (*alive)
+                    m_listBox.unselect_all();
+            });
+        });
+        m_listBox.add_controller(leftClick);
+    }
+
+    ItemListView::~ItemListView()
+    {
+        *m_alive = false;
     }
 
     void ItemListView::setRows(const std::vector<ItemRow>& rows)
