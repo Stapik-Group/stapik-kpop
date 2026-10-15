@@ -2,6 +2,7 @@
 
 #include "kpop/ui/Translate.hpp"
 
+#include <glibmm/main.h>
 #include <glibmm/ustring.h>
 #include <gtkmm/stringlist.h>
 
@@ -10,7 +11,33 @@ namespace kpop::ui
     namespace
     {
         constexpr int SPACING = 8;
+        constexpr int POPOVER_MARGIN = 12;
+        constexpr int POPOVER_SPACING = 10;
+        constexpr int DROPDOWN_WIDTH = 260;
         constexpr std::size_t ALL_ENTRY_COUNT = 1;
+
+        void addFilterRow(Gtk::Grid& grid, const int row, Gtk::Label& label, Gtk::DropDown& dropDown)
+        {
+            label.set_xalign(0.0F);
+            label.set_valign(Gtk::Align::CENTER);
+            dropDown.set_hexpand(true);
+            dropDown.set_size_request(DROPDOWN_WIDTH, -1);
+
+            grid.attach(label, 0, row);
+            grid.attach(dropDown, 1, row);
+        }
+
+        // The pop-up list of a drop-down is a popover that is a child of the drop-down.
+        Gtk::Popover* findPopup(Gtk::Widget& widget)
+        {
+            for (auto* child = widget.get_first_child(); child != nullptr; child = child->get_next_sibling())
+            {
+                if (auto* popup = dynamic_cast<Gtk::Popover*>(child))
+                    return popup;
+            }
+
+            return nullptr;
+        }
     }
 
     FilterBar::FilterBar() :
@@ -18,10 +45,17 @@ namespace kpop::ui
     {
         m_searchEntry.set_hexpand(true);
 
+        m_filterGrid.set_margin(POPOVER_MARGIN);
+        m_filterGrid.set_row_spacing(POPOVER_SPACING);
+        m_filterGrid.set_column_spacing(POPOVER_SPACING);
+        addFilterRow(m_filterGrid, 0, m_statusLabel, m_statusDropDown);
+        addFilterRow(m_filterGrid, 1, m_artistLabel, m_artistDropDown);
+        addFilterRow(m_filterGrid, 2, m_sortLabel, m_sortDropDown);
+        m_filterPopover.set_child(m_filterGrid);
+        m_filterButton.set_popover(m_filterPopover);
+
         append(m_searchEntry);
-        append(m_statusDropDown);
-        append(m_artistDropDown);
-        append(m_sortDropDown);
+        append(m_filterButton);
 
         rebuildStatusModel();
         rebuildArtistModel();
@@ -32,12 +66,29 @@ namespace kpop::ui
 
         const auto onSelectionChanged = [this]
         {
+            updateFilterButton();
+
             if (!m_updatingModels)
+            {
+                scheduleFilterPopoverRegrab();
                 m_signalChanged.emit();
+            }
         };
         m_statusDropDown.property_selected().signal_changed().connect(onSelectionChanged);
         m_artistDropDown.property_selected().signal_changed().connect(onSelectionChanged);
         m_sortDropDown.property_selected().signal_changed().connect(onSelectionChanged);
+
+        // Also when a list is closed without choosing anything.
+        for (auto* dropDown : { &m_statusDropDown, &m_artistDropDown, &m_sortDropDown })
+        {
+            if (auto* popup = findPopup(*dropDown))
+                popup->signal_closed().connect([this] { scheduleFilterPopoverRegrab(); });
+        }
+    }
+
+    FilterBar::~FilterBar()
+    {
+        *m_alive = false;
     }
 
     void FilterBar::setArtists(const std::vector<domain::Artist>& artists)
@@ -57,6 +108,8 @@ namespace kpop::ui
             }
         }
         m_updatingModels = false;
+
+        updateFilterButton();
     }
 
     void FilterBar::refreshLabels()
@@ -65,7 +118,9 @@ namespace kpop::ui
         const auto previousSortOrder = sortOrder();
 
         m_searchEntry.set_placeholder_text(translate("kpop.filter.search"));
-        m_sortDropDown.set_tooltip_text(translate("kpop.filter.sortTooltip"));
+        m_statusLabel.set_text(translate("kpop.filter.status"));
+        m_artistLabel.set_text(translate("kpop.filter.artist"));
+        m_sortLabel.set_text(translate("kpop.filter.sort"));
 
         rebuildStatusModel();
         rebuildArtistModel();
@@ -92,6 +147,8 @@ namespace kpop::ui
 
         selectSortOrder(previousSortOrder);
         m_updatingModels = false;
+
+        updateFilterButton();
     }
 
     domain::ItemFilter FilterBar::filter() const
@@ -125,6 +182,43 @@ namespace kpop::ui
     sigc::signal<void()>& FilterBar::signalChanged()
     {
         return m_signalChanged;
+    }
+
+    // Shows how many of the settings in the popover differ from the default, so a filter that is on is never hidden.
+    void FilterBar::updateFilterButton()
+    {
+        const auto current = filter();
+
+        const int activeCount = (current.status ? 1 : 0) + (current.artistId ? 1 : 0) + (sortOrder() != domain::SortOrder::AddedNewest ? 1 : 0);
+
+        m_filterButton.set_label(activeCount > 0
+            ? translate("kpop.filter.buttonActive", { { "count", std::to_string(activeCount) } })
+            : translate("kpop.filter.button"));
+    }
+
+    // GTK 4 bug (gtk issues 4369, 4529 and 5414): once a drop-down inside a popover has used its own pop-up list,
+    // the popover loses its grab and nothing closes it any more, not a click outside, not Esc, not the button.
+    // Showing the popover again, after GTK is done with the list, gives it a fresh grab.
+    void FilterBar::scheduleFilterPopoverRegrab()
+    {
+        if (m_regrabPending)
+            return;
+
+        m_regrabPending = true;
+
+        Glib::signal_idle().connect_once([this, alive = m_alive]
+        {
+            if (!*alive)
+                return;
+
+            m_regrabPending = false;
+
+            if (!m_filterPopover.get_visible())
+                return;
+
+            m_filterPopover.popdown();
+            m_filterPopover.popup();
+        });
     }
 
     void FilterBar::rebuildStatusModel()

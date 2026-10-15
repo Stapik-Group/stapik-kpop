@@ -2,8 +2,9 @@
 
 ## Kinds, statuses and artists
 
-Click a kind on the left to narrow the list. The two lists at the top narrow it further to a **status** (for example
-only *Wishlist*) and to one **artist**. The filters work together.
+Click a kind on the left to narrow the list. The **Filters and sorting** button at the top opens a small window where
+you narrow it further to a **status** (for example only *Wishlist*) and to one **artist**. The filters work together.
+When any of the settings differs from the default, the button shows how many, for example **Filters and sorting (2)**.
 
 ## Search
 
@@ -17,7 +18,7 @@ at, tracklists, writers, lyrics (original, romanization and translation), clip a
 
 ## Sorting
 
-The last list at the top sets the order: recently or oldest added, title, artist or release date. Titles and artists
+The last list in the **Filters and sorting** window sets the order: recently or oldest added, title, artist or release date. Titles and artists
 are put in alphabetical order of the language of the program, so in Polish *Ł* comes after *L*.
 
 ## List, shelf or grid

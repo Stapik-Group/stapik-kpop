@@ -2,8 +2,9 @@
 
 ## Rodzaje, statusy i artyści
 
-Kliknij rodzaj po lewej, aby zawęzić listę. Dwie listy u góry zawężają ją dalej do **statusu** (na przykład tylko
-*Lista życzeń*) i do jednego **artysty**. Filtry działają razem.
+Kliknij rodzaj po lewej, aby zawęzić listę. Przycisk **Filtry i sortowanie** u góry otwiera okienko, w którym zawężasz
+ją dalej do **statusu** (na przykład tylko *Lista życzeń*) i do jednego **artysty**. Filtry działają razem. Gdy któryś
+z ustawień różni się od domyślnego, na przycisku widać ich liczbę, na przykład **Filtry i sortowanie (2)**.
 
 ## Wyszukiwanie
 
@@ -17,7 +18,7 @@ listach utworów, autorach, tekstach piosenek (oryginał, romanizacja i tłumacz
 
 ## Sortowanie
 
-Ostatnia lista u góry ustala kolejność: ostatnio lub najdawniej dodane, tytuł, artysta albo data wydania. Tytuły i
+Ostatnia lista w okienku **Filtry i sortowanie** ustala kolejność: ostatnio lub najdawniej dodane, tytuł, artysta albo data wydania. Tytuły i
 artyści są ustawiani w kolejności alfabetu języka programu, więc po polsku *Ł* jest po *L*.
 
 ## Lista, półka czy siatka

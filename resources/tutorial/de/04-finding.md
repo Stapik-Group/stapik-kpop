@@ -2,8 +2,10 @@
 
 ## Arten, Status und Künstler
 
-Klicke links auf eine Art, um die Liste einzuengen. Die zwei Listen oben engen sie weiter auf einen **Status** (zum
-Beispiel nur *Wunschliste*) und auf einen **Künstler** ein. Die Filter wirken zusammen.
+Klicke links auf eine Art, um die Liste einzuengen. Die Schaltfläche **Filter und Sortierung** oben öffnet ein kleines
+Fenster, in dem du sie weiter auf einen **Status** (zum Beispiel nur *Wunschliste*) und auf einen **Künstler**
+einengst. Die Filter wirken zusammen. Weicht eine der Einstellungen vom Standard ab, zeigt die Schaltfläche ihre
+Anzahl, zum Beispiel **Filter und Sortierung (2)**.
 
 ## Suche
 
@@ -17,7 +19,7 @@ Tracklisten, Autoren, Songtexten (Original, Romanisierung und Übersetzung) sowi
 
 ## Sortieren
 
-Die letzte Liste oben legt die Reihenfolge fest: zuletzt oder zuerst hinzugefügt, Titel, Künstler oder
+Die letzte Liste im Fenster **Filter und Sortierung** legt die Reihenfolge fest: zuletzt oder zuerst hinzugefügt, Titel, Künstler oder
 Veröffentlichungsdatum. Titel und Künstler werden nach dem Alphabet der Programmsprache sortiert, auf Polnisch steht
 also *Ł* nach *L*.
 
