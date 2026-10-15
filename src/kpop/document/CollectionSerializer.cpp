@@ -342,7 +342,7 @@ namespace kpop::document::serializer
                 if (photo.caption.empty())
                     photos.push_back(photo.image.hash());
                 else
-                    photos.push_back({ { "image", photo.image.hash() }, { "caption", photo.caption } });
+                    photos.push_back({ { "id", photo.image.hash() }, { "caption", photo.caption } });
             }
 
             result["photos"] = std::move(photos);
@@ -396,7 +396,8 @@ namespace kpop::document::serializer
             for (const auto& photo : json.at("photos"))
             {
                 // Either a plain id or an object with the id and a caption.
-                const auto& idJson = photo.is_object() ? photo.at("image") : photo;
+                // "image" is accepted too, which is how the id was called for a short while.
+                const auto& idJson = photo.is_object() ? photo.at(photo.contains("id") ? "id" : "image") : photo;
                 const auto id = domain::ImageId::parse(idJson.get<std::string>());
                 if (!id)
                     throw std::invalid_argument("Invalid photo id");
