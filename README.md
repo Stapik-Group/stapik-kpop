@@ -70,7 +70,7 @@ distributed as an Inno Setup installer and as a portable zip.
 
 Data lives in `%APPDATA%\stapikkpop\data\collection.json`, settings in `%APPDATA%\stapikkpop\config` and the log
 (stderr of the GUI program) in `%LOCALAPPDATA%\stapikkpop\cache\stapik.log`. The program draws with the Cairo
-renderer by default; set `GSK_RENDERER=gl` to use the GPU. `packaging/windows/README.txt` is the note for testers that
+renderer by default; set `GSK_RENDERER=gl` to use the GPU. On Windows it also starts with `GTK_IM_MODULE=simple`, because GTK 4.24.1 crashes when the keyboard layout is switched (for example with Win+Space to Korean); a value set in the environment before the start is kept. `packaging/windows/README.txt` is the note for testers that
 goes into the zip.
 
 `--self-test` is also available on Linux; it checks icons, GSettings schemas, resources, translations and a writable

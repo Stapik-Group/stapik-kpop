@@ -52,6 +52,16 @@ int main(int argumentCount, char* arguments[])
     if (selfTest)
         g_setenv("G_MESSAGES_DEBUG", "all", FALSE);
 
+#ifdef _WIN32
+    // GTK 4.24.1 on Windows crashes (access violation in libgtk-4-1.dll, after repeated
+    // "gtk_im_context_ime_message_filter: assertion 'GTK_IS_IM_CONTEXT_IME (data)' failed") when the keyboard layout
+    // is switched, for example with Win+Space to Korean, or when typing with an IME. It also reproduces in a
+    // minimal GTK 4 program without this application. The simple input context avoids the broken IME context.
+    // It has to be set before GTK starts. A value the user has already set is kept (FALSE = do not overwrite).
+    // TODO: remove once GTK is fixed and the MSYS2 package carries the fix; check that Hangul composition works.
+    g_setenv("GTK_IM_MODULE", "simple", FALSE);
+#endif
+
     // The self-test has to work without a network, so it does not look for a newer version.
     stapik::app::StapikApplicationOptions options;
     options.checkForUpdates = !selfTest;
