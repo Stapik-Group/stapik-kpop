@@ -24,7 +24,7 @@ Feld mit unverständlichem Text wird markiert, und der Eintrag lässt sich erst 
   Variante, Veröffentlichungsdatum, Label, Region, Katalognummer und die **Trackliste** mit Titeln, Gastkünstlern (feat.),
   Länge, Titeltrack und der Markierung als Bonustitel. Die Trackliste öffnet sich in einem eigenen Fenster über die
   Schaltfläche **Titelliste hinzufügen…** (**Titelliste bearbeiten…**, wenn schon eine da ist). Im Formular siehst du nur eine
-  kurze Vorschau (Nummer, Titel und Länge), alle Details änderst du in diesem Fenster. Leere Positionen bleiben an
+  kurze Vorschau (Nummer, Titel, ein grauer *feat.*-Hinweis mit den Gästen und Länge), alle Details änderst du in diesem Fenster. Leere Positionen bleiben an
   ihrem Platz, bis du sie ausfüllst, die Nummerierung verschiebt sich also nicht.
 - **Photocards**: Mitglied, Herkunft (Albumbeigabe, Vorbestellerbonus, Lucky Draw, Fansign, Event), Quelle und ob sie
   zum Tausch bereitsteht.

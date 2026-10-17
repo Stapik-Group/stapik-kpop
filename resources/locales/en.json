@@ -149,6 +149,7 @@
   "kpop.tracklist.number": "No.",
   "kpop.tracklist.title": "Title",
   "kpop.tracklist.writers": "Feat.",
+  "kpop.tracklist.featured": "feat. {names}",
   "kpop.tracklist.length": "Length",
   "kpop.tracklist.titleTrackTooltip": "Title track",
   "kpop.tracklist.moveUpTooltip": "Move up",
