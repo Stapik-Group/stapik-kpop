@@ -30,7 +30,7 @@ the entries it considers equal. The whole order is shown in the tooltip of the *
 
 ## List, shelf or grid
 
-Choose **List**, **Shelf** or **Grid** in the **View** menu. The shelf and the grid show covers, which is nicer for
+Choose **List**, **Shelf** or **Grid** in the **View** menu. On the shelf the covers stand on boards: how many fit on one board depends on the width of the window, and every board is centred. A click on a highlighted cover removes the highlight. The shelf and the grid show covers, which is nicer for
 albums and photocards; the grid also shows the title and the subtitle under each cover. In the grid, the slider in the footer changes the size of the covers. Long lists are split into
 pages of 50 entries, with buttons below.
 

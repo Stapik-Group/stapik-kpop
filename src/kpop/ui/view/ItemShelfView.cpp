@@ -4,11 +4,16 @@
 #include "kpop/ui/widget/ImageTexture.hpp"
 
 #include <gdk/gdk.h>
+#include <glibmm/main.h>
+#include <gtkmm/adjustment.h>
 #include <gtkmm/box.h>
 #include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/overlay.h>
 #include <gtkmm/picture.h>
+#include <gtkmm/scrolledwindow.h>
+
+#include <algorithm>
 
 namespace kpop::ui
 {
@@ -21,35 +26,30 @@ namespace kpop::ui
         constexpr int ROW_SPACING = 12;
         constexpr int TILE_WIDTH = COVER_SIZE + 2 * COVER_MARGIN_SIDE;
         constexpr int TITLE_LINES = 2;
-        constexpr int MAX_TILES_PER_LINE = 60;
+        constexpr int SHELF_SIDE_PADDING = 8;
+        constexpr int DEFAULT_COLUMNS = 6;
+        constexpr int RELAYOUT_DELAY_MS = 100;
 
-        Gtk::Widget* makeCover(const ItemRow& row)
+        Gtk::Widget* makeCover(const Glib::RefPtr<Gdk::Texture>& texture)
         {
-            if (!row.imagePath.empty())
+            // The texture is never larger than COVER_SIZE, so its natural size cannot grow the slot.
+            if (texture)
             {
-                // The texture is never larger than COVER_SIZE, so its natural size cannot grow the slot.
-                if (const Glib::RefPtr<Gdk::Texture> texture = loadTexture(row.imagePath, COVER_SIZE))
-                {
-                    // Fixed-size slot: every cover occupies exactly COVER_SIZE x COVER_SIZE.
-                    // The picture inside is scaled (up or down) to fit it, keeping the aspect ratio.
-                    auto* slot = Gtk::make_managed<Gtk::Box>();
-                    slot->set_size_request(COVER_SIZE, COVER_SIZE);
-                    slot->set_halign(Gtk::Align::CENTER);
-                    slot->set_valign(Gtk::Align::START);
-                    slot->set_hexpand(false);
-                    slot->set_vexpand(false);
-                    slot->set_overflow(Gtk::Overflow::HIDDEN);
-                    slot->add_css_class("kpop-shelf-cover");
+                // Fixed-size slot: every cover occupies exactly COVER_SIZE x COVER_SIZE.
+                // The picture inside is centred in it and keeps its aspect ratio.
+                auto* slot = Gtk::make_managed<Gtk::Box>();
+                slot->set_size_request(COVER_SIZE, COVER_SIZE);
+                slot->set_halign(Gtk::Align::CENTER);
+                slot->set_valign(Gtk::Align::START);
+                slot->set_hexpand(false);
+                slot->set_vexpand(false);
+                slot->set_overflow(Gtk::Overflow::HIDDEN);
+                slot->add_css_class("kpop-shelf-cover");
 
-                    auto* picture = Gtk::make_managed<Gtk::Picture>();
-                    picture->set_can_shrink(true);
-                    picture->set_content_fit(Gtk::ContentFit::CONTAIN);
-                    picture->set_hexpand(true);
-                    picture->set_vexpand(true);
-                    picture->set_paintable(texture);
-                    slot->append(*picture);
-                    return slot;
-                }
+                // Sized to its texture: a picture that only has a minimum size grows to the proportions of its image,
+                // and a wide cover would then make its tile wider than the others.
+                slot->append(*makeExactPicture(texture));
+                return slot;
             }
 
             auto* empty = Gtk::make_managed<Gtk::Label>("♪");
@@ -65,6 +65,8 @@ namespace kpop::ui
         {
             auto* title = Gtk::make_managed<Gtk::Label>(text);
             title->add_css_class("kpop-shelf-title");
+            // The tiny maximum width keeps a long title from widening the tile; it only takes the width it is given.
+            title->set_max_width_chars(1);
             title->set_halign(Gtk::Align::FILL);
             title->set_valign(Gtk::Align::END);
             title->set_wrap(true);
@@ -91,7 +93,9 @@ namespace kpop::ui
 
     ItemShelfView::ItemShelfView() :
         m_content(Gtk::Orientation::VERTICAL),
-        m_contextMenu(m_flowBox)
+        m_shelves(Gtk::Orientation::VERTICAL),
+        m_columns(DEFAULT_COLUMNS),
+        m_contextMenu(m_content)
     {
         set_policy(Gtk::PolicyType::NEVER, Gtk::PolicyType::AUTOMATIC);
         set_vexpand(true);
@@ -102,75 +106,74 @@ namespace kpop::ui
         m_emptyState.set_visible(false);
 
         m_content.add_css_class("kpop-shelf");
-
-        m_flowBox.set_halign(Gtk::Align::START);
-        m_flowBox.set_valign(Gtk::Align::START);
-        m_flowBox.set_homogeneous(true);
-        m_flowBox.set_selection_mode(Gtk::SelectionMode::SINGLE);
-        m_flowBox.set_activate_on_single_click(false);
-        m_flowBox.set_max_children_per_line(MAX_TILES_PER_LINE);
-        m_flowBox.set_row_spacing(ROW_SPACING);
-        m_flowBox.set_column_spacing(0);
-
+        m_content.set_hexpand(true);
+        m_content.set_focusable(true);
         m_content.append(m_emptyState);
-        m_content.append(m_flowBox);
+        m_content.append(m_shelves);
 
-        m_flowBox.signal_child_activated().connect([this](const Gtk::FlowBoxChild* child)
+        // The viewport changes its size whenever the window does; the number of covers per shelf follows it.
+        get_hadjustment()->signal_changed().connect([this] { updateColumns(); });
+
+        const auto leftClick = Gtk::GestureClick::create();
+        leftClick->set_button(GDK_BUTTON_PRIMARY);
+        leftClick->signal_pressed().connect([this](const int pressCount, const double x, const double y)
         {
-            if (child == nullptr)
+            m_content.grab_focus();
+
+            const auto index = tileIndexAt(x, y);
+            if (!index)
                 return;
 
-            if (const auto index = static_cast<std::size_t>(child->get_index()); index < m_rowIds.size())
-                m_signalEditRequested.emit(m_rowIds[index]);
+            // A click on the highlighted cover removes the highlight again; the second click of a double click
+            // opens the entry and keeps it highlighted.
+            if (pressCount == 1)
+                select(m_selected == index ? std::nullopt : index);
+            else if (pressCount == 2)
+            {
+                select(index);
+                m_signalEditRequested.emit(m_rows[*index].id);
+            }
         });
-
-        const auto keyController = Gtk::EventControllerKey::create();
-        keyController->signal_key_pressed().connect([this](const guint keyval, guint, Gdk::ModifierType)
-        {
-            if (keyval != GDK_KEY_Delete)
-                return false;
-
-            const auto selected = m_flowBox.get_selected_children();
-            if (selected.empty())
-                return false;
-
-            if (const auto index = static_cast<std::size_t>(selected.front()->get_index()); index < m_rowIds.size())
-                m_signalDeleteRequested.emit(m_rowIds[index]);
-
-            return true;
-        }, false);
-        m_flowBox.add_controller(keyController);
-
-        m_contextMenu.signalEditRequested().connect([this](const std::string& itemId) { m_signalEditRequested.emit(itemId); });
-        m_contextMenu.signalDeleteRequested().connect([this](const std::string& itemId) { m_signalDeleteRequested.emit(itemId); });
-        m_contextMenu.signalDuplicateRequested().connect([this](const std::string& itemId) { m_signalDuplicateRequested.emit(itemId); });
-        m_contextMenu.signalDuplicateAndEditRequested().connect([this](const std::string& itemId) { m_signalDuplicateAndEditRequested.emit(itemId); });
+        m_content.add_controller(leftClick);
 
         const auto rightClick = Gtk::GestureClick::create();
         rightClick->set_button(GDK_BUTTON_SECONDARY);
         rightClick->signal_pressed().connect([this](const int, const double x, const double y)
         {
-            auto* child = m_flowBox.get_child_at_pos(static_cast<int>(x), static_cast<int>(y));
-            if (child == nullptr)
-                return;
-
-            const auto index = static_cast<std::size_t>(child->get_index());
-            if (index >= m_rowIds.size())
-                return;
-
-            m_flowBox.select_child(*child);
-            m_contextMenu.popup(m_rowIds[index], x, y);
+            if (const auto index = tileIndexAt(x, y))
+            {
+                select(index);
+                m_contextMenu.popup(m_rows[*index].id, x, y);
+            }
         });
-        m_flowBox.add_controller(rightClick);
+        m_content.add_controller(rightClick);
+
+        const auto keyController = Gtk::EventControllerKey::create();
+        keyController->signal_key_pressed().connect([this](const guint keyval, guint, Gdk::ModifierType) { return onKeyPressed(keyval); }, false);
+        m_content.add_controller(keyController);
+
+        m_contextMenu.signalEditRequested().connect([this](const std::string& itemId) { m_signalEditRequested.emit(itemId); });
+        m_contextMenu.signalDeleteRequested().connect([this](const std::string& itemId) { m_signalDeleteRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateRequested().connect([this](const std::string& itemId) { m_signalDuplicateRequested.emit(itemId); });
+        m_contextMenu.signalDuplicateAndEditRequested().connect([this](const std::string& itemId) { m_signalDuplicateAndEditRequested.emit(itemId); });
+    }
+
+    ItemShelfView::~ItemShelfView()
+    {
+        *m_alive = false;
+        m_relayoutConnection.disconnect();
     }
 
     void ItemShelfView::setRows(const std::vector<ItemRow>& rows)
     {
         clear();
 
-        for (const auto& row : rows)
-            appendRow(row);
+        m_rows = rows;
+        m_textures.reserve(rows.size());
+        for (const auto& row : m_rows)
+            m_textures.push_back(row.imagePath.empty() ? Glib::RefPtr<Gdk::Texture>() : loadTexture(row.imagePath, COVER_SIZE));
 
+        rebuildShelves();
         m_emptyState.set_visible(rows.empty());
     }
 
@@ -206,18 +209,130 @@ namespace kpop::ui
 
     void ItemShelfView::clear()
     {
-        while (auto* child = m_flowBox.get_child_at_index(0))
-            m_flowBox.remove(*child);
+        m_relayoutConnection.disconnect();
+        m_selected.reset();
+        m_tiles.clear();
 
-        m_rowIds.clear();
+        while (auto* child = m_shelves.get_first_child())
+            m_shelves.remove(*child);
+
+        m_rows.clear();
+        m_textures.clear();
     }
 
-    void ItemShelfView::appendRow(const ItemRow& row)
+    // Lays the covers out on shelves of m_columns covers. Only the arrangement changes, so the decoded covers are reused.
+    void ItemShelfView::rebuildShelves()
     {
-        auto* tile = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-        tile->set_size_request(TILE_WIDTH, -1);
+        m_tiles.clear();
 
-        auto* cover = makeCover(row);
+        while (auto* child = m_shelves.get_first_child())
+            m_shelves.remove(*child);
+
+        const auto columns = static_cast<std::size_t>(std::max(1, m_columns));
+        for (std::size_t first = 0; first < m_rows.size(); first += columns)
+        {
+            auto* covers = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+            covers->set_halign(Gtk::Align::CENTER);
+            covers->set_homogeneous(true);
+
+            for (std::size_t index = first; index < std::min(first + columns, m_rows.size()); ++index)
+            {
+                auto* tile = createTile(index);
+                m_tiles.push_back(tile);
+                covers->append(*tile);
+            }
+
+            auto* board = Gtk::make_managed<Gtk::Box>();
+            board->add_css_class("kpop-shelf-board");
+            board->set_size_request(-1, BOARD_HEIGHT);
+
+            auto* shelf = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+            shelf->set_margin_bottom(ROW_SPACING);
+            shelf->append(*covers);
+            shelf->append(*board);
+            m_shelves.append(*shelf);
+        }
+
+        if (m_selected && *m_selected < m_tiles.size())
+            m_tiles[*m_selected]->add_css_class("kpop-shelf-tile-selected");
+    }
+
+    void ItemShelfView::updateColumns()
+    {
+        const int width = get_width();
+        if (width <= 0)
+            return;
+
+        const int columns = std::max(1, (width - 2 * SHELF_SIDE_PADDING) / TILE_WIDTH);
+        if (columns == m_columns)
+            return;
+
+        m_columns = columns;
+        scheduleRelayout();
+    }
+
+    // Deferred and combined, because the size changes many times while a window is dragged and rebuilding the shelves
+    // inside the allocation of the window would restart it.
+    void ItemShelfView::scheduleRelayout()
+    {
+        m_relayoutConnection.disconnect();
+        m_relayoutConnection = Glib::signal_timeout().connect([this, alive = m_alive]
+        {
+            if (*alive)
+                rebuildShelves();
+
+            return false;
+        }, RELAYOUT_DELAY_MS);
+    }
+
+    void ItemShelfView::select(const std::optional<std::size_t> index)
+    {
+        if (m_selected && *m_selected < m_tiles.size())
+            m_tiles[*m_selected]->remove_css_class("kpop-shelf-tile-selected");
+
+        m_selected = index;
+
+        if (m_selected && *m_selected < m_tiles.size())
+            m_tiles[*m_selected]->add_css_class("kpop-shelf-tile-selected");
+    }
+
+    std::optional<std::size_t> ItemShelfView::tileIndexAt(const double x, const double y)
+    {
+        for (auto* widget = m_content.pick(x, y); widget != nullptr && widget != &m_content; widget = widget->get_parent())
+        {
+            if (const auto tile = std::ranges::find(m_tiles, widget); tile != m_tiles.end())
+                return static_cast<std::size_t>(tile - m_tiles.begin());
+        }
+
+        return std::nullopt;
+    }
+
+    bool ItemShelfView::onKeyPressed(const guint keyval)
+    {
+        if (!m_selected || *m_selected >= m_rows.size())
+            return false;
+
+        switch (keyval)
+        {
+            case GDK_KEY_Delete:
+                m_signalDeleteRequested.emit(m_rows[*m_selected].id);
+                return true;
+            case GDK_KEY_Return:
+            case GDK_KEY_KP_Enter:
+                m_signalEditRequested.emit(m_rows[*m_selected].id);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    Gtk::Widget* ItemShelfView::createTile(const std::size_t index)
+    {
+        const auto& row = m_rows[index];
+
+        auto* tile = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+
+        auto* cover = makeCover(m_textures[index]);
         if (row.status != domain::ItemStatus::Owned)
             cover->add_css_class("kpop-shelf-unowned");
 
@@ -230,11 +345,16 @@ namespace kpop::ui
         standing->set_tooltip_text(tooltipOf(row));
         tile->append(*standing);
 
-        auto* board = Gtk::make_managed<Gtk::Box>();
-        board->set_size_request(-1, BOARD_HEIGHT);
-        tile->append(*board);
+        // A scrolled window that never scrolls is the one container that does not pass the natural width of its child
+        // on. Whatever a cover or a title asks for, every tile stays exactly TILE_WIDTH wide, so the shelves line up.
+        auto* frame = Gtk::make_managed<Gtk::ScrolledWindow>();
+        frame->set_policy(Gtk::PolicyType::NEVER, Gtk::PolicyType::NEVER);
+        frame->set_min_content_width(TILE_WIDTH);
+        frame->set_propagate_natural_width(false);
+        frame->set_propagate_natural_height(true);
+        frame->set_hexpand(false);
+        frame->set_child(*tile);
 
-        m_flowBox.append(*tile);
-        m_rowIds.push_back(row.id);
+        return frame;
     }
 }

@@ -33,7 +33,7 @@ vorn.
 
 ## Liste, Regal oder Raster
 
-Die Ansicht wählst du im Menü **Ansicht**: **Liste**, **Regal** oder **Raster**. Regal und Raster zeigen Cover, was bei
+Die Ansicht wählst du im Menü **Ansicht**: **Liste**, **Regal** oder **Raster**. Im Regal stehen die Cover auf Brettern: Wie viele auf ein Brett passen, hängt von der Fensterbreite ab, und jedes Brett ist zentriert. Ein Klick auf ein markiertes Cover hebt die Markierung auf. Regal und Raster zeigen Cover, was bei
 Alben und Photocards schöner aussieht; das Raster zeigt unter jedem Cover auch Titel und Untertitel. Im Raster ändert der Schieberegler in der Fußzeile die Covergröße. Lange Listen werden
 in Seiten zu 50 Einträgen geteilt, mit Schaltflächen darunter.
 

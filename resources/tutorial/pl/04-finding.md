@@ -30,7 +30,7 @@ Wybór *Ostatnio dodane* albo *Najdawniej dodane* zaczyna od nowa.
 
 ## Lista, półka czy siatka
 
-Widok wybierasz w menu **Widok**: **Lista**, **Półka** albo **Siatka**. Półka i siatka pokazują okładki, co lepiej
+Widok wybierasz w menu **Widok**: **Lista**, **Półka** albo **Siatka**. Półka układa okładki na deskach: ile ich mieści się na jednej półce, zależy od szerokości okna, a każda półka jest wyśrodkowana. Kliknięcie zaznaczonej okładki zdejmuje zaznaczenie. Półka i siatka pokazują okładki, co lepiej
 wygląda przy albumach i photocardach; siatka pokazuje też tytuł i podtytuł pod każdą okładką. W siatce suwak w stopce zmienia rozmiar okładek. Długie listy są dzielone
 na strony po 50 wpisów, z przyciskami poniżej.
 
