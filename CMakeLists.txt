@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(STAPIK_KPOP_BUILD_TESTS "Build the Stapik K-Pop unit tests" OFF)
 
-set(STAPIK_COMMON_GIT_TAG "v1.5.5" CACHE STRING "Tag, branch or commit of stapik-common to build against")
+set(STAPIK_COMMON_GIT_TAG "v1.5.6" CACHE STRING "Tag, branch or commit of stapik-common to build against")
 
 include(FetchContent)
 FetchContent_Declare(
