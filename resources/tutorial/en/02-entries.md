@@ -22,7 +22,7 @@ that cannot be understood is marked, and the entry cannot be confirmed until you
 - **Albums**: album type (single, mini, full, repackage…), format (CD, vinyl, cassette, digital, kit…), edition,
   variant, release date, label, region, catalog number and the **tracklist** with titles, featured artists, length,
   the title track and a bonus track mark. The tracklist opens in a window of its own with the **Add tracklist…** button
-  (**Edit tracklist…** when there is one already). The form only shows a short preview (number, title and length);
+  (**Edit tracklist…** when there is one already). The form only shows a short preview (number, title, a grey *feat.* note with the guests, and length);
   you change all the details in that window. Empty positions stay where they are until you fill them in, so the
   numbering does not shift.
 - **Photocards**: member, origin (album inclusion, pre-order benefit, lucky draw, fansign, event), source and whether it

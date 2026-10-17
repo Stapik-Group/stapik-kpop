@@ -55,6 +55,7 @@ namespace kpop::ui
         constexpr int PREVIEW_MARGIN = 10;
         constexpr int PREVIEW_COLUMN_SPACING = 14;
         constexpr int PREVIEW_ROW_SPACING = 5;
+        constexpr int PREVIEW_FEAT_SPACING = 6;
         constexpr int PREVIEW_COLUMNS = 5;
         constexpr auto SUMMARY_SEPARATOR = "  ·  ";
         constexpr auto EMPTY_TITLE_TEXT = "—";
@@ -222,18 +223,31 @@ namespace kpop::ui
                     number->add_css_class("dim-label");
 
                     auto* title = Gtk::make_managed<Gtk::Label>(track.title.empty() ? EMPTY_TITLE_TEXT : track.title);
-                    title->set_hexpand(true);
                     title->set_xalign(0.0F);
                     title->set_ellipsize(Pango::EllipsizeMode::END);
                     if (track.title.empty())
                         title->add_css_class("dim-label");
+
+                    // The featured artists follow the title in the grey of the length.
+                    auto* titleBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, PREVIEW_FEAT_SPACING);
+                    titleBox->set_hexpand(true);
+                    titleBox->append(*title);
+
+                    if (!track.writers.empty())
+                    {
+                        auto* featured = Gtk::make_managed<Gtk::Label>(translate("kpop.tracklist.featured", { { "names", track.writers } }));
+                        featured->set_xalign(0.0F);
+                        featured->set_ellipsize(Pango::EllipsizeMode::END);
+                        featured->add_css_class("dim-label");
+                        titleBox->append(*featured);
+                    }
 
                     auto* length = Gtk::make_managed<Gtk::Label>(track.length ? track.length->toText() : std::string());
                     length->set_xalign(1.0F);
                     length->add_css_class("dim-label");
 
                     m_tracklistPreviewGrid.attach(*number, 0, gridRow);
-                    m_tracklistPreviewGrid.attach(*title, 1, gridRow);
+                    m_tracklistPreviewGrid.attach(*titleBox, 1, gridRow);
                     m_tracklistPreviewGrid.attach(*length, 2, gridRow);
                     ++gridRow;
                 }

@@ -94,22 +94,12 @@ dialog {
 }
 
 /* --- Shelf view: covers standing on a wooden board; what is not owned is greyed out --- */
-/* The board is the background of .kpop-shelf, repeated every row, so it runs through the whole width. */
-/* The measures (px) match ItemShelfView.cpp: row = 8 above + 110 cover + 14 board + 12 gap = 144. */
-.kpop-shelf {
-    background-image: linear-gradient(to bottom, transparent 0px, transparent 118px, #e0b87a 118px, #e0b87a 120px, #c99a5b 120px, #8b5e34 128px, #6b4526 132px, transparent 132px, transparent 144px);
-    background-size: 100% 144px;
-    background-repeat: repeat-y;
+/* Every shelf is a row of covers with a board below it (ItemShelfView.cpp), so the boards always line up with the covers. */
+.kpop-shelf-board {
+    background-image: linear-gradient(to bottom, #e0b87a 0px, #e0b87a 2px, #c99a5b 2px, #8b5e34 10px, #6b4526 14px);
 }
 
-.kpop-shelf flowboxchild,
-.kpop-shelf flowboxchild:hover,
-.kpop-shelf flowboxchild:selected {
-    padding: 0;
-    background-color: transparent;
-}
-
-.kpop-shelf flowboxchild:selected .kpop-shelf-cover {
+.kpop-shelf-tile-selected .kpop-shelf-cover {
     outline: 2px solid #0a84ff;
     outline-offset: 2px;
 }
